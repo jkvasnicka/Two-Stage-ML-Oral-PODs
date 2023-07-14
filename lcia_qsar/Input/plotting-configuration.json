@@ -1,0 +1,31 @@
+{
+    
+    "label_for_metric": {
+      "root_mean_squared_error": "RMSE",
+      "median_absolute_error": "MAE",
+      "r2_score": "$R^2$"
+    },
+
+    "label_for_scoring": {
+      "neg_root_mean_squared_error": "RMSE",
+      "neg_median_absolute_error": "MAE",
+      "r2": "$R^2$"
+    },
+
+    "label_for_effect": {
+      "general": "General Toxicity",
+      "repro_dev": "Reproductive/Developmental Toxicity"
+    },
+
+    "color_for_effect" : {
+      "general" : "#1f77b4",
+      "repro_dev" : "#d62728" 
+    },
+
+    "label_for_model_build": {
+      "with_selection": "With Selection",
+      "without_selection": "Without Selection"
+    }
+
+}
+  
