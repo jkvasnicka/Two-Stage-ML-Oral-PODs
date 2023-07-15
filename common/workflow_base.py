@@ -18,6 +18,7 @@ import sys
 sys.path.append('..')
 from common import evaluation
 
+# TODO: Change name, ModelEvaluator? Use a config file for the arguments.
 #region: SupervisedLearningWorkflow.__init__
 class SupervisedLearningWorkflow:
     '''The base class. At minimum, it needs X & y.
@@ -130,8 +131,7 @@ class SupervisedLearningWorkflow:
             self.estimator.fit(X_train[important_features], y_train)
 
             y_pred = self.estimator.predict(X_test[important_features])
-            performances.append(
-                evaluation.scores(y_test, y_pred, function_for_metric)) 
+            performances.append(evaluation.score(y_test, y_pred, function_for_metric)) 
         
         performances = pd.DataFrame(performances)
         performances.columns.names = ['metric']
@@ -310,9 +310,10 @@ class SupervisedLearningWorkflow:
             self.estimator.fit(X_train, y_train)
 
             y_pred = self.estimator.predict(X_test)
-            return evaluation.scores(y_test, y_pred, function_for_metric)
+            return evaluation.score(y_test, y_pred, function_for_metric)
     #endregion
-    
+
+    # TODO: May be obsolete?
     #region: X_fitted
     @property
     def X_fitted(self):

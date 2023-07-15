@@ -5,11 +5,6 @@ from json import loads
 from os import path
 import numpy as np
 
-# Enable modules to be imported from the parent directory.
-import sys
-sys.path.append('..')
-from common import evaluation
-from common import estimator_config
 
 #region: BaseConfiguration.__init__
 class BaseConfiguration:
@@ -103,20 +98,6 @@ class LciaQsarConfiguration(BaseConfiguration):
     @property
     def estimator_names(self):
         return list(self.config_for_estimator)
-    #endregion
-
-    #region: function_for_metric & evaluation_metrics
-    @property
-    def function_for_metric(self):
-        return self._function_for_metric
-
-    @property
-    def evaluation_metrics(self):
-        return list(self._function_for_metric.keys())
-
-    @evaluation_metrics.setter
-    def evaluation_metrics(self, metrics):
-        self._function_for_metric = evaluation.get_scoring_functions(metrics)
     #endregion
 
     #region: random_state_estimator & seed_estimator

@@ -17,6 +17,7 @@ from configuration import LciaQsarConfiguration
 from history import LciaQsarHistory
 from common.features import with_common_index 
 from common.transform import select_columns_without_pattern
+from common.evaluation import MetricWrapper
 
 #region: LciaQsarModelingWorkflow.__init__
 class LciaQsarModelingWorkflow(
@@ -41,6 +42,8 @@ class LciaQsarModelingWorkflow(
             'data_condition',
             'model_build'
         ]
+
+        self.function_for_metric = self._instantiate_metrics()
 #endregion
     
     #region: run
@@ -166,6 +169,7 @@ class LciaQsarModelingWorkflow(
         return ys[target_effect].squeeze().dropna()
     #endregion
 
+    # TODO: Move to a PipelineBuilder class?
     #region: _instantiate_estimators
     def _instantiate_estimators(self, data_condition):
         '''For the current workflow instructions.
@@ -173,8 +177,9 @@ class LciaQsarModelingWorkflow(
         # Initialize the container.
         estimators = []
 
-        for class_name, config in self.config_for_estimator.items():
+        for name, config in self.config_for_estimator.items():
             module = importlib.import_module(config['module'])
+            class_name = config.get('class', name)
             kwargs = config.get('kwargs', {})
 
             pre_steps = self._instantiate_preprocessors(data_condition)                
@@ -187,6 +192,7 @@ class LciaQsarModelingWorkflow(
         return estimators
     #endregion
     
+    # TODO: Move to a PipelineBuilder class?
     #region: _instantiate_preprocessors
     def _instantiate_preprocessors(self, data_condition):
         '''Return a list of preprocessing steps for the Pipeline.
@@ -197,13 +203,14 @@ class LciaQsarModelingWorkflow(
         configuring the transform() output globally via sklearn.set_config(). A 
         workaround is implemented below.
         '''    
-        preprocessor_class_names = self.pre_steps_for_condition[data_condition]
+        preprocessor_names = self.preprocessors_for_condition[data_condition]
     
         # Initialize the container.
         pre_steps = []
-        for class_name in preprocessor_class_names:
-            config = self.config_for_preprocessor[class_name]
+        for name in preprocessor_names:
+            config = self.config_for_preprocessor[name]
             module = importlib.import_module(config['module'])
+            class_name = config.get('class', name)
             kwargs = config.get('kwargs', {})
             preprocessor = getattr(module, class_name)(**kwargs)
             if config.get('do_column_select', False) is True:
@@ -216,6 +223,7 @@ class LciaQsarModelingWorkflow(
         return pre_steps
     #endregion
 
+    # TODO: Move to a PipelineBuilder class?
     #region: _make_column_transformer
     def _make_column_transformer(self, transformer):
         '''Make a ColumnTransformer to "pass-through" discrete features.
@@ -227,6 +235,26 @@ class LciaQsarModelingWorkflow(
             remainder='passthrough',
             verbose_feature_names_out=False,
             )    
+    #endregion
+
+    #region: _instantiate_metrics
+    def _instantiate_metrics(self):
+        '''
+        Return a dictionary of scoring functions.
+        '''        
+        function_for_metric = {}
+
+        for name, config in self.config_for_metric.items():
+            module = importlib.import_module(config['module'])
+            class_name = config.get('class', name)
+            kwargs = config.get('kwargs', {})
+            
+            metric = getattr(module, class_name)
+            metric_instance = MetricWrapper(metric, **kwargs)
+
+            function_for_metric[name] = metric_instance
+
+        return function_for_metric
     #endregion
 
     # TODO: Define from configuration instead of hard-coding?

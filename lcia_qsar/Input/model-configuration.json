@@ -1,102 +1,128 @@
 {
-  
-  "config_for_estimator" : {
-    "RandomForestRegressor" : {
-      "module" : "sklearn.ensemble",
-      "kwargs" : {
-        "max_features" : 0.3333333333333333
+
+  "config_for_estimator": {
+    "RandomForestRegressor": {
+      "module": "sklearn.ensemble",
+      "kwargs": {
+        "max_features": 0.3333333333333333
       }
     },
-    "Ridge" : {"module" : "sklearn.linear_model"}
+    "Ridge": {
+      "module": "sklearn.linear_model"
+    }
   },
-    
-  "seed_estimator" : 0,
-    
-  "kwargs_build_model" : {
-    "n_splits_cv" : 2, 
-    "n_repeats_cv" : 1, 
-    "random_state_cv" : 1,
-    "n_splits_select" : 2, 
-    "n_repeats_select" : 1, 
-    "random_state_select" : 2, 
-    "n_repeats_perm" : 2,
-    "random_state_perm" : 3,
-    "n_jobs" : -1,
-    "criterion_metric" : "neg_root_mean_squared_error",
-    "n_features" : 10
+
+  "seed_estimator": 0,
+
+  "kwargs_build_model": {
+    "n_splits_cv": 2,
+    "n_repeats_cv": 1,
+    "random_state_cv": 1,
+    "n_splits_select": 2,
+    "n_repeats_select": 1,
+    "random_state_select": 2,
+    "n_repeats_perm": 2,
+    "random_state_perm": 3,
+    "n_jobs": -1,
+    "criterion_metric": "neg_root_mean_squared_error",
+    "n_features": 10
   },
-  
-  "instruction_keys" : [
-    ["general", "opera", "predicted", "missing", "without_selection"],
-    ["repro_dev", "opera", "predicted", "missing", "without_selection"],
-    ["general", "opera", "predicted", "missing", "with_selection"],
-    ["repro_dev", "opera", "predicted", "missing", "with_selection"]
+
+  "instruction_keys": [
+    [
+      "general",
+      "opera",
+      "predicted",
+      "missing",
+      "without_selection"
+    ],
+    [
+      "repro_dev",
+      "opera",
+      "predicted",
+      "missing",
+      "without_selection"
+    ],
+    [
+      "general",
+      "opera",
+      "predicted",
+      "missing",
+      "with_selection"
+    ],
+    [
+      "repro_dev",
+      "opera",
+      "predicted",
+      "missing",
+      "with_selection"
+    ]
   ],
 
-  "pre_steps_for_condition" : {
-    "missing" : [
+  "preprocessors_for_condition": {
+    "missing": [
       "VarianceThreshold",
       "MissingValuesSelector",
       "PowerTransformer",
       "SimpleImputer",
       "MedianScaler"
     ],
-    "complete" : [
+    "complete": [
       "PowerTransformer",
       "MedianScaler"
     ]
   },
-  
-  "config_for_preprocessor" : {
-    "VarianceThreshold" : {
-      "module" : "sklearn.feature_selection", 
-      "kwargs" : {
-        "threshold" : 0
+
+  "config_for_preprocessor": {
+    "VarianceThreshold": {
+      "module": "sklearn.feature_selection",
+      "kwargs": {
+        "threshold": 0
       }
     },
-    "MissingValuesSelector" : {
-      "module" : "common.transform",
-      "kwargs" : {
-        "threshold" : 0.3
+    "MissingValuesSelector": {
+      "module": "common.transform",
+      "kwargs": {
+        "threshold": 0.3
       }
     },
-    "PowerTransformer" : {
-      "module" : "sklearn.preprocessing",
-      "kwargs" : {
-        "standardize" : false
+    "PowerTransformer": {
+      "module": "sklearn.preprocessing",
+      "kwargs": {
+        "standardize": false
       },
-      "do_column_select" : true
+      "do_column_select": true
     },
-    "SimpleImputer" : {
-      "module" : "sklearn.impute",
-      "kwargs" : {
-        "strategy" : "median"
+    "SimpleImputer": {
+      "module": "sklearn.impute",
+      "kwargs": {
+        "strategy": "median"
       }
     },
-    "MedianScaler" : {
-      "module" : "common.transform",
-      "do_column_select" : true 
+    "MedianScaler": {
+      "module": "common.transform",
+      "do_column_select": true
     }
   },
 
-  "ld50_pred_column_for_source" : {
-    "comptox" : "ORAL_RAT_LD50_MOL/KG_TEST_PRED",
-    "opera" : "CATMoS_LD50_pred"
+  "ld50_pred_column_for_source": {
+    "comptox": "ORAL_RAT_LD50_MOL/KG_TEST_PRED",
+    "opera": "CATMoS_LD50_pred"
   },
-  
-  "use_experimental_for_ld50" : {
-    "experimental" : true,
-    "predicted" : false
+
+  "use_experimental_for_ld50": {
+    "experimental": true,
+    "predicted": false
   },
-  
-  "drop_missing_for_condition" : {
-    "complete" : true, 
-    "missing" : false
+
+  "drop_missing_for_condition": {
+    "complete": true,
+    "missing": false
   },
-  
-  "discrete_columns_for_source" : {
-    "comptox" : [],
-    "opera" : [
+
+  "discrete_columns_for_source": {
+    "comptox": [],
+    "opera": [
       "CERAPP_Ago_pred",
       "CERAPP_Anta_pred",
       "CERAPP_Bind_pred",
@@ -119,20 +145,40 @@
     ]
   },
 
-  "discrete_column_suffix"  : "_discrete",
-  
-  "evaluation_metrics" : [
-    "explained_variance_score", 
-    "max_error", 
-    "mean_absolute_error",
-    "mean_squared_error", 
-    "root_mean_squared_error",
-    "median_absolute_error",
-    "mean_absolute_percentage_error", 
-    "r2_score"
-  ],
+  "discrete_column_suffix": "_discrete",
 
-  "feature_importance_scorings" : [
+  "config_for_metric": {
+    "explained_variance_score": {
+      "module": "sklearn.metrics"
+    },
+    "max_error": {
+      "module": "sklearn.metrics"
+    },
+    "mean_absolute_error": {
+      "module": "sklearn.metrics"
+    },
+    "mean_squared_error": {
+      "module": "sklearn.metrics"
+    },
+    "root_mean_squared_error": {
+      "module": "sklearn.metrics",
+      "class": "mean_squared_error",
+      "kwargs": {
+        "squared": false
+      }
+    },
+    "median_absolute_error": {
+      "module": "sklearn.metrics"
+    },
+    "mean_absolute_percentage_error": {
+      "module": "sklearn.metrics"
+    },
+    "r2_score": {
+      "module": "sklearn.metrics"
+    }
+  },
+
+  "feature_importance_scorings": [
     "explained_variance",
     "max_error",
     "neg_mean_absolute_error",
@@ -142,5 +188,5 @@
     "neg_mean_absolute_percentage_error",
     "r2"
   ]
-  
+
 }
