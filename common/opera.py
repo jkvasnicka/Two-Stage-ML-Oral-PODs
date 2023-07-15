@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import os
 import logging
+import re
 
 from common.input_output import json_to_dict
 from common.features import inverse_log10_transform
@@ -423,4 +424,63 @@ def split_applicability_domain_columns(global_local_ADs):
     local_AD_indexes = global_local_ADs[local_AD_column].squeeze()
 
     return global_ADs, local_AD_indexes
+#endregion
+
+#region: get_failed_directories
+def get_failed_directories(main_dir, log_file_name):
+    '''
+    Get a list of directories with failed operations from the main log file.
+
+    Parameters
+    ----------
+    main_dir : str
+        The main directory containing the main log file.
+    log_file_name : str
+        The name of the main log file.
+
+    Returns
+    -------
+    list
+        List of directories with failed operations.
+    '''
+    failed_directories = []
+    main_log_file_path = os.path.join(main_dir, log_file_name)
+
+    try:
+        with open(main_log_file_path, 'r') as file:
+            for line in file:
+                if "Skipping directory" in line:
+                    dir_name = re.search(
+                        'Skipping directory (.*?) due to error', line).group(1)
+                    failed_directories.append(dir_name)
+    except Exception as e:
+        print(f"Could not open main log file due to error: {str(e)}")
+
+    return failed_directories
+#endregion
+
+#region: print_error_log_files
+def print_error_log_files(
+        main_dir, failed_directories, log_file_name="errorLogBatchRun.txt"):
+    '''
+    Print the contents of the log files located at the given paths.
+
+    Parameters
+    ----------
+    main_dir : str
+        The main directory.
+    failed_directories : list
+        List of directories with failed operations.
+    log_file_name : str, optional
+        The name of the log file. Defaults to "errorLogBatchRun.txt".
+    '''
+    for dir_name in failed_directories:
+        path = os.path.join(main_dir, dir_name, log_file_name)
+        try:
+            with open(path, 'r') as file:
+                print(f"Contents of log file at {path}:")
+                print(file.read())
+                print("\n----------\n")
+        except Exception as e:
+            print(f"Could not open and print the log file at {path} due to error: {str(e)}")
 #endregion
