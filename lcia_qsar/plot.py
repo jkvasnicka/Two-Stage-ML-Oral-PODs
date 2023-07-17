@@ -810,18 +810,17 @@ def margins_of_exposure_cumulative(
         )
 #endregion
 
-#region: performances_by_missing_feature
-def performances_by_missing_feature(workflow, label_for_effect):
+#region: predictions_by_missing_feature
+def predictions_by_missing_feature(workflow, label_for_effect):
     '''
-    Generate boxplots of the absolute differences between observed and predicted
-    values, organized by the combination of the features of the models.
+    Generate boxplots of the predictions, organized by the combination of the 
+    features of the models.
 
     For each unique combination of the features in the model, the function
     generates a subplot with a boxplot for each target effect. The boxplots
-    represent the absolute differences between the observed and predicted
-    values, categorized by the missing samples for each feature. The boxplots
-    are colored based on the samples, with a unique color for all samples and
-    a different color for the remaining.
+    represent the predictions, categorized by the missing samples for each 
+    feature. The boxplots are colored based on the samples, with a unique 
+    color for all samples and a different color for the remaining.
 
     Parameters
     ----------
@@ -845,19 +844,21 @@ def performances_by_missing_feature(workflow, label_for_effect):
             model_keys = list(group)
             n_effects = len(model_keys)
 
-            fig, axs = plt.subplots(nrows=n_effects, figsize=(6, 4 * n_effects))
+            fig, axs = plt.subplots(
+                nrows=n_effects, 
+                figsize=(6, 4 * n_effects)
+                )
 
-            for model_key, ax in zip(model_keys, axs.flatten()):
+            for i, model_key in enumerate(model_keys):
 
                 key_for = dict(zip(model_key_names, model_key))
                 title = label_for_effect[key_for['target_effect']]
 
-                y_pred, X, y_true = get_in_sample_prediction(workflow, model_key)
-                abs_diffs = abs(y_pred - y_true)
-                ax.set_xlabel('|Predicted (QSAR) - Observed (ToxValDB)|')
+                ## Plot the distributions for training chemicals.
+                y_pred, X, *_ = get_in_sample_prediction(workflow, model_key)
                 _boxplot_by_missing_feature(
-                    ax, 
-                    abs_diffs, 
+                    axs[i], 
+                    y_pred, 
                     X, 
                     all_samples_color, 
                     remaining_color, 
@@ -868,7 +869,7 @@ def performances_by_missing_feature(workflow, label_for_effect):
 
             save_figure(
                 fig, 
-                performances_by_missing_feature, 
+                predictions_by_missing_feature, 
                 combination_key
                 )
 #endregion
@@ -917,13 +918,18 @@ def _boxplot_by_missing_feature(
         df_for_name = {_relabel_box(k, v): v for k, v in sorted(
             df_for_name.items(), key=lambda item: item[1].size, reverse=False)}
 
+    # Define properties for outliers
+        flierprops = dict(marker='o', markerfacecolor='lightgray', markersize=2,
+                    linestyle='none', markeredgecolor='lightgray')
+
         boxplot = ax.boxplot(
             list(df_for_name.values()),
             vert=False,
             labels=list(df_for_name.keys()),
             widths=0.6,
             patch_artist=True,
-            medianprops={'color': 'black'}
+            medianprops={'color': 'black'},
+            flierprops=flierprops
         )
 
         for patch in boxplot['boxes']:
@@ -944,6 +950,9 @@ def _boxplot_by_missing_feature(
         )
         
         ax.set_title(title)
+        ax.set_xlabel(f'Predicted {_prediction_label}')
+        # Make y-axis tick labels smaller
+        ax.tick_params(axis='y', which='major', labelsize=8)
 #endregion
 
 #region: _relabel_box
