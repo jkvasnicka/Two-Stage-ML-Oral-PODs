@@ -815,17 +815,16 @@ def format_score_text(score_labels):
     return '\n'.join([f'{key}: {value}' for key, value in score_labels.items()])
 #endregion
 
-#region: margins_of_exposure_cdfs
-def margins_of_exposure_cdfs(workflow, exposure_df, label_for_effect):
+#region: margins_of_exposure_cumulative
+def margins_of_exposure_cumulative(
+        workflow, exposure_df, label_for_effect, right_truncation=None):
     '''
-    Function to plot cumulative fractions of chemicals for different MOE
-    categories.
+    Function to plot cumulative count of chemicals for different MOE categories.
 
     Parameters
     ----------
     workflow : object
-        The workflow object which contains models and functions to predict and
-        plot.
+        The workflow object which contains models and functions to predict and plot.
     exposure_df : pd.DataFrame
         DataFrame with exposure estimates.
 
@@ -850,30 +849,29 @@ def margins_of_exposure_cdfs(workflow, exposure_df, label_for_effect):
 
         # Initialize a figure
         fig, axs = plt.subplots(
-            1, 
-            len(model_keys), 
-            figsize=(len(model_keys)*5, 5),
+            1,
+            len(model_keys),
+            figsize=(len(model_keys) * 5, 5),
             sharey=True
-            )
+        )
 
         for i, model_key in enumerate(model_keys):
-
             y_pred, *_ = predict_out_of_sample(
-                workflow, 
-                model_key, 
+                workflow,
+                model_key,
                 inverse_transform=True
-                )
+            )
 
             for j, percentile in enumerate(exposure_df.columns):
                 exposure_estimates = exposure_df[percentile]
                 margins_of_exposure = y_pred.divide(exposure_estimates)
 
-                # Sort the MOEs and calculate cumulative fractions
+                # Sort the MOEs and calculate cumulative counts
                 sorted_moe = margins_of_exposure.sort_values()
-                cumulative_fractions = np.linspace(0, 1, num=len(sorted_moe))
+                cumulative_counts = np.arange(1, len(sorted_moe) + 1)
 
-                # Plot the cumulative fractions
-                axs[i].plot(sorted_moe, cumulative_fractions, color=colors[j],
+                # Plot the cumulative counts
+                axs[i].plot(sorted_moe, cumulative_counts, color=colors[j],
                             label=f'Exposure {percentile}')
 
             # Set titles, labels, scale, and gridlines
@@ -882,11 +880,17 @@ def margins_of_exposure_cdfs(workflow, exposure_df, label_for_effect):
             axs[i].set_title(label_for_effect[effect])
             axs[i].set_xlabel('Margin of Exposure')
             axs[i].set_xscale('log')
+            axs[i].set_yscale('log')
             axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
 
             if i == 0:  # only label y-axis for the leftmost plot
-                axs[i].set_ylabel('Cumulative Fraction of Chemicals')
+                axs[i].set_ylabel('Cumulative Count of Chemicals')
 
+            # Set x-axis limit based on the user input
+            if right_truncation:
+                left = axs[i].get_xlim()[0]
+                axs[i].set_xlim(left, right_truncation)
+                
             # Indicate MOE categories with vertical spans
             for k, (category, (lower, upper)) in enumerate(moe_categories.items()):
                 axs[i].axvspan(lower, upper, alpha=0.2, color=moe_colors[k])
@@ -901,27 +905,27 @@ def margins_of_exposure_cdfs(workflow, exposure_df, label_for_effect):
 
                 # Plot category annotations
                 axs[i].text(
-                    x_position, 
-                    y_position, 
+                    x_position,
+                    y_position,
                     category.replace(" ", "\n"),
-                    ha='left', 
-                    va='top', 
+                    ha='left',
+                    va='top',
                     fontsize='small',
                     transform=axs[i].transAxes
-                    )
+                )
 
         # Set a single legend for all subplots
         handles, labels = axs[0].get_legend_handles_labels()
         fig.legend(handles, labels, loc='lower center', fontsize='small',
-                   ncol=len(exposure_df.columns)+2, bbox_to_anchor=(0.5, -0.05))
+                   ncol=len(exposure_df.columns) + 2, bbox_to_anchor=(0.5, -0.05))
 
         fig.tight_layout()
 
         save_figure(
-            fig, 
-            margins_of_exposure_cdfs, 
+            fig,
+            margins_of_exposure_cumulative,
             combination_key
-            )
+        )
 #endregion
 
 #region: performances_by_missing_feature
