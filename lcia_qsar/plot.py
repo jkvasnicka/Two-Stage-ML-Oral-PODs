@@ -696,6 +696,7 @@ def format_score_text(score_labels):
     return '\n'.join([f'{key}: {value}' for key, value in score_labels.items()])
 #endregion
 
+# TODO: Map the percentile columns to new labels.
 #region: margins_of_exposure_cumulative
 def margins_of_exposure_cumulative(
         workflow, exposure_df, label_for_effect, right_truncation=None):
@@ -838,66 +839,30 @@ def performances_by_missing_feature(workflow, label_for_effect):
         # Use the helper function to get the combination key group
         combination_key_groups = get_model_key_groups(
             workflow, model_key_names, 'target_effect')
-
-        def relabel(name, abs_diffs):
-            '''Helper function to label each box including sample size.
-            '''
-            prefix = 'Missing' if name != 'All Samples' else ''
-            return f'{prefix} {name} ({abs_diffs.size})'
-
+        
         # Iterate over combination_key_group
         for combination_key, group in combination_key_groups:
             model_keys = list(group)
             n_effects = len(model_keys)
+
             fig, axs = plt.subplots(nrows=n_effects, figsize=(6, 4 * n_effects))
 
             for model_key, ax in zip(model_keys, axs.flatten()):
 
-
-                y_pred, X, y_surrogate = get_in_sample_prediction(workflow, model_key)
-
-                abs_diffs = abs(y_pred - y_surrogate)
-                ax.set_xlabel('|Predicted - Surrogate|')
-
-                abs_diffs_for_name = {}
-                abs_diffs_for_name['All Samples'] = abs_diffs
-                for feature_name in X.columns:
-                    missing_samples = X[X[feature_name].isna()].index
-                    abs_diffs_for_name[feature_name] = abs_diffs.loc[missing_samples]
-
-                # Sort by the sample size and add sample size to labels
-                abs_diffs_for_name = {relabel(k, v): v for k, v in sorted(
-                    abs_diffs_for_name.items(), key=lambda item: item[1].size, reverse=False)}
-
-                boxplot = ax.boxplot(
-                    list(abs_diffs_for_name.values()),
-                    vert=False,
-                    labels=list(abs_diffs_for_name.keys()),
-                    widths=0.6,
-                    patch_artist=True,
-                    medianprops={'color': 'black'}
-                )
-
-                for patch in boxplot['boxes']:
-                    patch.set(facecolor=remaining_color)
-
-                patch.set(facecolor=all_samples_color)
-
-                for key in ['whiskers', 'caps', 'medians']:
-                    for element in boxplot[key]:
-                        element.set(color='black')
-
-                median_value = boxplot['medians'][-1].get_xdata()[0]
-                ax.axvline(
-                    x=median_value,
-                    color=all_samples_color,
-                    linestyle='--',
-                    alpha=0.5
-                )
-
                 key_for = dict(zip(model_key_names, model_key))
-                effect = key_for['target_effect']
-                ax.set_title(label_for_effect[effect])
+                title = label_for_effect[key_for['target_effect']]
+
+                y_pred, X, y_true = get_in_sample_prediction(workflow, model_key)
+                abs_diffs = abs(y_pred - y_true)
+                ax.set_xlabel('|Predicted (QSAR) - Observed (ToxValDB)|')
+                _boxplot_by_missing_feature(
+                    ax, 
+                    abs_diffs, 
+                    X, 
+                    all_samples_color, 
+                    remaining_color, 
+                    title
+                    )
 
             fig.tight_layout()
 
@@ -906,6 +871,88 @@ def performances_by_missing_feature(workflow, label_for_effect):
                 performances_by_missing_feature, 
                 combination_key
                 )
+#endregion
+
+#region: _boxplot_by_missing_feature
+def _boxplot_by_missing_feature(
+            ax, 
+            df, 
+            X, 
+            all_samples_color, 
+            remaining_color, 
+            title
+            ):
+        '''
+        Draw a boxplot on the given axis, illustrating the distributions
+        for all samples and the remaining samples after excluding missing 
+        values.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes object to draw the boxplot on.
+        df : pandas.DataFrame
+            The input data.
+        X : pandas.DataFrame
+            DataFrame containing feature values, used to identify missing 
+            samples.
+        all_samples_color : matplotlib color
+            Color for the 'All Samples' box in the boxplot.
+        remaining_color : matplotlib color
+            Color for the remaining boxes in the boxplot.
+        title : str
+            Title for the boxplot.
+
+        Returns
+        -------
+        None
+        '''
+        df_for_name = {}
+        df_for_name['All Samples'] = df
+        for feature_name in X.columns:
+            missing_samples = X[X[feature_name].isna()].index
+            df_for_name[feature_name] = df.loc[missing_samples]
+
+        # Sort by the sample size and add sample size to labels
+        df_for_name = {_relabel_box(k, v): v for k, v in sorted(
+            df_for_name.items(), key=lambda item: item[1].size, reverse=False)}
+
+        boxplot = ax.boxplot(
+            list(df_for_name.values()),
+            vert=False,
+            labels=list(df_for_name.keys()),
+            widths=0.6,
+            patch_artist=True,
+            medianprops={'color': 'black'}
+        )
+
+        for patch in boxplot['boxes']:
+            patch.set(facecolor=remaining_color)
+
+        patch.set(facecolor=all_samples_color)
+
+        for key in ['whiskers', 'caps', 'medians']:
+            for element in boxplot[key]:
+                element.set(color='black')
+
+        median_value = boxplot['medians'][-1].get_xdata()[0]
+        ax.axvline(
+            x=median_value,
+            color=all_samples_color,
+            linestyle='--',
+            alpha=0.5
+        )
+        
+        ax.set_title(title)
+#endregion
+
+#region: _relabel_box
+def _relabel_box(name, series):
+    '''Return an updated box label for the missing feature. 
+    '''
+    prefix = 'Missing' if name != 'All Samples' else ''
+    sample_size = len(series)
+    return f'{prefix} {name} ({sample_size})'
 #endregion
 
 #region: get_model_key_groups
