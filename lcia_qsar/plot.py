@@ -15,6 +15,8 @@ import sys
 sys.path.append('..')
 from common import plot 
 
+_prediction_label = '$log_{10}POD$'  # LaTeX rendering for subscript
+
 #region: performance_and_prediction_comparison
 def performance_and_prediction_comparison(
         workflow, 
@@ -195,7 +197,7 @@ def _plot_prediction_scatterplots_right_half(
     def create_title(sample_type, n_chemicals):
         '''Adds comma separation'''
         description = f"{sample_type} ({'{:,}'.format(n_chemicals)})"
-        return f"log10(POD), {description}"
+        return f"{_prediction_label}, {description}"
     
     xlabel = label_for_model_build['without_selection']
     ylabel = label_for_model_build['with_selection']
@@ -635,8 +637,7 @@ def benchmarking_scatterplots(
     axs : list
         List of axes corresponding to the figures.
     '''
-    xlabel = 'Regulatory log10(POD)'
-    ylabel = 'Predicted log10(POD)'
+    xlabel = f'Regulatory {_prediction_label}'
 
     model_key_names = get_model_key_names(workflow)
     combination_key_groups = get_model_key_groups(
@@ -646,19 +647,19 @@ def benchmarking_scatterplots(
         model_keys = list(group)
         num_subplots = len(model_keys)
 
-        fig, ax_objs = plt.subplots(3, num_subplots, figsize=figsize, 
-                                    sharex=True, sharey=True)
+        fig, ax_objs = plt.subplots(3, num_subplots, figsize=figsize)
+
         xmin, xmax = np.inf, -np.inf
 
         for i, model_key in enumerate(model_keys):
             
-            y_pred, _, y_surrogate = get_in_sample_prediction(workflow, model_key)
+            y_pred, _, y_true = get_in_sample_prediction(workflow, model_key)
 
             key_for = dict(zip(model_key_names, model_key))
             y_comparison = y_regulatory_df[key_for['target_effect']].dropna()
             y_evaluation_dict = {
-                'Surrogate' : y_surrogate, 
-                'QSAR Model' : y_pred,
+                'ToxValDB' : y_true, 
+                'QSAR' : y_pred,
                 'ToxCast/httk' : y_toxcast,
             }
 
@@ -667,8 +668,14 @@ def benchmarking_scatterplots(
 
                 ax = ax_objs[j, i]
 
-                title = f"{label}\n{label_for_effect[key_for['target_effect']]}"
+                if j == 0:
+                    # Set title only for the first row.
+                    title = label_for_effect[key_for['target_effect']]
+                else:
+                    title = ''
+
                 color = color_for_effect[key_for['target_effect']]
+                ylabel = f'{label} {_prediction_label}'
 
                 generate_scatterplot(
                     ax, 
