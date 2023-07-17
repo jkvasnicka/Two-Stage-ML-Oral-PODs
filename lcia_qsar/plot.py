@@ -474,125 +474,6 @@ def _feature_importances_boxplots(
             )
 #endregion
 
-# TODO: May not be used?
-#region: vertical_boxplots_for_cv_results
-def vertical_boxplots_for_cv_results(
-        cv_results_for_workflow, metrics_keys, ascendings, xlabels, xlims, 
-        title_for_key=None, figsize=None, write_dir=None):
-    '''Plot vertical boxplots of cross-validation scores for each workflow.
-
-    Parameters
-    ----------
-    cv_results_for_workflow : pandas.DataFrame
-        Cross-validation scores, returned by 
-        learn.repeated_kfolds_for_workflows().
-    metrics_keys : list of str
-        Which metrics to plot, must be columns in cv_results_for_workflow.
-    ascendings, xlabels, xlims : list 
-        Parameters for common.plot.vertical_boxplots(), sorted according to
-        metrics_keys, one element per metric.  
-    write_dir : str (optional)
-        If specified, each figure will be saved in this directory.
-
-    Returns
-    -------
-    dict[(source, metric)] --> (fig, axs)
-    '''
-    x, y = 'value', 'estimator'  # from sort_cv_scores_for_metric()
-
-    # Initialize a container for the plot objects.
-    plot_for = {}
-
-    data_sources = cv_results_for_workflow.columns.unique(level=0)
-    for source in data_sources:
-        for metric, ascending, xlabel, xlim in zip(
-            metrics_keys, ascendings, xlabels, xlims):
-            
-            scores_wide = cv_results_for_workflow[source].xs(
-                metric, axis=1, level=-1)
-            sorted_scores = sort_cv_scores_for_metric(scores_wide, ascending)
-
-            if write_dir is not None:
-                # Use matplotlib default file type/extension.
-                fig_file = source + '_' + metric
-                write_path = os.path.join(write_dir, fig_file)
-            else:
-                write_path = None
-
-            fig, axs = plot.vertical_boxplots(
-                sorted_scores, 
-                x, 
-                y, 
-                xlabel, 
-                sharex=True,
-                xlim=xlim,
-                title_for_key=title_for_key, 
-                figsize=figsize, 
-                write_path=write_path,
-                palette='vlag'
-            )
-            plot_for[(source, metric)] = fig, axs
-
-    return plot_for
-#endregion
-
-# TODO: May not be used?
-#region: sort_cv_scores_for_metric
-def sort_cv_scores_for_metric(scores_wide, ascending=True):
-    '''Helper function to format cross-validation scores for plotting.
-
-    This function parses the model evaluation scores from wide format to long
-    DataFrame format, the latter of which works better with the seaborn API.
-    
-    Parameters
-    ----------
-    scores_wide : pandas.DataFrame
-        Cross-validation scores in wide format. Axis 0 = CV fold, 
-        Axis 1 = MultiIndex with levels, (workflow + 'estimator').
-    ascending : bool 
-        Sort ascending vs. descending depending on the metric.
-
-    Returns
-    -------
-    dict[workflow] --> pandas.Dataframe
-        Contains 'estimator' and 'value' as columns in long format.
-    '''
-    scores_long = scores_wide.melt()
-    # Set a MultiIndex for groupby operations. 
-    multiindex_levels = list(scores_long.columns[:-1])  # exclude 'value'
-    scores_long = scores_long.set_index(multiindex_levels).squeeze()
-
-    ## Format the data for visualization. 
-
-    # 1. Compute the mean score across folds, for each workflow.
-    # 2. Find which estimator has the largest mean score and sort accordingly.
-    sorted_workflows = list(
-        scores_long
-        .groupby(multiindex_levels).mean() 
-        .groupby(multiindex_levels[:-1]).max()  
-        .sort_values(ascending=False)
-        .index
-    )
-
-    best_workflow = sorted_workflows[0]
-    # Sort estimators by mean score across folds.
-    sorted_index = list(
-        scores_long.loc[best_workflow]
-        .reset_index()
-        .groupby('estimator')
-        .mean()
-        .sort_values(by='value', ascending=ascending)
-        .index
-    )
-
-    sorted_scores_for_workflow = {
-        wf : scores_long.loc[wf].loc[sorted_index].reset_index()
-        for wf in sorted_workflows
-    }
-
-    return sorted_scores_for_workflow
-#endregion
-
 #region: benchmarking_scatterplots
 def benchmarking_scatterplots(
         workflow,
@@ -890,7 +771,7 @@ def margins_of_exposure_cumulative(
             if right_truncation:
                 left = axs[i].get_xlim()[0]
                 axs[i].set_xlim(left, right_truncation)
-                
+
             # Indicate MOE categories with vertical spans
             for k, (category, (lower, upper)) in enumerate(moe_categories.items()):
                 axs[i].axvspan(lower, upper, alpha=0.2, color=moe_colors[k])
