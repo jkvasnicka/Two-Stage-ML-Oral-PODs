@@ -828,10 +828,9 @@ def predictions_by_missing_feature(workflow, label_for_effect):
     '''
     # Set seaborn style locally within the function
     with sns.axes_style('whitegrid'):
-        # Create a color palette for the boxes
-        palette = sns.color_palette('Set2')
-        all_samples_color = palette[1]  # red
-        remaining_color = palette[0]  # green
+
+        all_samples_color = '#00008b'  # dark blue
+        remaining_color = '#ffff99'  # pale yellow
 
         model_key_names = get_model_key_names(workflow)
 
