@@ -31,7 +31,15 @@
       "95th percentile (mg/kg/day)" : "Exposure 95th Percentile",
       "50th percentile (mg/kg/day)" : "Exposure 50th Percentile",
       "5th percentile (mg/kg/day)" : "Exposure 5th Percentile"
-    }
+    },
+
+    "prediction_label": "$log_{10}POD$",
+
+    "feature_names_label": "Feature Names",
+
+    "all_chemicals_label": "All Chemicals",
+    
+    "train_chemicals_label": "Training Chemicals"
 
 }
   

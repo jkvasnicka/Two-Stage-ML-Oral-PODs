@@ -15,13 +15,14 @@ import sys
 sys.path.append('..')
 from common import plot 
 
-_prediction_label = '$log_{10}POD$'  # LaTeX rendering for subscript
-
 #region: performance_and_prediction_comparison
 def performance_and_prediction_comparison(
         workflow, 
         label_for_metric, 
         label_for_model_build,
+        prediction_label, 
+        train_chemicals_label,
+        all_chemicals_label,
         ylim=(0., 1.)
         ):
     '''
@@ -69,7 +70,10 @@ def performance_and_prediction_comparison(
             workflow, 
             model_keys, 
             label_for_metric,
-            label_for_model_build
+            label_for_model_build,
+            prediction_label, 
+            train_chemicals_label,
+            all_chemicals_label
             )
 
         gs1.tight_layout(fig, rect=[0, 0, 0.5, 1])
@@ -171,7 +175,10 @@ def _plot_prediction_scatterplots_right_half(
         workflow, 
         model_keys, 
         label_for_metric,
-        label_for_model_build
+        label_for_model_build,
+        prediction_label, 
+        train_chemicals_label,
+        all_chemicals_label
         ):
     '''
     Plot scatterplots of predictions on the right half of a figure.
@@ -203,8 +210,8 @@ def _plot_prediction_scatterplots_right_half(
     ax0 = fig.add_subplot(gs2[0])
     x0, *_ = get_in_sample_prediction(workflow, key_without_selection)
     y0, *_ = get_in_sample_prediction(workflow, key_with_selection)
-    overall_title = f'Predicted {_prediction_label} Comparison'
-    ax0_title = f"{overall_title}\n{create_title('Training Set', len(x0))}"
+    overall_title = f'Predicted {prediction_label} Comparison'
+    ax0_title = f"{overall_title}\n{create_title(train_chemicals_label, len(x0))}"
     _plot_prediction_scatterplot(
         ax0, 
         x0, 
@@ -220,7 +227,7 @@ def _plot_prediction_scatterplots_right_half(
     ax1 = fig.add_subplot(gs2[1])
     x1, *_ = predict_out_of_sample(workflow, key_without_selection)
     y1, *_ = predict_out_of_sample(workflow, key_with_selection)
-    ax1_title = create_title('All Chemicals', len(x1))
+    ax1_title = create_title(all_chemicals_label, len(x1))
     _plot_prediction_scatterplot(
         ax1, 
         x1, 
@@ -310,7 +317,11 @@ def get_prediction(X, workflow, model_key, inverse_transform=False):
 #endregion
 
 #region: important_feature_counts
-def important_feature_counts(workflow, label_for_effect):
+def important_feature_counts(
+        workflow, 
+        label_for_effect, 
+        feature_names_label
+        ):
     '''
     '''
     # Define colorblind-friendly colors
@@ -369,7 +380,7 @@ def important_feature_counts(workflow, label_for_effect):
             axs[i].tick_params(axis='y', pad=0)
             axs[i].invert_yaxis()
             axs[i].set_xlabel('Count', fontsize=12)
-            axs[i].set_ylabel('Feature Names', fontsize=12)
+            axs[i].set_ylabel(feature_names_label, fontsize=12)
             axs[i].set_title(
                 label_for_effect[key_for['target_effect']], fontsize=12)
 
@@ -400,36 +411,46 @@ def important_feature_counts(workflow, label_for_effect):
 #endregion
 
 #region: importances_boxplots
-def importances_boxplots(workflow, label_for_scoring):
+def importances_boxplots(
+        workflow, 
+        label_for_scoring,
+        feature_names_label
+        ):
     '''
     '''
     _feature_importances_boxplots(
         workflow, 
         'importances', 
         importances_boxplots,
-        label_for_scoring
+        label_for_scoring,
+        feature_names_label
         )
 #endregion
 
 #region: importances_replicates_boxplots
-def importances_replicates_boxplots(workflow, label_for_scoring):
+def importances_replicates_boxplots(
+        workflow, 
+        label_for_scoring,
+        feature_names_label
+        ):
     '''
     '''
     _feature_importances_boxplots(
         workflow, 
         'importances_replicates', 
         importances_replicates_boxplots,
-        label_for_scoring
+        label_for_scoring,
+        feature_names_label
         )
 #endregion
 
-# TODO: Define Feature Names label globally.
 #region: _feature_importances_boxplots
 def _feature_importances_boxplots(
         workflow, 
         importances_key, 
         function, 
-        label_for_scoring
+        label_for_scoring,
+        feature_names_label
         ):
     '''
     Plot boxplots for feature importances for all models in workflow.
@@ -477,7 +498,7 @@ def _feature_importances_boxplots(
         for i, ax in enumerate(axs.flatten()):
             ax.tick_params(axis='y', size=10)
             if i == 0:
-                ax.set_ylabel('Feature Names', size=12)
+                ax.set_ylabel(feature_names_label, size=12)
 
         fig.tight_layout()
 
@@ -496,6 +517,7 @@ def benchmarking_scatterplots(
         label_for_effect,
         color_for_effect,
         label_for_metric,
+        prediction_label,
         figsize=(6, 9)
         ):
     '''
@@ -567,9 +589,9 @@ def benchmarking_scatterplots(
                 if j == 0:  # first row
                     title = label_for_effect[key_for['target_effect']]
                 if j == len(y_evaluation_dict)-1:  # last row
-                    xlabel = f'Regulatory {_prediction_label}'
+                    xlabel = f'Regulatory {prediction_label}'
                 if i == 0:  # first column
-                    ylabel = f'{label} {_prediction_label}'
+                    ylabel = f'{label} {prediction_label}'
                 
                 generate_scatterplot(
                     ax, 
@@ -827,9 +849,12 @@ def margins_of_exposure_cumulative(
         )
 #endregion
 
-# TODO: Define labels globally for the chemical sets.
 #region: predictions_by_missing_feature
-def predictions_by_missing_feature(workflow, label_for_effect):
+def predictions_by_missing_feature(
+    workflow, 
+    label_for_effect, 
+    prediction_label
+    ):
     '''
     Generate and plot in-sample and out-of-sample predictions.
 
@@ -878,7 +903,8 @@ def predictions_by_missing_feature(workflow, label_for_effect):
                     y_pred_out, 
                     X_out, 
                     all_samples_color, 
-                    remaining_color
+                    remaining_color,
+                    prediction_label
                     )
                 # Use the sames sort order of boxes, based on the left Axes.
                 sort_order = list(dfs_out.keys())
@@ -888,6 +914,7 @@ def predictions_by_missing_feature(workflow, label_for_effect):
                     X_in, 
                     all_samples_color, 
                     remaining_color, 
+                    prediction_label,
                     sort_order
                     )
 
@@ -911,7 +938,14 @@ def predictions_by_missing_feature(workflow, label_for_effect):
 
 #region: _boxplot_by_missing_feature
 def _boxplot_by_missing_feature(
-        ax, df, X, all_samples_color, remaining_color, sort_order=None):
+        ax, 
+        df, 
+        X, 
+        all_samples_color, 
+        remaining_color, 
+        prediction_label, 
+        sort_order=None
+        ):
     '''
     Generate boxplot by missing feature on the provided axes.
 
@@ -952,13 +986,25 @@ def _boxplot_by_missing_feature(
 
     df_for_name = {name: df_for_name[name] for name in sort_order}
 
-    _create_boxplot(ax, df_for_name, all_samples_color, remaining_color)
+    _create_boxplot(
+        ax, 
+        df_for_name, 
+        all_samples_color, 
+        remaining_color, 
+        prediction_label
+        )
 
     return df_for_name
 #endregion
 
 #region: _create_boxplot
-def _create_boxplot(ax, df_for_name, all_samples_color, remaining_color):
+def _create_boxplot(
+        ax, 
+        df_for_name, 
+        all_samples_color, 
+        remaining_color, 
+        prediction_label
+        ):
     '''
     Draw a boxplot on the given axis.
 
@@ -1005,7 +1051,7 @@ def _create_boxplot(ax, df_for_name, all_samples_color, remaining_color):
         alpha=0.5
     )
 
-    ax.set_xlabel(f'Predicted {_prediction_label}')
+    ax.set_xlabel(f'Predicted {prediction_label}')
     ax.tick_params(axis='y', which='major', labelsize=8)
 #endregion
 
