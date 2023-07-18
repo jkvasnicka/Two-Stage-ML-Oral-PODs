@@ -686,10 +686,14 @@ def plot_one_one_line(ax, xmin, xmax):
             linestyle='--', linewidth=1)
 #endregion
 
-# TODO: Map the percentile columns to new labels.
 #region: margins_of_exposure_cumulative
 def margins_of_exposure_cumulative(
-        workflow, exposure_df, label_for_effect, right_truncation=None):
+        workflow, 
+        exposure_df, 
+        label_for_effect, 
+        label_for_exposure_column, 
+        right_truncation=None
+        ):
     '''
     Function to plot cumulative count of chemicals for different MOE categories.
 
@@ -713,7 +717,10 @@ def margins_of_exposure_cumulative(
     colors = sns.color_palette("Set2", len(exposure_df.columns))
 
     # Define MOE categories
-    moe_categories = {"Potential Concern": [1, 100], "Definite Concern": [0, 1]}
+    moe_categories = {
+        'Potential Concern': (1., 100.), 
+        'Definite Concern': (0., 1.)
+        }
     moe_colors = sns.color_palette("Paired", len(moe_categories))
 
     for combination_key, group in combination_key_groups:
@@ -743,8 +750,12 @@ def margins_of_exposure_cumulative(
                 cumulative_counts = np.arange(1, len(sorted_moe) + 1)
 
                 # Plot the cumulative counts
-                axs[i].plot(sorted_moe, cumulative_counts, color=colors[j],
-                            label=f'Exposure {percentile}')
+                axs[i].plot(
+                    sorted_moe, 
+                    cumulative_counts, 
+                    color=colors[j],
+                    label=label_for_exposure_column[percentile]
+                    )
 
             # Set titles, labels, scale, and gridlines
             key_for = dict(zip(model_key_names, model_key))
@@ -768,30 +779,49 @@ def margins_of_exposure_cumulative(
                 axs[i].axvspan(lower, upper, alpha=0.2, color=moe_colors[k])
 
                 # Calculate x-position for category annotations
-                x_position = axs[i].get_xlim()[0] + lower
-                data_to_axes = axs[i].transData + axs[i].transAxes.inverted()
-                x_position = data_to_axes.transform((x_position, 0))[0]
+                # If lower is outside the left limit, set it to the left limit
+                lower = max(lower, left) 
+                 # If upper is outside the right limit, set it to the right limit
+                upper = min(upper, right_truncation) 
+                # Compute geometric mean for logarithmic scale
+                x_position = np.sqrt(lower * upper)
+
+                # Transform the calculated x_position from data coordinates 
+                # to axes fraction coordinates
+                xlim = axs[i].get_xlim()
+                x_position = (
+                    (np.log10(x_position) - np.log10(xlim[0])) 
+                    / (np.log10(xlim[1]) - np.log10(xlim[0]))
+                )
 
                 # Calculate y-position for category annotations
-                y_position = 0.99
+                y_position = 0.97
 
                 # Plot category annotations
                 axs[i].text(
                     x_position,
                     y_position,
                     category.replace(" ", "\n"),
-                    ha='left',
+                    ha='center',  # change alignment to 'center'
                     va='top',
                     fontsize='small',
                     transform=axs[i].transAxes
                 )
 
-        # Set a single legend for all subplots
-        handles, labels = axs[0].get_legend_handles_labels()
-        fig.legend(handles, labels, loc='lower center', fontsize='small',
-                   ncol=len(exposure_df.columns) + 2, bbox_to_anchor=(0.5, -0.05))
-
         fig.tight_layout()
+        fig.subplots_adjust(bottom=0.2)  # accomodate the legend
+
+        # Set a single legend.
+        legend_ax = axs[-1]
+        handles, labels = legend_ax.get_legend_handles_labels()
+        fig.legend(
+            handles, 
+            labels, 
+            loc='lower center', 
+            fontsize='small',
+            ncol=len(labels), 
+            bbox_to_anchor=(0.5, -0.01)
+        )
 
         save_figure(
             fig,

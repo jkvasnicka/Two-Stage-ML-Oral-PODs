@@ -25,6 +25,12 @@
     "label_for_model_build": {
       "with_selection": "With Selection",
       "without_selection": "Without Selection"
+    },
+
+    "label_for_exposure_column" : {
+      "95th percentile (mg/kg/day)" : "Exposure 95th Percentile",
+      "50th percentile (mg/kg/day)" : "Exposure 50th Percentile",
+      "5th percentile (mg/kg/day)" : "Exposure 5th Percentile"
     }
 
 }
