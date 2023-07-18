@@ -162,7 +162,8 @@ def _plot_performances_boxplots_left_half(
         ax.set_ylabel(metric, rotation=0, labelpad=15, size='small')
         ax.tick_params(axis='x', labelsize='small')
         ax.set_xlabel('')
-        ax.set_title('')
+        if i == 0:
+            ax.set_title('Performance Comparison', size='medium')
 #endregion
 
 #region: _plot_prediction_scatterplots_right_half
@@ -196,8 +197,7 @@ def _plot_prediction_scatterplots_right_half(
 
     def create_title(sample_type, n_chemicals):
         '''Adds comma separation'''
-        description = f"{sample_type} ({_comma_separated(n_chemicals)})"
-        return f"{_prediction_label}, {description}"
+        return f"{sample_type} ({_comma_separated(n_chemicals)})"
     
     xlabel = label_for_model_build['without_selection']
     ylabel = label_for_model_build['with_selection']
@@ -206,7 +206,8 @@ def _plot_prediction_scatterplots_right_half(
     ax0 = fig.add_subplot(gs2[0])
     x0, *_ = get_in_sample_prediction(workflow, key_without_selection)
     y0, *_ = get_in_sample_prediction(workflow, key_with_selection)
-    title0 = create_title('Training Set', len(x0))
+    overall_title = f'Predicted {_prediction_label} Comparison'
+    ax0_title = f"{overall_title}\n{create_title('Training Set', len(x0))}"
     _plot_prediction_scatterplot(
         ax0, 
         x0, 
@@ -214,7 +215,7 @@ def _plot_prediction_scatterplots_right_half(
         workflow, 
         label_for_metric,
         label_for_scoring,
-        title0, 
+        ax0_title, 
         xlabel, 
         ylabel
         )
@@ -223,7 +224,7 @@ def _plot_prediction_scatterplots_right_half(
     ax1 = fig.add_subplot(gs2[1])
     x1, *_ = predict_out_of_sample(workflow, key_without_selection)
     y1, *_ = predict_out_of_sample(workflow, key_with_selection)
-    title1 = create_title('All Chemicals', len(x1))
+    ax1_title = create_title('All Chemicals', len(x1))
     _plot_prediction_scatterplot(
         ax1, 
         x1, 
@@ -231,7 +232,7 @@ def _plot_prediction_scatterplots_right_half(
         workflow, 
         label_for_metric,
         label_for_scoring,
-        title1, 
+        ax1_title, 
         xlabel, 
         ylabel
         )
