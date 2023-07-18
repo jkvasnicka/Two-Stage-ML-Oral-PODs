@@ -196,7 +196,7 @@ def _plot_prediction_scatterplots_right_half(
 
     def create_title(sample_type, n_chemicals):
         '''Adds comma separation'''
-        description = f"{sample_type} ({'{:,}'.format(n_chemicals)})"
+        description = f"{sample_type} ({_comma_separated(n_chemicals)})"
         return f"{_prediction_label}, {description}"
     
     xlabel = label_for_model_build['without_selection']
@@ -235,6 +235,13 @@ def _plot_prediction_scatterplots_right_half(
         xlabel, 
         ylabel
         )
+#endregion
+
+#region: _comma_separated
+def _comma_separated(number):
+    '''Convert float or int to a string with comma-separated thousands.
+    '''
+    return '{:,}'.format(number)
 #endregion
 
 #region: _plot_prediction_scatterplot
@@ -810,21 +817,22 @@ def margins_of_exposure_cumulative(
         )
 #endregion
 
+# TODO: Define labels globally for the chemical sets.
 #region: predictions_by_missing_feature
 def predictions_by_missing_feature(workflow, label_for_effect):
     '''
-    Generate boxplots of the predictions, organized by the combination of the 
-    features of the models.
-
-    For each unique combination of the features in the model, the function
-    generates a subplot with a boxplot for each target effect. The boxplots
-    represent the predictions, categorized by the missing samples for each 
-    feature. The boxplots are colored based on the samples, with a unique 
-    color for all samples and a different color for the remaining.
+    Generate and plot in-sample and out-of-sample predictions.
 
     Parameters
     ----------
     workflow : object
+        The workflow object containing the trained model.
+    label_for_effect : dict
+        A dictionary mapping the effect to its label.
+
+    Returns
+    -------
+    None
     '''
     # Set seaborn style locally within the function
     with sns.axes_style('whitegrid'):
@@ -845,24 +853,42 @@ def predictions_by_missing_feature(workflow, label_for_effect):
 
             fig, axs = plt.subplots(
                 nrows=n_effects, 
-                figsize=(6, 4 * n_effects)
+                ncols=2,
+                figsize=(8, 4 * n_effects)
                 )
 
             for i, model_key in enumerate(model_keys):
-
                 key_for = dict(zip(model_key_names, model_key))
-                title = label_for_effect[key_for['target_effect']]
 
-                ## Plot the distributions for training chemicals.
-                y_pred, X, *_ = get_in_sample_prediction(workflow, model_key)
-                _boxplot_by_missing_feature(
-                    axs[i], 
-                    y_pred, 
-                    X, 
+                y_pred_out, X_out, *_ = predict_out_of_sample(workflow, model_key)
+                y_pred_in, X_in, *_ = get_in_sample_prediction(workflow, model_key)
+
+                dfs_out = _boxplot_by_missing_feature(
+                    axs[i, 0], 
+                    y_pred_out, 
+                    X_out, 
+                    all_samples_color, 
+                    remaining_color
+                    )
+                # Use the sames sort order of boxes, based on the left Axes.
+                sort_order = list(dfs_out.keys())
+                dfs_in = _boxplot_by_missing_feature(
+                    axs[i, 1], 
+                    y_pred_in, 
+                    X_in, 
                     all_samples_color, 
                     remaining_color, 
-                    title
+                    sort_order
                     )
+
+                _set_ytick_labels(axs[i, 0], dfs_out, True)
+                _set_ytick_labels(axs[i, 1], dfs_in, False)
+                
+                effect = label_for_effect[key_for['target_effect']]
+                axs[i, 0].set_title(
+                    f'{effect}\nAll Chemicals', size='medium', loc='left')
+                axs[i, 1].set_title(
+                    f'{effect}\nTraining Set', size='medium', loc='left')
 
             fig.tight_layout()
 
@@ -875,92 +901,171 @@ def predictions_by_missing_feature(workflow, label_for_effect):
 
 #region: _boxplot_by_missing_feature
 def _boxplot_by_missing_feature(
-            ax, 
-            df, 
-            X, 
-            all_samples_color, 
-            remaining_color, 
-            title
-            ):
-        '''
-        Draw a boxplot on the given axis, illustrating the distributions
-        for all samples and the remaining samples after excluding missing 
-        values.
+        ax, df, X, all_samples_color, remaining_color, sort_order=None):
+    '''
+    Generate boxplot by missing feature on the provided axes.
 
-        Parameters
-        ----------
-        ax : matplotlib.axes.Axes
-            The axes object to draw the boxplot on.
-        df : pandas.DataFrame
-            The input data.
-        X : pandas.DataFrame
-            DataFrame containing feature values, used to identify missing 
-            samples.
-        all_samples_color : matplotlib color
-            Color for the 'All Samples' box in the boxplot.
-        remaining_color : matplotlib color
-            Color for the remaining boxes in the boxplot.
-        title : str
-            Title for the boxplot.
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The axes object to draw the boxplot on.
+    df : pd.DataFrame
+        The input data.
+    X : pd.DataFrame
+        DataFrame containing feature values, used to identify missing samples.
+    all_samples_color : str
+        Color for the 'All Samples' box in the boxplot.
+    remaining_color : str
+        Color for the remaining boxes in the boxplot.
+    sort_order : list of str, optional
+        Order to sort the features. If None, sort by the sample size.
 
-        Returns
-        -------
-        None
-        '''
-        df_for_name = {}
-        df_for_name['All Samples'] = df
-        for feature_name in X.columns:
-            missing_samples = X[X[feature_name].isna()].index
-            df_for_name[feature_name] = df.loc[missing_samples]
+    Returns
+    -------
+    df_for_name : dict
+        A dictionary with keys as feature names and values as dataframes 
+        representing the distributions.
+    '''
+    df_for_name = {}
+    df_for_name['All Samples'] = df
+    for feature_name in X.columns:
+        missing_samples = X[X[feature_name].isna()].index
+        df_for_name[feature_name] = df.loc[missing_samples]
 
-        # Sort by the sample size and add sample size to labels
-        df_for_name = {_relabel_box(k, v): v for k, v in sorted(
-            df_for_name.items(), key=lambda item: item[1].size, reverse=False)}
-
-    # Define properties for outliers
-        flierprops = dict(marker='o', markerfacecolor='lightgray', markersize=2,
-                    linestyle='none', markeredgecolor='lightgray')
-
-        boxplot = ax.boxplot(
-            list(df_for_name.values()),
-            vert=False,
-            labels=list(df_for_name.keys()),
-            widths=0.6,
-            patch_artist=True,
-            medianprops={'color': 'black'},
-            flierprops=flierprops
+    # If no sort order is provided, sort by the sample size.
+    if sort_order is None:
+        sort_order = sorted(
+            df_for_name.keys(), 
+            key=lambda name: df_for_name[name].size, 
+            reverse=False
         )
 
-        for patch in boxplot['boxes']:
-            patch.set(facecolor=remaining_color)
+    df_for_name = {name: df_for_name[name] for name in sort_order}
 
-        patch.set(facecolor=all_samples_color)
+    _create_boxplot(ax, df_for_name, all_samples_color, remaining_color)
 
-        for key in ['whiskers', 'caps', 'medians']:
-            for element in boxplot[key]:
-                element.set(color='black')
-
-        median_value = boxplot['medians'][-1].get_xdata()[0]
-        ax.axvline(
-            x=median_value,
-            color=all_samples_color,
-            linestyle='--',
-            alpha=0.5
-        )
-        
-        ax.set_title(title)
-        ax.set_xlabel(f'Predicted {_prediction_label}')
-        # Make y-axis tick labels smaller
-        ax.tick_params(axis='y', which='major', labelsize=8)
+    return df_for_name
 #endregion
 
-#region: _relabel_box
-def _relabel_box(name, series):
-    '''Return an updated box label for the missing feature. 
+#region: _create_boxplot
+def _create_boxplot(ax, df_for_name, all_samples_color, remaining_color):
     '''
-    prefix = 'Missing' if name != 'All Samples' else ''
-    sample_size = len(series)
-    return f'{prefix} {name} ({sample_size})'
+    Draw a boxplot on the given axis.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The axes object to draw the boxplot on.
+    df_for_name : dict of pd.DataFrame
+        Dictionary with keys as feature names and values as dataframes 
+        representing the distributions.
+    all_samples_color : str
+        Color for the 'All Samples' box in the boxplot.
+    remaining_color : str
+        Color for the remaining boxes in the boxplot.
+    '''
+    # Define properties for outliers
+    flierprops = dict(marker='o', markerfacecolor='lightgray', markersize=2,
+                      linestyle='none', markeredgecolor='lightgray')
+
+    boxplot = ax.boxplot(
+        list(df_for_name.values()),
+        vert=False,
+        labels=[None]*len(df_for_name),  # will be updated later
+        widths=0.6,
+        patch_artist=True,
+        medianprops={'color': 'black'},
+        flierprops=flierprops
+    )
+
+    for patch in boxplot['boxes']:
+        patch.set(facecolor=remaining_color)
+
+    patch.set(facecolor=all_samples_color)
+
+    for key in ['whiskers', 'caps', 'medians']:
+        for element in boxplot[key]:
+            element.set(color='black')
+
+    median_value = boxplot['medians'][-1].get_xdata()[0]
+    ax.axvline(
+        x=median_value,
+        color=all_samples_color,
+        linestyle='--',
+        alpha=0.5
+    )
+
+    ax.set_xlabel(f'Predicted {_prediction_label}')
+    ax.tick_params(axis='y', which='major', labelsize=8)
+#endregion
+
+#region: _set_ytick_labels
+def _set_ytick_labels(ax, df_for_name, do_label_features):
+    '''
+    Sets the ytick labels for a given axis.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The axes object to draw the boxplot on.
+    df_for_name : dict of pd.DataFrame
+        Dictionary with keys as feature names and values as dataframes 
+        representing the distributions.
+    do_label_features : bool
+        If True, feature labels are set for the y-axis ticks. If False, 
+        feature labels are not set.
+    '''
+    feature_labels = []
+    sample_size_labels = []
+    for name, series in df_for_name.items():
+        feature_label, sample_size_label = _get_box_tick_labels(name, series)
+        if do_label_features:
+            feature_labels.append(feature_label)
+        else:
+            feature_labels.append(None)
+        sample_size_labels.append(sample_size_label)
+
+    ax.set_yticklabels(feature_labels, fontsize=8)
+    ax.set_ylabel(None)
+    
+    # Add secondary y-axis for the sample size labels
+    axs2 = ax.twinx()
+    axs2.set_yticks(ax.get_yticks())
+    axs2.set_ylim(ax.get_ylim())
+    axs2.set_yticklabels(sample_size_labels, fontsize=8)
+    axs2.yaxis.set_label_position("right")
+#endregion
+
+#region: _get_box_tick_labels
+def _get_box_tick_labels(name, series):
+    '''
+    Return the box label components.
+
+    Parameters
+    ----------
+    name : str
+        Feature name.
+    series : pd.Series
+        Data series.
+
+    Returns
+    -------
+    feature_label : str
+        Updated box label for the feature.
+    sample_size_label : str
+        Sample size of the data series in a string format.
+    '''
+    if name != 'All Samples':
+        prefix = 'Missing'
+        suffix = f'"{name}"'
+    else:
+        prefix = ''
+        suffix = name
+    feature_label = f'{prefix} {suffix}'
+
+    sample_size_label = _comma_separated(len(series))
+
+    return feature_label, sample_size_label 
 #endregion
 
 #region: get_model_key_groups
