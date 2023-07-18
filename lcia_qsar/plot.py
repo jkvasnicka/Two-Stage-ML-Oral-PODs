@@ -330,7 +330,7 @@ def important_feature_counts(workflow, label_for_effect):
         # Figure layout is adjusted to have one column per model key
         fig, axs = plt.subplots(1, n_keys, figsize=(5*n_keys, 8), sharey=True)
 
-        for idx, model_key in enumerate(model_keys):
+        for i, model_key in enumerate(model_keys):
             ## Prepare the data for plotting.
             features_for_final_model = workflow.get_important_features(model_key)
             features_for_replicate_model = (
@@ -360,40 +360,37 @@ def important_feature_counts(workflow, label_for_effect):
             bar_colors = [color_filled if feature in final_model_features 
                           else color_unfilled for feature in sorted_features]
 
-            axs[idx].barh(
+            axs[i].barh(
                 bar_positions, bar_counts, color=bar_colors, edgecolor='black', 
                 linewidth=1)
-            axs[idx].set_ylim(-1, len(all_feature_names))
-            axs[idx].set_yticks(range(len(all_feature_names)))
-            axs[idx].set_yticklabels(sorted_features, fontsize=10)
-            axs[idx].tick_params(axis='y', pad=0)
-            axs[idx].invert_yaxis()
-            axs[idx].set_xlabel('Count', fontsize=12)
-            axs[idx].set_ylabel('Feature Names', fontsize=12)
-            axs[idx].set_title(
+            axs[i].set_ylim(-1, len(all_feature_names))
+            axs[i].set_yticks(range(len(all_feature_names)))
+            axs[i].set_yticklabels(sorted_features, fontsize=10)
+            axs[i].tick_params(axis='y', pad=0)
+            axs[i].invert_yaxis()
+            axs[i].set_xlabel('Count', fontsize=12)
+            axs[i].set_ylabel('Feature Names', fontsize=12)
+            axs[i].set_title(
                 label_for_effect[key_for['target_effect']], fontsize=12)
 
-            if idx != 0:  # Only set ylabel for first subplot
-                axs[idx].set_ylabel('')
+            if i != 0:  # Only set ylabel for first subplot
+                axs[i].set_ylabel('')
 
-        ## Add legend on the first plot below the xlabel
+        fig.tight_layout()
+        fig.subplots_adjust(bottom=0.125)  # accomodate the legend
+
+        # Set a single legend.
         legend_patches = [
             mpatches.Patch(color=color_filled, label='In Final Model'),
             mpatches.Patch(color=color_unfilled, label='Not in Final Model')
         ]
-        
-        # Set legend below the right Axes, right-flush.
-        legend_ax = axs[-1]
-        legend_ax.legend(
-            handles=legend_patches,
-            loc='upper right',
-            bbox_to_anchor=(1, -0.1),
-            bbox_transform=legend_ax.transAxes,
-            fontsize=10,
-            ncol=1
+        fig.legend(
+            handles=legend_patches, 
+            loc='lower right', 
+            fontsize='small',
+            ncol=len(legend_patches), 
+            bbox_to_anchor=(1., -0.01)
         )
-        
-        fig.tight_layout()
 
         save_figure(
             fig, 
