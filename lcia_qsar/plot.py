@@ -22,7 +22,6 @@ def performance_and_prediction_comparison(
         workflow, 
         label_for_metric, 
         label_for_model_build,
-        label_for_scoring,
         ylim=(0., 1.)
         ):
     '''
@@ -70,8 +69,7 @@ def performance_and_prediction_comparison(
             workflow, 
             model_keys, 
             label_for_metric,
-            label_for_model_build,
-            label_for_scoring
+            label_for_model_build
             )
 
         gs1.tight_layout(fig, rect=[0, 0, 0.5, 1])
@@ -173,8 +171,7 @@ def _plot_prediction_scatterplots_right_half(
         workflow, 
         model_keys, 
         label_for_metric,
-        label_for_model_build,
-        label_for_scoring
+        label_for_model_build
         ):
     '''
     Plot scatterplots of predictions on the right half of a figure.
@@ -214,7 +211,6 @@ def _plot_prediction_scatterplots_right_half(
         y0, 
         workflow, 
         label_for_metric,
-        label_for_scoring,
         ax0_title, 
         xlabel, 
         ylabel
@@ -231,7 +227,6 @@ def _plot_prediction_scatterplots_right_half(
         y1, 
         workflow, 
         label_for_metric,
-        label_for_scoring,
         ax1_title, 
         xlabel, 
         ylabel
@@ -252,7 +247,6 @@ def _plot_prediction_scatterplot(
         y, 
         workflow, 
         label_for_metric,
-        label_for_scoring,
         title, 
         xlabel, 
         ylabel
@@ -267,9 +261,8 @@ def _plot_prediction_scatterplot(
         y,  
         workflow, 
         label_for_metric,
-        label_for_scoring,
-        title=title, 
         color=color, 
+        title=title, 
         xlabel=xlabel, 
         ylabel=ylabel
     )
@@ -506,7 +499,6 @@ def benchmarking_scatterplots(
         label_for_effect,
         color_for_effect,
         label_for_metric,
-        label_for_scoring,
         figsize=(6, 9)
         ):
     '''
@@ -542,8 +534,6 @@ def benchmarking_scatterplots(
     axs : list
         List of axes corresponding to the figures.
     '''
-    xlabel = f'Regulatory {_prediction_label}'
-
     model_key_names = get_model_key_names(workflow)
     combination_key_groups = get_model_key_groups(
         workflow, model_key_names, 'target_effect')
@@ -573,26 +563,27 @@ def benchmarking_scatterplots(
 
                 ax = ax_objs[j, i]
 
-                if j == 0:
-                    # Set title only for the first row.
-                    title = label_for_effect[key_for['target_effect']]
-                else:
-                    title = ''
-
                 color = color_for_effect[key_for['target_effect']]
-                ylabel = f'{label} {_prediction_label}'
 
+                ## Set labels depending on the Axes.
+                title, xlabel, ylabel = '', '', ''
+                if j == 0:  # first row
+                    title = label_for_effect[key_for['target_effect']]
+                if j == len(y_evaluation_dict)-1:  # last row
+                    xlabel = f'Regulatory {_prediction_label}'
+                if i == 0:  # first column
+                    ylabel = f'{label} {_prediction_label}'
+                
                 generate_scatterplot(
                     ax, 
                     y_comparison, 
                     y_evaluation, 
                     workflow, 
                     label_for_metric,
-                    label_for_scoring,
-                    title, 
-                    color, 
-                    xlabel, 
-                    ylabel
+                    color=color, 
+                    title=title, 
+                    xlabel=xlabel, 
+                    ylabel=ylabel
                     )
 
                 xmin = min(xmin, *ax.get_xlim())
@@ -613,13 +604,12 @@ def benchmarking_scatterplots(
 #region: generate_scatterplot
 def generate_scatterplot(
         ax, 
-        y_comparison, 
-        y_evaluation, 
+        y_true, 
+        y_pred, 
         workflow, 
         label_for_metric,
-        label_for_scoring,
-        title='', 
         color=None, 
+        title='', 
         xlabel='', 
         ylabel=''
         ):
@@ -630,49 +620,50 @@ def generate_scatterplot(
     ----------
     ax : matplotlib.axes.Axes
         The axes object to plot the scatterplot on.
-    y_comparison : pd.Series
+    y_true : pd.Series
         The comparison data (x).
-    y_evaluation : pd.Series
+    y_pred : pd.Series
         The evaluation data (y).
     workflow : object
         The workflow object containing additional information.
-    title : str
-        The title of the scatterplot.
     color : str
         The color for the scatterplot points.
+    title : str
+        The title of the scatterplot.
     xlabel : str
         The label for the x-axis.
     ylabel : str
         The label for the y-axis.
     '''
-    chem_intersection = y_comparison.index.intersection(y_evaluation.index)
-    y_comparison = y_comparison.loc[chem_intersection]
-    y_evaluation = y_evaluation.loc[chem_intersection]
-
-    scores = [
-        workflow.function_for_metric[met](y_comparison, y_evaluation)
-        for met in label_for_metric
-    ]
-    scores = [score_to_string(score) for score in scores]
-    score_for_label = dict(zip(
-        label_for_scoring.values(),
-        scores))
+    chem_intersection = y_true.index.intersection(y_pred.index)
+    y_true = y_true.loc[chem_intersection]
+    y_pred = y_pred.loc[chem_intersection]
 
     ax.scatter(
-        y_comparison,
-        y_evaluation,
+        y_true,
+        y_pred,
         alpha=0.7,
         color=color
     )
 
-    ax.set_title(title, fontsize='medium')
-
-    score_text = format_score_text(score_for_label)
+    ## Set the performance scores as text.
+    float_to_string = lambda score : format(score, '.2f')  # limit precision
+    dict_to_string = lambda d : '\n'.join([f'{k}: {v}' for k, v in d.items()])
+    get_score = (
+        lambda metric : workflow.function_for_metric[metric](y_true, y_pred))
+    score_text = dict_to_string(
+        {label : float_to_string(get_score(metric)) 
+         for metric, label in label_for_metric.items()}
+    )
     ax.text(0.05, 0.95, score_text, transform=ax.transAxes,
             va='top', ha='left', size='small')
 
-    ax.set_xlabel(xlabel, size='small')
-    ax.set_ylabel(ylabel, size='small')
+    if title:
+        ax.set_title(title, fontsize='medium')
+    if xlabel:
+        ax.set_xlabel(xlabel, size='small')
+    if ylabel:
+        ax.set_ylabel(ylabel, size='small')
 #endregion
 
 #region: plot_one_one_line
@@ -693,31 +684,6 @@ def plot_one_one_line(ax, xmin, xmax):
     ax.set_ylim(xmin, xmax)
     ax.plot([xmin, xmax], [xmin, xmax], color='#808080', 
             linestyle='--', linewidth=1)
-#endregion
-
-#region: score_to_string
-def score_to_string(score, precision=2):
-    '''Helper function for plotting scores (float) as text.
-    '''
-    return f'{score:.{precision}f}'
-#endregion
-
-#region: format_score_text
-def format_score_text(score_labels):
-    '''
-    Convert score labels dictionary to formatted string.
-
-    Parameters
-    ----------
-    score_labels : dict
-        Score labels.
-
-    Returns
-    -------
-    str
-        Formatted score text.
-    '''
-    return '\n'.join([f'{key}: {value}' for key, value in score_labels.items()])
 #endregion
 
 # TODO: Map the percentile columns to new labels.
