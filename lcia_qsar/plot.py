@@ -433,6 +433,7 @@ def importances_replicates_boxplots(workflow, label_for_scoring):
         )
 #endregion
 
+# TODO: Define Feature Names label globally.
 #region: _feature_importances_boxplots
 def _feature_importances_boxplots(
         workflow, 
@@ -482,6 +483,11 @@ def _feature_importances_boxplots(
             whis=[0, 100], 
             linewidth=0.8
         )
+        # TODO: Add this logic in the function, vertical_boxplots?
+        for i, ax in enumerate(axs.flatten()):
+            ax.tick_params(axis='y', size=10)
+            if i == 0:
+                ax.set_ylabel('Feature Names', size=12)
 
         fig.tight_layout()
 

@@ -7,8 +7,8 @@
     },
 
     "label_for_scoring": {
-      "neg_root_mean_squared_error": "RMSE",
-      "neg_median_absolute_error": "MAE",
+      "neg_root_mean_squared_error": "- RMSE",
+      "neg_median_absolute_error": "- MAE",
       "r2": "$R^2$"
     },
 

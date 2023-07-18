@@ -84,6 +84,7 @@ def vertical_boxplots(
         )
 
         axs[i].grid(axis='x', linestyle='--', linewidth=0.5)
+        axs[i].grid(axis='y', linestyle='--', linewidth=0.5)
         # Set grid lines, etc., below all artists.
         axs[i].set_axisbelow(True)
 
