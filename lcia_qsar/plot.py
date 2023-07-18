@@ -376,20 +376,30 @@ def important_feature_counts(workflow, label_for_effect):
             axs[idx].tick_params(axis='y', pad=0)
             axs[idx].invert_yaxis()
             axs[idx].set_xlabel('Count', fontsize=12)
+            axs[idx].set_ylabel('Feature Names', fontsize=12)
             axs[idx].set_title(
                 label_for_effect[key_for['target_effect']], fontsize=12)
 
             if idx != 0:  # Only set ylabel for first subplot
                 axs[idx].set_ylabel('')
 
-        ## Add legend below the plots
+        ## Add legend on the first plot below the xlabel
         legend_patches = [
-            mpatches.Patch(color=color_filled, label='Included in final model'),
-            mpatches.Patch(color=color_unfilled, label='Not included in final model')
+            mpatches.Patch(color=color_filled, label='In Final Model'),
+            mpatches.Patch(color=color_unfilled, label='Not in Final Model')
         ]
-        fig.legend(handles=legend_patches, loc='lower center', fontsize=10, ncol=2,
-                bbox_to_anchor=(0.5, -0.05))
-
+        
+        # Set legend below the right Axes, right-flush.
+        legend_ax = axs[-1]
+        legend_ax.legend(
+            handles=legend_patches,
+            loc='upper right',
+            bbox_to_anchor=(1, -0.1),
+            bbox_transform=legend_ax.transAxes,
+            fontsize=10,
+            ncol=1
+        )
+        
         fig.tight_layout()
 
         save_figure(
