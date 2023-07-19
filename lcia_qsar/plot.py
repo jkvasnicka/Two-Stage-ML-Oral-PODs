@@ -10,11 +10,6 @@ import pandas as pd
 import numpy as np
 import itertools
 
-# Enable modules to be imported from the parent directory.
-import sys
-sys.path.append('..')
-from common import plot 
-
 # TODO: Move to configuration file.
 _flierprops = dict(
     marker='o', 
@@ -493,7 +488,7 @@ def _feature_importances_boxplots(
         # Get the column names from the last iteration.
         y, x = list(cv_importances_long[score])
         
-        fig, axs = plot.vertical_boxplots(
+        fig, axs = vertical_boxplots(
             cv_importances_long, 
             x, 
             y,
@@ -513,6 +508,92 @@ def _feature_importances_boxplots(
             function, 
             model_key
             )
+#endregion
+
+#region: vertical_boxplots
+def vertical_boxplots(
+        data_for_key, 
+        x, 
+        y, 
+        xlabel, 
+        ylabel=None,
+        sharex=False, 
+        xlim=None, 
+        title_for_key=None, 
+        figsize=None, 
+        write_path=None, 
+        **kwargs
+        ):
+    '''Wrapper around seaborn.boxplot().
+
+    Parameters
+    ----------
+    data_for_key : dict of pandas.DataFrame
+        Datasets, in long form, to plot.
+    x, y, huenames of variables in data or vector data, optional
+        Inputs for plotting long-form data.
+    xlabel : str
+        Used for Axes.set_xlabel().
+    sharex : bool
+        Controls sharing of properties among x axes via matplotlib.subplots().
+    xlim : 2-tuple (optional)
+        Used for Axes.set_xlim().
+    title_for_key : dict (optional)
+        Mapping DataFrame keys to Axes titles.
+    figsize : 2-tuple (optional)
+    write_path : str (optional)
+        If specified, the figure will be saved as Figure.savefig(write_path).
+    kwargs : key-value mapping
+        Other keyword arguments are passed to seaborn.boxplot().
+
+    Returns
+    -------
+    matplotlib (Figure, Axes)
+    '''
+    fig, axs = plt.subplots(
+        ncols=len(data_for_key),
+        sharey=True,
+        sharex=sharex,
+        figsize=figsize
+    )
+        
+    for i, (k, data) in enumerate(data_for_key.items()): 
+
+        sns.boxplot(    
+            x=x, 
+            y=y, 
+            data=data,
+            dodge=False,
+            ax=axs[i],
+            **kwargs
+        )
+
+        axs[i].grid(axis='x', linestyle='--', linewidth=0.5)
+        axs[i].grid(axis='y', linestyle='--', linewidth=0.5)
+        # Set grid lines, etc., below all artists.
+        axs[i].set_axisbelow(True)
+
+        if xlim is not None:
+            axs[i].set_xlim(xlim)
+        axs[i].set_ylabel('')
+        axs[i].set_xlabel(xlabel)
+
+        title = k if title_for_key is None else title_for_key[k]
+        axs[i].set_title(title)
+
+    if ylabel:
+        # Set ylabel, first column only.
+        for i, ax in enumerate(axs.flatten()):
+            ax.tick_params(axis='y', size=10)
+            if i == 0:
+                ax.set_ylabel(ylabel, size=12)
+        
+    fig.tight_layout()
+
+    if write_path is not None:
+        fig.savefig(write_path)
+
+    return fig, axs
 #endregion
 
 #region: benchmarking_scatterplots

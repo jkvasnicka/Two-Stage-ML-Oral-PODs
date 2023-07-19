@@ -11,7 +11,6 @@ from common import (
     input_output,  
     opera, 
     pattern, 
-    plot, 
     rdkit_helper, 
     transform,
     workflow_base
