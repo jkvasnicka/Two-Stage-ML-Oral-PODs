@@ -498,17 +498,13 @@ def _feature_importances_boxplots(
             x, 
             y,
             xlabel,
+            ylabel=feature_names_label,
             title_for_key=label_for_scoring,
             figsize=figsize,
             palette='icefire', 
             linewidth=0.8,
             flierprops=_flierprops
         )
-        # TODO: Add this logic in the function, vertical_boxplots?
-        for i, ax in enumerate(axs.flatten()):
-            ax.tick_params(axis='y', size=10)
-            if i == 0:
-                ax.set_ylabel(feature_names_label, size=12)
 
         fig.tight_layout()
 

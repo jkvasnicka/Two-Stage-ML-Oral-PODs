@@ -37,8 +37,18 @@ def histograms_for_columns(data, figsize=None, fontsize=8):
 
 #region: vertical_boxplots
 def vertical_boxplots(
-            data_for_key, x, y, xlabel, sharex=False, xlim=None, title_for_key=None, 
-            figsize=None, write_path=None, **kwargs):
+        data_for_key, 
+        x, 
+        y, 
+        xlabel, 
+        ylabel=None,
+        sharex=False, 
+        xlim=None, 
+        title_for_key=None, 
+        figsize=None, 
+        write_path=None, 
+        **kwargs
+        ):
     '''Wrapper around seaborn.boxplot().
 
     Parameters
@@ -92,8 +102,16 @@ def vertical_boxplots(
             axs[i].set_xlim(xlim)
         axs[i].set_ylabel('')
         axs[i].set_xlabel(xlabel)
+
         title = k if title_for_key is None else title_for_key[k]
         axs[i].set_title(title)
+
+    if ylabel:
+        # Set ylabel, first column only.
+        for i, ax in enumerate(axs.flatten()):
+            ax.tick_params(axis='y', size=10)
+            if i == 0:
+                ax.set_ylabel(ylabel, size=12)
         
     fig.tight_layout()
 
