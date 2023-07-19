@@ -15,6 +15,15 @@ import sys
 sys.path.append('..')
 from common import plot 
 
+# TODO: Move to configuration file.
+_flierprops = dict(
+    marker='o', 
+    markerfacecolor='lightgray', 
+    markersize=2,
+    linestyle='none', 
+    markeredgecolor='lightgray'
+    )
+
 #region: performance_and_prediction_comparison
 def performance_and_prediction_comparison(
         workflow, 
@@ -154,7 +163,8 @@ def _plot_performances_boxplots_left_half(
             data=metric_data_long,
             x='model_build',
             y='value',
-            ax=ax
+            ax=ax,
+            flierprops=_flierprops
         )
 
         # Set the y-axis limits.
@@ -491,8 +501,8 @@ def _feature_importances_boxplots(
             title_for_key=label_for_scoring,
             figsize=figsize,
             palette='icefire', 
-            whis=[0, 100], 
-            linewidth=0.8
+            linewidth=0.8,
+            flierprops=_flierprops
         )
         # TODO: Add this logic in the function, vertical_boxplots?
         for i, ax in enumerate(axs.flatten()):
@@ -1020,10 +1030,6 @@ def _create_boxplot(
     remaining_color : str
         Color for the remaining boxes in the boxplot.
     '''
-    # Define properties for outliers
-    flierprops = dict(marker='o', markerfacecolor='lightgray', markersize=2,
-                      linestyle='none', markeredgecolor='lightgray')
-
     boxplot = ax.boxplot(
         list(df_for_name.values()),
         vert=False,
@@ -1031,7 +1037,7 @@ def _create_boxplot(
         widths=0.6,
         patch_artist=True,
         medianprops={'color': 'black'},
-        flierprops=flierprops
+        flierprops=_flierprops
     )
 
     for patch in boxplot['boxes']:
