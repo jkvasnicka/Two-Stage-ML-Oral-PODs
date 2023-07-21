@@ -163,16 +163,26 @@ def extract_dtxsid_from_structures_file(structures_file, index_col):
 
 #region: parse_data_with_applicability_domains
 def parse_data_with_applicability_domains(
-        data_dir, columns_mapper_path, data_file_namer, index_name=None, 
-        discrete_columns=None, discrete_suffix=None, log10_pat='Log', 
-        molecule_ids=None, data_write_path=None, flags_write_path=None):
+        data_dir, 
+        columns_mapper_path, 
+        data_file_namer, 
+        index_name=None, 
+        discrete_columns=None, 
+        discrete_suffix=None, 
+        log10_pat='Log', 
+        molecule_ids=None, 
+        data_write_path=None, 
+        flags_write_path=None
+        ):
     '''
     '''
     AD_flags = applicability_domain_flags(
         data_dir, 
         columns_mapper_path, 
         data_file_namer, 
-        index_name=index_name, 
+        index_name=index_name,
+        discrete_columns=discrete_columns, 
+        discrete_suffix=discrete_suffix,  
         log10_pat=log10_pat, 
         molecule_ids=molecule_ids, 
         write_path=flags_write_path
@@ -196,9 +206,17 @@ def parse_data_with_applicability_domains(
 
 #region: parse_data_from_csv_files
 def parse_data_from_csv_files(
-        data_dir, columns_mapper_path, data_file_namer, index_name=None, 
-        discrete_columns=None, discrete_suffix=None, log10_pat='Log', 
-        flags=None, molecule_ids=None, write_path=None):
+        data_dir, 
+        columns_mapper_path, 
+        data_file_namer, 
+        index_name=None, 
+        discrete_columns=None, 
+        discrete_suffix=None, 
+        log10_pat='Log', 
+        flags=None, 
+        molecule_ids=None, 
+        write_path=None
+        ):
     '''Load and parse the outputs as separate CSV file from OPERA 2.9.
 
     Parameters
@@ -249,19 +267,21 @@ def parse_data_from_csv_files(
         data_for_model.index.name = index_name
     if log10_pat is not None:
         data_for_model = inverse_log10_transform(data_for_model, log10_pat)
+    if discrete_columns is not None:
+        data_for_model = rename_discrete_columns(
+            data_for_model, discrete_columns, discrete_suffix)
     if flags is not None:
         data_for_model = set_unreliable_values(data_for_model, flags)
-    if discrete_columns is not None:
-        data_for_model = tag_discrete(
-            data_for_model, discrete_columns, discrete_suffix)
     if write_path is not None:
         data_for_model.to_csv(write_path)
 
     return data_for_model
 #endregion
 
-#region: tag_discrete
-def tag_discrete(data_for_model, discrete_columns, suffix):
+# TODO: Add a check to ensure correct spelling.
+#region: rename_discrete_columns
+def rename_discrete_columns(
+        data_for_model, discrete_columns, suffix):
     '''Tag discrete columns by adding a suffix.
 
     discrete_columns must be contained in data_for_model.columns.
@@ -300,8 +320,16 @@ def set_unreliable_values(data, AD_flags):
 
 #region: applicability_domain_flags
 def applicability_domain_flags(
-        data_dir, columns_mapper_path, data_file_namer, index_name=None, 
-        log10_pat=None, molecule_ids=None, write_path=None):
+        data_dir, 
+        columns_mapper_path, 
+        data_file_namer, 
+        index_name=None, 
+        discrete_columns=None, 
+        discrete_suffix=None, 
+        log10_pat=None, 
+        molecule_ids=None, 
+        write_path=None
+        ):
     '''Flag any features outside the respective model applicability domains.
 
     Returns a DataFrame corresponding to common.opera.data_from_csv_files().
@@ -352,6 +380,9 @@ def applicability_domain_flags(
         AD_flags.index.name = index_name
     if log10_pat is not None:
         AD_flags.columns = AD_flags.columns.str.replace(log10_pat, '')
+    if discrete_columns is not None:
+        AD_flags = rename_discrete_columns(
+            AD_flags, discrete_columns, discrete_suffix)
     if write_path is not None:
         AD_flags.to_csv(write_path)
 
