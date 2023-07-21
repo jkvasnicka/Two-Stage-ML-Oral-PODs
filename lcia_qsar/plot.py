@@ -419,16 +419,23 @@ def important_feature_counts(
 def importances_boxplots(
         workflow, 
         label_for_scoring,
-        feature_names_label
+        feature_names_label, 
+        xlabel='Δ Score',
+        figsize=(8, 10)
         ):
     '''
     '''
+    importances_wide = workflow.concatenate_history('importances')
+    model_keys = [k for k in workflow.model_keys if 'with_selection' in k]
+
     _feature_importances_boxplots(
-        workflow, 
-        'importances', 
+        importances_wide, 
+        model_keys, 
         importances_boxplots,
         label_for_scoring,
-        feature_names_label
+        xlabel=xlabel,
+        ylabel=feature_names_label,
+        figsize=figsize
         )
 #endregion
 
@@ -436,26 +443,35 @@ def importances_boxplots(
 def importances_replicates_boxplots(
         workflow, 
         label_for_scoring,
-        feature_names_label
+        feature_names_label,
+        xlabel='Δ Score',
+        figsize=(8, 10)
         ):
     '''
     '''
+    importances_wide = workflow.concatenate_history('importances_replicates')
+    model_keys = [k for k in workflow.model_keys if 'with_selection' in k]
+
     _feature_importances_boxplots(
-        workflow, 
-        'importances_replicates', 
+        importances_wide, 
+        model_keys, 
         importances_replicates_boxplots,
         label_for_scoring,
-        feature_names_label
+        xlabel=xlabel,
+        ylabel=feature_names_label,
+        figsize=figsize
         )
 #endregion
 
 #region: _feature_importances_boxplots
 def _feature_importances_boxplots(
-        workflow, 
-        importances_key, 
+        df_wide, 
+        model_keys,
         function, 
         label_for_scoring,
-        feature_names_label
+        xlabel,
+        ylabel='', 
+        figsize=None,
         ):
     '''
     Plot boxplots for feature importances for all models in workflow.
@@ -463,44 +479,48 @@ def _feature_importances_boxplots(
     Parameters
     ----------
     workflow : object
-        The workflow object containing the model keys and corresponding history.
+        The workflow object containing the model keys and corresponding 
+        history.
 
     Returns
     -------
     None : None
     '''
-    importances_wide = workflow.concatenate_history(importances_key)
-    xlabel = 'Δ Score'
-    figsize = (8, 10)
-
-    model_keys = [k for k in workflow.model_keys if 'with_selection' in k]
     for model_key in model_keys:
         
-        # Format the data for plotting.
-        cv_importances_long = {}
-        for score in label_for_scoring:
-            cv_importances_long[score] = (
-                importances_wide[model_key][score]
+        fig, axs = plt.subplots(
+            ncols=len(label_for_scoring),
+            sharey=True,
+            figsize=figsize
+        )
+
+        for i, (scoring, title) in enumerate(label_for_scoring.items()):
+
+            df_long = (
+                df_wide[model_key][scoring]
                 .melt()
                 .sort_values(by='value', ascending=False) 
             )
         
-        # Get the column names from the last iteration.
-        y, x = list(cv_importances_long[score])
+            y, x = list(df_long.columns)
         
-        fig, axs = vertical_boxplots(
-            cv_importances_long, 
-            x, 
-            y,
-            xlabel,
-            ylabel=feature_names_label,
-            title_for_key=label_for_scoring,
-            figsize=figsize,
-            palette='icefire', 
-            linewidth=0.8,
-            flierprops=_flierprops
-        )
+            sns_boxplot_wrapper(
+                axs[i], 
+                df_long,
+                x, 
+                y,
+                xlabel=xlabel, 
+                title=title,
+                palette='icefire' 
+            )
 
+        if ylabel:
+            # Set ylabel, first column only.
+            for i, ax in enumerate(axs.flatten()):
+                ax.tick_params(axis='y', size=10)
+                if i == 0:
+                    ax.set_ylabel(ylabel, size=12)
+        
         fig.tight_layout()
 
         save_figure(
@@ -510,90 +530,38 @@ def _feature_importances_boxplots(
             )
 #endregion
 
-#region: vertical_boxplots
-def vertical_boxplots(
-        data_for_key, 
+#region: sns_boxplot_wrapper
+def sns_boxplot_wrapper(
+        ax, 
+        df_long, 
         x, 
         y, 
-        xlabel, 
-        ylabel=None,
-        sharex=False, 
-        xlim=None, 
-        title_for_key=None, 
-        figsize=None, 
-        write_path=None, 
+        xlabel='',
+        ylabel='', 
+        title='',
         **kwargs
         ):
-    '''Wrapper around seaborn.boxplot().
-
-    Parameters
-    ----------
-    data_for_key : dict of pandas.DataFrame
-        Datasets, in long form, to plot.
-    x, y, huenames of variables in data or vector data, optional
-        Inputs for plotting long-form data.
-    xlabel : str
-        Used for Axes.set_xlabel().
-    sharex : bool
-        Controls sharing of properties among x axes via matplotlib.subplots().
-    xlim : 2-tuple (optional)
-        Used for Axes.set_xlim().
-    title_for_key : dict (optional)
-        Mapping DataFrame keys to Axes titles.
-    figsize : 2-tuple (optional)
-    write_path : str (optional)
-        If specified, the figure will be saved as Figure.savefig(write_path).
-    kwargs : key-value mapping
-        Other keyword arguments are passed to seaborn.boxplot().
-
-    Returns
-    -------
-    matplotlib (Figure, Axes)
+    '''Wrapper around seaborn.boxplot() with customization.
     '''
-    fig, axs = plt.subplots(
-        ncols=len(data_for_key),
-        sharey=True,
-        sharex=sharex,
-        figsize=figsize
+    sns.boxplot(    
+        x=x, 
+        y=y, 
+        data=df_long,
+        linewidth=0.8,
+        dodge=False,
+        ax=ax,
+        flierprops=_flierprops, 
+        **kwargs
     )
-        
-    for i, (k, data) in enumerate(data_for_key.items()): 
 
-        sns.boxplot(    
-            x=x, 
-            y=y, 
-            data=data,
-            dodge=False,
-            ax=axs[i],
-            **kwargs
-        )
+    ## Set gridlines below all artists.
+    ax.grid(axis='x', linestyle='--', linewidth=0.5)
+    ax.grid(axis='y', linestyle='--', linewidth=0.5)
+    ax.set_axisbelow(True)
 
-        axs[i].grid(axis='x', linestyle='--', linewidth=0.5)
-        axs[i].grid(axis='y', linestyle='--', linewidth=0.5)
-        # Set grid lines, etc., below all artists.
-        axs[i].set_axisbelow(True)
-
-        if xlim is not None:
-            axs[i].set_xlim(xlim)
-        axs[i].set_ylabel('')
-        axs[i].set_xlabel(xlabel)
-
-        title = k if title_for_key is None else title_for_key[k]
-        axs[i].set_title(title)
-
-    if ylabel:
-        # Set ylabel, first column only.
-        for i, ax in enumerate(axs.flatten()):
-            ax.tick_params(axis='y', size=10)
-            if i == 0:
-                ax.set_ylabel(ylabel, size=12)
-        
-    fig.tight_layout()
-
-    if write_path is not None:
-        fig.savefig(write_path)
-
-    return fig, axs
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
 #endregion
 
 #region: benchmarking_scatterplots
