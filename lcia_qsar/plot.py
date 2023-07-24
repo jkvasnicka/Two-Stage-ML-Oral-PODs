@@ -980,7 +980,7 @@ def margins_of_exposure_cumulative(
         exposure_df, 
         label_for_effect, 
         label_for_exposure_column, 
-        right_truncation=None
+        xlim=None
         ):
     '''
     Function to plot cumulative count of chemicals for different MOE categories.
@@ -1019,7 +1019,6 @@ def margins_of_exposure_cumulative(
             1,
             len(model_keys),
             figsize=(len(model_keys) * 5, 5),
-            sharey=True
         )
 
         for i, model_key in enumerate(model_keys):
@@ -1054,13 +1053,18 @@ def margins_of_exposure_cumulative(
             axs[i].set_yscale('log')
             axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
 
+            x_ticks = _even_log_ticks(axs[i].xaxis)
+            axs[i].set_xticks(x_ticks)
+
+            y_ticks = _even_log_ticks(axs[i].yaxis, min_limit=1)
+            axs[i].set_yticks(y_ticks)
+
             if i == 0:  # only label y-axis for the leftmost plot
                 axs[i].set_ylabel('Cumulative Count of Chemicals')
 
             # Set x-axis limit based on the user input
-            if right_truncation:
-                left = axs[i].get_xlim()[0]
-                axs[i].set_xlim(left, right_truncation)
+            if xlim:
+                axs[i].set_xlim(*xlim)
 
             # Indicate MOE categories with vertical spans
             for k, (category, (lower, upper)) in enumerate(moe_categories.items()):
@@ -1068,9 +1072,9 @@ def margins_of_exposure_cumulative(
 
                 # Calculate x-position for category annotations
                 # If lower is outside the left limit, set it to the left limit
-                lower = max(lower, left) 
+                lower = max(lower, axs[i].get_xlim()[0]) 
                  # If upper is outside the right limit, set it to the right limit
-                upper = min(upper, right_truncation) 
+                upper = min(upper, axs[i].get_xlim()[-1]) 
                 # Compute geometric mean for logarithmic scale
                 x_position = np.sqrt(lower * upper)
 
@@ -1116,6 +1120,49 @@ def margins_of_exposure_cumulative(
             margins_of_exposure_cumulative,
             combination_key
         )
+#endregion
+
+#region: _even_log_ticks
+def _even_log_ticks(axis, min_limit=None):
+    '''
+    Compute tick positions for even exponents based on the current axis limits.
+
+    Parameters
+    ----------
+    axis : matplotlib axis object
+        The axis for which to compute the tick positions.
+    min_limit : float, optional
+        The minimum limit for the axis. If provided, the function will not 
+        generate ticks below this limit.
+
+    Returns
+    -------
+    ticks : numpy array
+        Array of tick positions corresponding to even exponents.
+    '''
+
+    # Get the axis limits
+    xmin, xmax = axis.get_view_interval()  # or ymin, ymax
+
+    # Ensure xmin is not below min_limit
+    if min_limit is not None:
+        xmin = max(xmin, min_limit)
+
+    # Calculate the minimum and maximum exponents of the data
+    min_exp = np.floor(np.log10(xmin))
+    max_exp = np.ceil(np.log10(xmax))
+
+    # Adjust to the nearest even numbers
+    min_exp = min_exp if min_exp % 2 == 0 else min_exp - 1
+    max_exp = max_exp if max_exp % 2 == 0 else max_exp + 1
+
+    # Compute the number of ticks
+    num_ticks = int((max_exp - min_exp) / 2) + 1
+
+    # Calculate tick positions for even exponents
+    ticks = np.logspace(min_exp, max_exp, num=num_ticks)
+
+    return ticks
 #endregion
 
 #region: predictions_by_missing_feature
