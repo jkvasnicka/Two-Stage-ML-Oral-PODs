@@ -1230,21 +1230,23 @@ def get_model_key_names(workflow):
 #endregion
 
 #region: save_figure
-def save_figure(fig, function, combination_key):
+def save_figure(fig, function, fig_label, extension='.png'):
     '''
     '''
     output_dir = function_directory(function)
-    fig_path = figure_path(output_dir, combination_key)
+    fig_path = figure_path(output_dir, fig_label, extension=extension)
     print(f'Saving figure --> "{fig_path}"')
     fig.savefig(fig_path)
 #endregion
 
 #region: figure_path
-def figure_path(function_dir, combination_key):
+def figure_path(function_dir, fig_label, extension='.png'):
     '''
     '''
-    fig_name = '-'.join(map(str, combination_key)) + '.png'
-    return os.path.join(function_dir, fig_name)
+    if isinstance(fig_label, (tuple, list)):
+        fig_label = '-'.join(map(str, fig_label))
+    filename = fig_label.replace(' ', '-').replace('/', '-') + extension
+    return os.path.join(function_dir, filename)
 #endregion
 
 #region: function_directory
