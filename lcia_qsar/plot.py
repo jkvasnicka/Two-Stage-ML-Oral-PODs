@@ -980,41 +980,51 @@ def margins_of_exposure_cumulative(
         exposure_df, 
         label_for_effect, 
         label_for_exposure_column, 
-        xlim=None
+        right_truncation=None
         ):
     '''
-    Function to plot cumulative count of chemicals for different MOE categories.
+    Plots margins of exposure for different chemicals. 
 
     Parameters
     ----------
     workflow : object
-        The workflow object which contains models and functions to predict and plot.
+        An object representing the workflow.
     exposure_df : pd.DataFrame
         DataFrame with exposure estimates.
+    label_for_effect : dict
+        Dictionary mapping target effects to their labels.
+    label_for_exposure_column : dict
+        Dictionary mapping percentile columns to their labels.
+    right_truncation : float, optional
+        If provided, sets the right truncation limit for x-axis.
 
     Returns
     -------
-    None : None
+    None
     '''
+    # Define the y-limit of the vertical spans in Axes fraction units.
+    y_position_axes_coords = 0.97
+
+    exposure_df = np.log10(exposure_df)
+
     model_key_names = get_model_key_names(workflow)
     combination_key_groups = get_model_key_groups(
         workflow, model_key_names, 'target_effect'
     )
 
-    # Define colors for different percentiles
     colors = sns.color_palette("Set2", len(exposure_df.columns))
 
-    # Define MOE categories
+    # Define the limits of the vertical spans in log10 units of MOE.
+    # log10(0) is undefined and will be handled dynamically
     moe_categories = {
-        'Potential Concern': (1., 100.), 
-        'Definite Concern': (0., 1.)
-        }
-    moe_colors = sns.color_palette("Paired", len(moe_categories))
+        'Potential Concern': (0., 2.),  # 1, 100
+        'Definite Concern' : (-np.inf, 0.)  # 0, 1
+    }
+    moe_colors = sns.color_palette("Paired", len(moe_categories)+1)
 
     for combination_key, group in combination_key_groups:
         model_keys = list(group)
 
-        # Initialize a figure
         fig, axs = plt.subplots(
             1,
             len(model_keys),
@@ -1022,21 +1032,20 @@ def margins_of_exposure_cumulative(
         )
 
         for i, model_key in enumerate(model_keys):
+
             y_pred, *_ = predict_out_of_sample(
                 workflow,
                 model_key,
-                inverse_transform=True
+                inverse_transform=False
             )
 
             for j, percentile in enumerate(exposure_df.columns):
-                exposure_estimates = exposure_df[percentile]
-                margins_of_exposure = y_pred.divide(exposure_estimates)
 
-                # Sort the MOEs and calculate cumulative counts
+                exposure_estimates = exposure_df[percentile]
+                margins_of_exposure = y_pred - exposure_estimates  # in log10 scale
                 sorted_moe = margins_of_exposure.sort_values()
                 cumulative_counts = np.arange(1, len(sorted_moe) + 1)
 
-                # Plot the cumulative counts
                 axs[i].plot(
                     sorted_moe, 
                     cumulative_counts, 
@@ -1044,66 +1053,53 @@ def margins_of_exposure_cumulative(
                     label=label_for_exposure_column[percentile]
                     )
 
-            # Set titles, labels, scale, and gridlines
             key_for = dict(zip(model_key_names, model_key))
             effect = key_for['target_effect']
             axs[i].set_title(label_for_effect[effect])
-            axs[i].set_xlabel('Margin of Exposure')
-            axs[i].set_xscale('log')
+            axs[i].set_xlabel("$log_{10}MOE$")
             axs[i].set_yscale('log')
             axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
-
-            x_ticks = _even_log_ticks(axs[i].xaxis)
-            axs[i].set_xticks(x_ticks)
 
             y_ticks = _even_log_ticks(axs[i].yaxis, min_limit=1)
             axs[i].set_yticks(y_ticks)
 
-            if i == 0:  # only label y-axis for the leftmost plot
+            if i == 0: 
                 axs[i].set_ylabel('Cumulative Count of Chemicals')
 
-            # Set x-axis limit based on the user input
-            if xlim:
-                axs[i].set_xlim(*xlim)
-
-            # Indicate MOE categories with vertical spans
+            lowers = []  # will be used to update xlim
             for k, (category, (lower, upper)) in enumerate(moe_categories.items()):
+
+                if lower == -np.inf:
+                    # Extend the lower limit to the xmin of the Axes
+                    lower = axs[i].get_xlim()[0]
+                lowers.append(lower)
+
                 axs[i].axvspan(lower, upper, alpha=0.2, color=moe_colors[k])
 
-                # Calculate x-position for category annotations
-                # If lower is outside the left limit, set it to the left limit
-                lower = max(lower, axs[i].get_xlim()[0]) 
-                 # If upper is outside the right limit, set it to the right limit
-                upper = min(upper, axs[i].get_xlim()[-1]) 
-                # Compute geometric mean for logarithmic scale
-                x_position = np.sqrt(lower * upper)
+                x_position = (lower + upper) / 2  # arithmetic mean in linear scale
 
-                # Transform the calculated x_position from data coordinates 
-                # to axes fraction coordinates
-                xlim = axs[i].get_xlim()
-                x_position = (
-                    (np.log10(x_position) - np.log10(xlim[0])) 
-                    / (np.log10(xlim[1]) - np.log10(xlim[0]))
-                )
+                # convert to data coordinates
+                coords_axes = (0, y_position_axes_coords)
+                _, y_position = axs[i].transData.inverted().transform(
+                    axs[i].transAxes.transform(coords_axes))
 
-                # Calculate y-position for category annotations
-                y_position = 0.97
-
-                # Plot category annotations
                 axs[i].text(
                     x_position,
                     y_position,
                     category.replace(" ", "\n"),
-                    ha='center',  # change alignment to 'center'
+                    ha='center', 
                     va='top',
                     fontsize='small',
-                    transform=axs[i].transAxes
                 )
 
-        fig.tight_layout()
-        fig.subplots_adjust(bottom=0.2)  # accomodate the legend
+            # Update the limits to remove buffer space.
+            xmin = np.min(np.array(lowers))
+            xmax = right_truncation if right_truncation else axs[i].get_xlim()[-1]
+            axs[i].set_xlim(xmin, xmax)
 
-        # Set a single legend.
+        fig.tight_layout()
+        fig.subplots_adjust(bottom=0.2)  
+
         legend_ax = axs[-1]
         handles, labels = legend_ax.get_legend_handles_labels()
         fig.legend(
@@ -1120,6 +1116,7 @@ def margins_of_exposure_cumulative(
             margins_of_exposure_cumulative,
             combination_key
         )
+
 #endregion
 
 #region: _even_log_ticks
