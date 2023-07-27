@@ -1038,7 +1038,7 @@ def margins_of_exposure_cumulative(
                 model_key,
                 inverse_transform=False
             )
-
+            
             for j, percentile in enumerate(exposure_df.columns):
 
                 exposure_estimates = exposure_df[percentile]
@@ -1059,9 +1059,6 @@ def margins_of_exposure_cumulative(
             axs[i].set_xlabel("$log_{10}MOE$")
             axs[i].set_yscale('log')
             axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
-
-            y_ticks = _even_log_ticks(axs[i].yaxis, min_limit=1)
-            axs[i].set_yticks(y_ticks)
 
             if i == 0: 
                 axs[i].set_ylabel('Cumulative Count of Chemicals')
@@ -1092,10 +1089,11 @@ def margins_of_exposure_cumulative(
                     fontsize='small',
                 )
 
-            # Update the limits to remove buffer space.
-            xmin = np.min(np.array(lowers))
-            xmax = right_truncation if right_truncation else axs[i].get_xlim()[-1]
-            axs[i].set_xlim(xmin, xmax)
+            # Update the limits.
+            set_even_ticks(axs[i], axis_type='x')
+            set_even_log_ticks(axs[i], axis_type='y')
+            if right_truncation:
+                axs[i].set_xlim(axs[i].get_xlim()[0], right_truncation)
 
         fig.tight_layout()
         fig.subplots_adjust(bottom=0.2)  
@@ -1119,47 +1117,140 @@ def margins_of_exposure_cumulative(
 
 #endregion
 
-#region: _even_log_ticks
-def _even_log_ticks(axis, min_limit=None):
+#region: set_even_ticks
+def set_even_ticks(ax, axis_type='x'):
     '''
-    Compute tick positions for even exponents based on the current axis limits.
+    Set the ticks on an axis of a matplotlib Axes object to be at even 
+    intervals.
 
     Parameters
     ----------
-    axis : matplotlib axis object
-        The axis for which to compute the tick positions.
-    min_limit : float, optional
-        The minimum limit for the axis. If provided, the function will not 
-        generate ticks below this limit.
+    ax : matplotlib.axes.Axes
+        The Axes object on which to set the ticks.
+    axis_type : str
+        The axis on which to set the ticks. Should be either 'x' or 'y'.
 
     Returns
     -------
-    ticks : numpy array
-        Array of tick positions corresponding to even exponents.
+    None
     '''
+    # Define the sequence of "nice" numbers
+    nice_numbers = [
+        1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
 
-    # Get the axis limits
-    xmin, xmax = axis.get_view_interval()  # or ymin, ymax
+    data_min, data_max = get_data_limits(ax, axis_type=axis_type)
+    
+    # Handle when data_min or data_max is NaN
+    if data_min is np.nan or data_max is np.nan:  
+        return
+    
+    # Calculate the range of data and the raw step
+    data_range = data_max - data_min
+    raw_step = data_range / 10  # We desire around 10 ticks on the axis
 
-    # Ensure xmin is not below min_limit
-    if min_limit is not None:
-        xmin = max(xmin, min_limit)
+    # Get the "nice" step by finding the closest nice number to the raw step
+    nice_step = min(nice_numbers, key=lambda x:abs(x-raw_step))
 
-    # Calculate the minimum and maximum exponents of the data
-    min_exp = np.floor(np.log10(xmin))
-    max_exp = np.ceil(np.log10(xmax))
+    # Calculate new minimum and maximum values to be multiples of nice_step
+    data_min = nice_step * np.floor(data_min/nice_step)
+    data_max = nice_step * np.ceil(data_max/nice_step)
+    
+    if axis_type == 'x':
+        ax.set_xlim(data_min, data_max)
+        # +nice_step to include data_max in the ticks
+        ax.set_xticks(
+            np.arange(data_min, data_max + nice_step, step=nice_step))  
+    elif axis_type == 'y':
+        ax.set_ylim(data_min, data_max)
+        # +nice_step to include data_max in the ticks
+        ax.set_yticks(
+            np.arange(data_min, data_max + nice_step, step=nice_step))  
+#endregion
 
-    # Adjust to the nearest even numbers
-    min_exp = min_exp if min_exp % 2 == 0 else min_exp - 1
-    max_exp = max_exp if max_exp % 2 == 0 else max_exp + 1
+#region: set_even_log_ticks
+def set_even_log_ticks(ax, axis_type='x'):
+    '''
+    Set the ticks on a logarithmic axis of a matplotlib Axes object to be at 
+    even intervals.
 
-    # Compute the number of ticks
-    num_ticks = int((max_exp - min_exp) / 2) + 1
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The Axes object on which to set the ticks.
+    axis_type : str
+        The axis on which to set the ticks. Should be either 'x' or 'y'.
 
-    # Calculate tick positions for even exponents
-    ticks = np.logspace(min_exp, max_exp, num=num_ticks)
+    Returns
+    -------
+    None
+    '''
+    # Get the limits of the data
+    data_min, data_max = get_data_limits(ax, axis_type)
 
-    return ticks
+    # Get the powers of 10 that bound the data
+    data_min_pow = np.floor(np.log10(data_min))
+    data_max_pow = np.ceil(np.log10(data_max))
+
+    # Make sure the exponents are even
+    if data_min_pow % 2 != 0:
+        data_min_pow -= 1
+    if data_max_pow % 2 != 0:
+        data_max_pow += 1
+
+    # Create the list of ticks
+    # Step by 2 to get even exponents
+    ticks = [
+        10**i for i in range(int(data_min_pow), int(data_max_pow) + 1, 2)]  
+
+    # Set the ticks on the appropriate axis
+    if axis_type == 'x':
+        ax.set_xticks(ticks)
+    elif axis_type == 'y':
+        ax.set_yticks(ticks)
+#endregion
+
+#region: get_data_limits
+def get_data_limits(ax, axis_type='x'):
+    '''
+    Get the minimum and maximum limits of the data on a specific axis of a 
+    matplotlib Axes object.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The Axes object containing the data.
+    axis_type : str
+        The axis for which to get the data limits. Should be either 'x' or 'y'.
+
+    Returns
+    -------
+    float, float
+        The minimum and maximum data limits.
+    '''
+    # Get the data
+    if axis_type == 'x':
+        lines = ax.get_lines()
+        data = np.concatenate([line.get_xdata() for line in lines])
+    elif axis_type == 'y':
+        lines = ax.get_lines()
+        data = np.concatenate([line.get_ydata() for line in lines])
+    else:
+        raise ValueError(
+            f"Invalid axis_type: {axis_type}. Choose either 'x' or 'y'.")
+
+    # Exclude NaN values
+    data = data[~np.isnan(data)]
+    
+    # Check if data is empty after excluding NaN values
+    if len(data) == 0:
+        # Return None for both min and max if no valid data is available
+        return None, None  
+
+    # Get the min and max
+    data_min = np.min(data)
+    data_max = np.max(data)
+
+    return data_min, data_max
 #endregion
 
 #region: predictions_by_missing_feature
