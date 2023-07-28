@@ -261,7 +261,7 @@ def performance_and_prediction_comparison(
     '''
     model_key_names = get_model_key_names(workflow)
     combination_key_groups = get_model_key_groups(
-        workflow, model_key_names, 'model_build')
+        workflow.model_keys, model_key_names, 'model_build')
 
     for combination_key, model_keys in combination_key_groups:
 
@@ -548,7 +548,7 @@ def important_feature_counts(
 
     model_key_names = get_model_key_names(workflow)
     combination_key_groups = get_model_key_groups(
-        workflow, model_key_names, 'target_effect', 
+        workflow.model_keys, model_key_names, 'target_effect', 
         exclusion_string='without_selection'
     )
 
@@ -822,7 +822,7 @@ def benchmarking_scatterplots(
     '''
     model_key_names = get_model_key_names(workflow)
     combination_key_groups = get_model_key_groups(
-        workflow, model_key_names, 'target_effect')
+        workflow.model_keys, model_key_names, 'target_effect')
 
     for combination_key, model_keys in combination_key_groups:
         num_subplots = len(model_keys)
@@ -1011,7 +1011,7 @@ def margins_of_exposure_cumulative(
 
     model_key_names = get_model_key_names(workflow)
     combination_key_groups = get_model_key_groups(
-        workflow, model_key_names, 'target_effect'
+        workflow.model_keys, model_key_names, 'target_effect'
     )
 
     colors = sns.color_palette("Set2", len(exposure_df.columns))
@@ -1407,7 +1407,7 @@ def predictions_by_missing_feature(
 
         # Use the helper function to get the combination key group
         combination_key_groups = get_model_key_groups(
-            workflow, model_key_names, 'target_effect')
+            workflow.model_keys, model_key_names, 'target_effect')
         
         # Iterate over combination_key_group
         for combination_key, model_keys in combination_key_groups:
@@ -1649,47 +1649,61 @@ def _get_box_tick_labels(name, series):
 
 #region: get_model_key_groups
 def get_model_key_groups(
-        workflow, key_names, exclusion_key, exclusion_string=None):
+        model_keys, 
+        key_names, 
+        exclusion_keys, 
+        exclusion_string=None
+    ):
     '''
-    Get combination key group by sorting model keys based on combination key.
+    This function groups model keys by combination keys. A combination key is 
+    formed by taking a model key and excluding one or more of its elements. The 
+    function sorts the model keys by the combination keys and then groups them 
+    based on these combination keys. The result is a generator that yields a 
+    combination key and its corresponding group of model keys.
 
     Parameters
     ----------
-    workflow : object
-        The workflow object containing the model keys.
+    model_keys : list of tuples
+        A list of tuples, where each tuple represents a model key.
     key_names : list
-        List of key names to construct the model keys.
-    exclusion_key : str
-        The key to exclude from the combination key.
+        A list of strings, where each string is the name of a key. The order of 
+        names should match the order of elements in each tuple of model_keys.
+    exclusion_keys : str or list of str
+        The name or names of keys to exclude when forming the combination key. 
+        These keys should be in key_names.
     exclusion_string : str, optional
-        The string to check for in the model keys. Keys containing this string 
-        will be excluded.
+        A string to exclude certain model keys. If a model key contains this 
+        string, it will be excluded from the final output. If None, no model keys 
+        are excluded based on this criterion.
 
     Returns
     -------
     combination_key_group : generator
-        Generator yielding combination key and group of model keys.
+        A generator that yields tuples. Each tuple consists of a combination key 
+        and a list of model keys that share this combination key.
     '''
-    # Get the index of the key to exclude in the key names
-    key_idx = key_names.index(exclusion_key)
 
-    # Filter model keys to exclude those containing the exclusion_string
-    model_keys = workflow.model_keys
-    if exclusion_string is not None:
+    if isinstance(exclusion_keys, str):
+        exclusion_keys = [exclusion_keys]
+
+    if exclusion_string:
+        # Filter the model keys accordingly
         model_keys = [k for k in model_keys if exclusion_string not in k]
+        
+    exclusion_key_indices = [key_names.index(key) for key in exclusion_keys]
 
-    # Sort model keys by combination key without affecting the original model keys
-    sorted_model_keys = sorted(model_keys, key=lambda x: tuple(
-        item for idx, item in enumerate(x) if idx != key_idx))
+    def get_combination_key(model_key):
+        return tuple(item for idx, item in enumerate(model_key) 
+                     if idx not in exclusion_key_indices)
 
-    # Define variable for clarity
+    # Group the keys by combination key
+    # Sorting is necessary, because itertools.groupby() only groups 
+    # consecutive elements with the same key
+    sorted_model_keys = sorted(model_keys, key=get_combination_key)
     combination_key_groups = (
         (combination_key, list(group))
         for combination_key, group in itertools.groupby(
-            sorted_model_keys, key=lambda x: tuple(
-                item for idx, item in enumerate(x) if idx != key_idx
-            )
-        )
+        sorted_model_keys, key=get_combination_key)
     )
 
     return combination_key_groups
