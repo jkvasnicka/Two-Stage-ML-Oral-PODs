@@ -238,9 +238,8 @@ def performance_and_prediction_comparison(
         workflow, 
         label_for_metric, 
         label_for_model_build,
+        label_for_effect,
         prediction_label, 
-        train_chemicals_label,
-        all_chemicals_label,
         ylim=(0., 1.)
         ):
     '''
@@ -260,56 +259,65 @@ def performance_and_prediction_comparison(
         of levels from the workflow data.
     '''
     model_key_names = get_model_key_names(workflow)
-    grouped_keys = group_model_keys(
-        workflow.model_keys, model_key_names, 'model_build')
+    grouped_keys_outer = group_model_keys(
+        workflow.model_keys, 
+        model_key_names, 
+        ['target_effect', 'model_build']
+        )
 
-    for grouping_key, model_keys in grouped_keys:
+    for grouping_key_outer, model_keys in grouped_keys_outer:
 
+        grouped_keys_inner = group_model_keys(
+            model_keys, 
+            model_key_names, 
+            'model_build'
+            )
+        
         # Initialize a Figure for the subplot.
-        fig = plt.figure()
+        fig = plt.figure(figsize=(7, 6))
 
-        gs1 = gridspec.GridSpec(3, 1)
-        gs2 = gridspec.GridSpec(2, 1)
+        gs1 = gridspec.GridSpec(2, 2)
+        gs2 = gridspec.GridSpec(6, 1)
 
-        _plot_performances_boxplots_left_half(
+        _plot_prediction_scatterplots(
             fig, 
             gs1, 
             workflow, 
-            model_keys, 
+            grouped_keys_inner, 
+            model_key_names,
+            label_for_metric,
+            label_for_model_build,
+            label_for_effect,
+            prediction_label
+            )
+        
+        _plot_performances_boxplots(
+            fig, 
+            gs2, 
+            workflow, 
+            grouped_keys_inner, 
             label_for_metric, 
             label_for_model_build,
             ylim=ylim
             )
 
-        _plot_prediction_scatterplots_right_half(
-            fig, 
-            gs2, 
-            workflow, 
-            model_keys, 
-            label_for_metric,
-            label_for_model_build,
-            prediction_label, 
-            train_chemicals_label,
-            all_chemicals_label
-            )
-
-        gs1.tight_layout(fig, rect=[0, 0, 0.5, 1])
-        gs2.tight_layout(fig, rect=[0.5, 0, 1, 1], h_pad=0.5)
-
+        # adjust the 'right' value for gs1 and 'left' value for gs2
+        gs1.tight_layout(fig, rect=[0, 0, 0.7, 1]) 
+        gs2.tight_layout(fig, rect=[0.7, 0, 1, 1], h_pad=0.5)
 
         save_figure(
             fig, 
             performance_and_prediction_comparison, 
-            grouping_key
+            grouping_key_outer
             )
 #endregion
 
-#region: _plot_performances_boxplots_left_half
-def _plot_performances_boxplots_left_half(
+#region: _plot_performances_boxplots
+def _plot_performances_boxplots(
         fig, 
-        gs1, 
+        gs2, 
         workflow, 
-        model_keys, 
+        grouped_keys_inner, 
         label_for_metric, 
         label_for_model_build,
         ylim=(0., 1.)
@@ -321,7 +329,7 @@ def _plot_performances_boxplots_left_half(
     ----------
     fig : Figure
         The figure on which to add the subplots.
-    gs1 : GridSpec
+    gs2 : GridSpec
         The GridSpec object used to specify the subplot layout.
     workflow : Workflow
         The workflow object containing the data.
@@ -330,6 +338,7 @@ def _plot_performances_boxplots_left_half(
     ylim : tuple, optional
         A tuple specifying the y-axis limits. Default is (0., 1.).
     '''
+    # TODO: Is all this necessary?
     ## Prepare the data.
     performances_wide = workflow.concatenate_history('performances')
     # Filter the data.
@@ -340,6 +349,8 @@ def _plot_performances_boxplots_left_half(
     )
     performances_wide = performances_wide.loc[:, where_subset_metrics]
     # Rename the columns for visualization.
+    label_for_model_build = {
+        k : v.split(' ')[0] for k, v in label_for_model_build.items()}
     label_for_column = {
         **label_for_metric, 
         **label_for_model_build
@@ -350,53 +361,59 @@ def _plot_performances_boxplots_left_half(
 
     metrics = performances_wide.columns.unique(level='metric')
 
-    # The new keys will be used to get the data.
-    model_keys_renamed = [
-        tuple(label_for_column.get(k, k) for k in model_key) 
-        for model_key in model_keys
+    # Create a counter for the current row
+    index = 0
+    for i, (_, model_keys) in enumerate(grouped_keys_inner):
+
+        # The new keys will be used to get the data.
+        model_keys_renamed = [
+            tuple(label_for_column.get(k, k) for k in model_key) 
+            for model_key in model_keys
         ]
+        
+        for j, metric in enumerate(metrics):
 
-    for i, metric in enumerate(metrics):
+            ax = fig.add_subplot(gs2[index])                
 
-        ax = fig.add_subplot(gs1[i])                
+            # Filter and format the data.
+            metric_data_long = (
+                performances_wide.xs(metric, axis=1, level='metric')
+                [model_keys_renamed]
+                .melt()
+            )
 
-        # Filter and format the data.
-        metric_data_long = (
-            performances_wide.xs(metric, axis=1, level='metric')
-            [model_keys_renamed]
-            .melt()
-        )
+            sns.boxplot(
+                data=metric_data_long,
+                y='model_build',  # swapped 'x' and 'y'
+                x='value',  # swapped 'x' and 'y'
+                ax=ax,
+                flierprops=_flierprops,
+                orient='h'  # added 'orient' to specify the orientation of the boxplots
+            )
 
-        sns.boxplot(
-            data=metric_data_long,
-            x='model_build',
-            y='value',
-            ax=ax,
-            flierprops=_flierprops
-        )
+            # Set the x-axis limits.
+            ax.set_xlim(ylim)
 
-        # Set the y-axis limits.
-        ax.set_ylim(ylim)
+            # Re-format the labels.
+            ax.set_xlabel(metric, size='small') 
+            ax.set_ylabel('')
+            ax.tick_params(axis='both', labelsize='small')
 
-        # Re-format the labels.
-        ax.set_ylabel(metric, rotation=0, labelpad=15, size='small')
-        ax.tick_params(axis='x', labelsize='small')
-        ax.set_xlabel('')
-        if i == 0:
-            ax.set_title('Performance Comparison', size='medium')
+            # Increase the counter
+            index += 1
 #endregion
 
-#region: _plot_prediction_scatterplots_right_half
-def _plot_prediction_scatterplots_right_half(
+#region: _plot_prediction_scatterplots
+def _plot_prediction_scatterplots(
         fig, 
-        gs2, 
+        gs1, 
         workflow, 
-        model_keys, 
+        grouped_keys_inner, 
+        model_key_names, 
         label_for_metric,
         label_for_model_build,
-        prediction_label, 
-        train_chemicals_label,
-        all_chemicals_label
+        label_for_effect, 
+        prediction_label
         ):
     '''
     Plot scatterplots of predictions on the right half of a figure.
@@ -405,57 +422,42 @@ def _plot_prediction_scatterplots_right_half(
     ----------
     fig : Figure
         The figure on which to add the subplots.
-    gs2 : GridSpec
+    gs1 : GridSpec
         The GridSpec object used to specify the subplot layout.
     workflow : Workflow
         The workflow object containing the data.
     model_keys : list
         A list of model keys used to filter and format the data.
     '''
-    # TODO: Could raise error if len(model_keys) != 2, etc.
-    key_without_selection = next(
-        k for k in model_keys if 'without_selection' in k)
-    key_with_selection = next(k for k in model_keys if 'with_selection' in k)
+    for i, (_, model_keys) in enumerate(grouped_keys_inner):
 
-    def create_title(sample_type, n_chemicals):
-        '''Adds comma separation'''
-        return f"{sample_type} ({_comma_separated(n_chemicals)})"
-    
-    xlabel = label_for_model_build['without_selection']
-    ylabel = label_for_model_build['with_selection']
+        for j, model_key in enumerate(model_keys):
 
-    ## Create the top Axes.
-    ax0 = fig.add_subplot(gs2[0])
-    x0, *_ = get_in_sample_prediction(workflow, key_without_selection)
-    y0, *_ = get_in_sample_prediction(workflow, key_with_selection)
-    overall_title = f'Predicted {prediction_label} Comparison'
-    ax0_title = f"{overall_title}\n{create_title(train_chemicals_label, len(x0))}"
-    _plot_prediction_scatterplot(
-        ax0, 
-        x0, 
-        y0, 
-        workflow, 
-        label_for_metric,
-        ax0_title, 
-        xlabel, 
-        ylabel
-        )
-    
-    ## Create the bottom Axes.
-    ax1 = fig.add_subplot(gs2[1])
-    x1, *_ = predict_out_of_sample(workflow, key_without_selection)
-    y1, *_ = predict_out_of_sample(workflow, key_with_selection)
-    ax1_title = create_title(all_chemicals_label, len(x1))
-    _plot_prediction_scatterplot(
-        ax1, 
-        x1, 
-        y1, 
-        workflow, 
-        label_for_metric,
-        ax1_title, 
-        xlabel, 
-        ylabel
-        )
+            key_for = dict(zip(model_key_names, model_key))
+
+            ax = fig.add_subplot(gs1[i, j])
+
+            y_pred, _, y_true = get_in_sample_prediction(workflow, model_key)
+
+            xlabel = f'Observed {prediction_label}'
+            if i == len(grouped_keys_inner) - 1:
+                model_build = label_for_model_build[key_for['model_build']]
+                xlabel = f'{xlabel}\n' + model_build
+            ax.set_xlabel(xlabel, size='medium')
+
+            ylabel = f'Predicted {prediction_label}'
+            if j == 0:
+                effect = label_for_effect[key_for['target_effect']]
+                ylabel = f'{effect}\n' + ylabel
+            ax.set_ylabel(ylabel, size='medium')
+
+            _plot_prediction_scatterplot(
+                ax, 
+                y_true, 
+                y_pred, 
+                workflow, 
+                label_for_metric
+                )
 #endregion
 
 #region: _comma_separated
@@ -465,6 +467,7 @@ def _comma_separated(number):
     return '{:,}'.format(number)
 #endregion
 
+# TODO: Include sample size as text.
 #region: _plot_prediction_scatterplot
 def _plot_prediction_scatterplot(
         ax, 
@@ -472,9 +475,9 @@ def _plot_prediction_scatterplot(
         y, 
         workflow, 
         label_for_metric,
-        title, 
-        xlabel, 
-        ylabel
+        title=None, 
+        xlabel=None, 
+        ylabel=None
         ):
     '''
     '''
@@ -494,6 +497,8 @@ def _plot_prediction_scatterplot(
 
     xmin, xmax = ax.get_xlim()
     plot_one_one_line(ax, xmin, xmax)
+
+    ax.tick_params(axis='both', labelsize='small')
 #endregion
 
 #region: get_in_sample_prediction
@@ -502,11 +507,11 @@ def get_in_sample_prediction(workflow, model_key, inverse_transform=False):
     '''
     model_key_names = get_model_key_names(workflow)
     key_for = dict(zip(model_key_names, model_key))
-    X, y = workflow.load_features_and_target(**key_for)
+    X, y_true = workflow.load_features_and_target(**key_for)
 
     y_pred, X = get_prediction(X, workflow, model_key, inverse_transform)
 
-    return y_pred, X, y
+    return y_pred, X, y_true
 #endregion
 
 #region: predict_out_of_sample
@@ -1675,9 +1680,8 @@ def group_model_keys(
 
     Returns
     -------
-    grouped_model_keys : generator
-        Generator yielding each grouping key and its corresponding group of 
-        model keys.
+    grouped_model_keys : list of 2-tuple
+        Contains each grouping key and its corresponding group of model keys.
     '''
 
     # Convert exclusion_key_names  to list if it's a string
@@ -1701,11 +1705,11 @@ def group_model_keys(
     sorted_model_keys = sorted(model_keys, key=create_grouping_key)
 
     # Group the sorted keys by grouping key
-    grouped_model_keys = (
+    grouped_model_keys = [
         (grouping_key, list(group))
         for grouping_key, group in itertools.groupby(
         sorted_model_keys, key=create_grouping_key)
-    )
+    ]
 
     return grouped_model_keys
 #endregion
