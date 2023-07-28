@@ -260,10 +260,10 @@ def performance_and_prediction_comparison(
         of levels from the workflow data.
     '''
     model_key_names = get_model_key_names(workflow)
-    combination_key_groups = get_model_key_groups(
+    grouped_keys = group_model_keys(
         workflow.model_keys, model_key_names, 'model_build')
 
-    for combination_key, model_keys in combination_key_groups:
+    for grouping_key, model_keys in grouped_keys:
 
         # Initialize a Figure for the subplot.
         fig = plt.figure()
@@ -300,7 +300,7 @@ def performance_and_prediction_comparison(
         save_figure(
             fig, 
             performance_and_prediction_comparison, 
-            combination_key
+            grouping_key
             )
 #endregion
 
@@ -547,12 +547,12 @@ def important_feature_counts(
     color_unfilled = '#dcdcdc'  # Light gray
 
     model_key_names = get_model_key_names(workflow)
-    combination_key_groups = get_model_key_groups(
+    grouped_keys = group_model_keys(
         workflow.model_keys, model_key_names, 'target_effect', 
-        exclusion_string='without_selection'
+        string_to_exclude='without_selection'
     )
 
-    for combination_key, model_keys in combination_key_groups:
+    for grouping_key, model_keys in grouped_keys:
         n_keys = len(model_keys)
 
         # Figure layout is adjusted to have one column per model key
@@ -623,7 +623,7 @@ def important_feature_counts(
         save_figure(
             fig, 
             important_feature_counts, 
-            combination_key
+            grouping_key
             )
 #endregion
 
@@ -821,10 +821,10 @@ def benchmarking_scatterplots(
         List of axes corresponding to the figures.
     '''
     model_key_names = get_model_key_names(workflow)
-    combination_key_groups = get_model_key_groups(
+    grouped_keys = group_model_keys(
         workflow.model_keys, model_key_names, 'target_effect')
 
-    for combination_key, model_keys in combination_key_groups:
+    for grouping_key, model_keys in grouped_keys:
         num_subplots = len(model_keys)
 
         fig, ax_objs = plt.subplots(3, num_subplots, figsize=figsize)
@@ -882,7 +882,7 @@ def benchmarking_scatterplots(
         save_figure(
             fig, 
             benchmarking_scatterplots, 
-            combination_key
+            grouping_key
             )
 #endregion
 
@@ -1010,7 +1010,7 @@ def margins_of_exposure_cumulative(
     exposure_df = np.log10(exposure_df)
 
     model_key_names = get_model_key_names(workflow)
-    combination_key_groups = get_model_key_groups(
+    grouped_keys = group_model_keys(
         workflow.model_keys, model_key_names, 'target_effect'
     )
 
@@ -1024,7 +1024,7 @@ def margins_of_exposure_cumulative(
     }
     moe_colors = sns.color_palette("Paired", len(moe_categories)+1)
 
-    for combination_key, model_keys in combination_key_groups:
+    for grouping_key, model_keys in grouped_keys:
 
         fig, axs = plt.subplots(
             1,
@@ -1100,7 +1100,7 @@ def margins_of_exposure_cumulative(
         save_figure(
             fig,
             margins_of_exposure_cumulative,
-            combination_key
+            grouping_key
         )
 #endregion
 
@@ -1406,11 +1406,11 @@ def predictions_by_missing_feature(
         model_key_names = get_model_key_names(workflow)
 
         # Use the helper function to get the combination key group
-        combination_key_groups = get_model_key_groups(
+        grouped_keys = group_model_keys(
             workflow.model_keys, model_key_names, 'target_effect')
         
-        # Iterate over combination_key_group
-        for combination_key, model_keys in combination_key_groups:
+        # Iterate over grouping_key_group
+        for grouping_key, model_keys in grouped_keys:
             n_effects = len(model_keys)
 
             fig, axs = plt.subplots(
@@ -1459,7 +1459,7 @@ def predictions_by_missing_feature(
             save_figure(
                 fig, 
                 predictions_by_missing_feature, 
-                combination_key
+                grouping_key
                 )
 #endregion
 
@@ -1647,66 +1647,67 @@ def _get_box_tick_labels(name, series):
     return feature_label, sample_size_label 
 #endregion
 
-#region: get_model_key_groups
-def get_model_key_groups(
+#region: group_model_keys
+def group_model_keys(
         model_keys, 
         key_names, 
-        exclusion_keys, 
-        exclusion_string=None
+        exclusion_key_names , 
+        string_to_exclude=None
     ):
     '''
-    This function groups model keys by combination keys. A combination key is 
-    formed by taking a model key and excluding one or more of its elements. The 
-    function sorts the model keys by the combination keys and then groups them 
-    based on these combination keys. The result is a generator that yields a 
-    combination key and its corresponding group of model keys.
+    Group model keys by grouping keys. A grouping key is formed by taking a model 
+    key and excluding one or more of its elements.
 
     Parameters
     ----------
     model_keys : list of tuples
-        A list of tuples, where each tuple represents a model key.
+        Model keys to be grouped. Each tuple represents a model key.
     key_names : list
-        A list of strings, where each string is the name of a key. The order of 
+        Names of keys corresponding to elements in the model keys. The order of 
         names should match the order of elements in each tuple of model_keys.
-    exclusion_keys : str or list of str
-        The name or names of keys to exclude when forming the combination key. 
-        These keys should be in key_names.
-    exclusion_string : str, optional
-        A string to exclude certain model keys. If a model key contains this 
+    exclusion_key_names  : str or list of str
+        Names of keys (which should be in key_names) to exclude when forming 
+        the grouping key.
+    string_to_exclude : str, optional
+        String to exclude model keys containing it. If a model key contains this 
         string, it will be excluded from the final output. If None, no model keys 
         are excluded based on this criterion.
 
     Returns
     -------
-    combination_key_group : generator
-        A generator that yields tuples. Each tuple consists of a combination key 
-        and a list of model keys that share this combination key.
+    grouped_model_keys : generator
+        Generator yielding each grouping key and its corresponding group of 
+        model keys.
     '''
 
-    if isinstance(exclusion_keys, str):
-        exclusion_keys = [exclusion_keys]
+    # Convert exclusion_key_names  to list if it's a string
+    if isinstance(exclusion_key_names , str):
+        exclusion_key_names  = [exclusion_key_names ]
 
-    if exclusion_string:
-        # Filter the model keys accordingly
-        model_keys = [k for k in model_keys if exclusion_string not in k]
-        
-    exclusion_key_indices = [key_names.index(key) for key in exclusion_keys]
+    # Exclude model keys that contain string_to_exclude
+    if string_to_exclude:
+        model_keys = [k for k in model_keys if string_to_exclude not in k]
 
-    def get_combination_key(model_key):
+    # Get the indices of the keys to exclude in the key names
+    exclusion_key_indices = [key_names.index(key) for key in exclusion_key_names ]
+
+    def create_grouping_key(model_key):
         return tuple(item for idx, item in enumerate(model_key) 
                      if idx not in exclusion_key_indices)
 
-    # Group the keys by combination key
-    # Sorting is necessary, because itertools.groupby() only groups 
-    # consecutive elements with the same key
-    sorted_model_keys = sorted(model_keys, key=get_combination_key)
-    combination_key_groups = (
-        (combination_key, list(group))
-        for combination_key, group in itertools.groupby(
-        sorted_model_keys, key=get_combination_key)
+    # Sort model keys by grouping key
+    # This is necessary because itertools.groupby() groups only consecutive 
+    # elements with the same key
+    sorted_model_keys = sorted(model_keys, key=create_grouping_key)
+
+    # Group the sorted keys by grouping key
+    grouped_model_keys = (
+        (grouping_key, list(group))
+        for grouping_key, group in itertools.groupby(
+        sorted_model_keys, key=create_grouping_key)
     )
 
-    return combination_key_groups
+    return grouped_model_keys
 #endregion
 
 # TODO: Move this to the Workflow.History?
