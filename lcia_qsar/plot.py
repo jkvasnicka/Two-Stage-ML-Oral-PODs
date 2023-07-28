@@ -1010,9 +1010,6 @@ def margins_of_exposure_cumulative(
         .to_dict()
     )
 
-    # Define the y-limit of the vertical spans in Axes fraction units.
-    y_position_axes_coords = 0.97
-
     exposure_df = np.log10(exposure_df)
 
     model_key_names = get_model_key_names(workflow)
@@ -1051,6 +1048,7 @@ def margins_of_exposure_cumulative(
             
             for j, percentile in enumerate(exposure_df.columns):
 
+                ## Get the data for plotting.
                 exposure_estimates = exposure_df[percentile]
                 margins_of_exposure = y_pred - exposure_estimates  # in log10 scale
                 sorted_moe = margins_of_exposure.sort_values()
@@ -1067,47 +1065,27 @@ def margins_of_exposure_cumulative(
                     label=label_for_exposure_column[percentile]
                     )
 
+            ## Update the limits.
+            set_even_ticks(axs[i], axis_type='x', data_type='fill')
+            set_even_log_ticks(axs[i], axis_type='y', data_type='fill')
+            if right_truncation:
+                axs[i].set_xlim(axs[i].get_xlim()[0], right_truncation)
+
+            ## Set labels, etc. 
             key_for = dict(zip(model_key_names, model_key))
             effect = key_for['target_effect']
             axs[i].set_title(label_for_effect[effect])
             axs[i].set_xlabel("$log_{10}MOE$")
             axs[i].set_yscale('log')
             axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
-
             if i == 0: 
                 axs[i].set_ylabel('Cumulative Count of Chemicals')
 
-            lowers = []  # will be used to update xlim
-            for k, (category, (lower, upper)) in enumerate(moe_categories.items()):
-
-                if lower == -np.inf:
-                    # Extend the lower limit to the xmin of the Axes
-                    lower = axs[i].get_xlim()[0]
-                lowers.append(lower)
-
-                axs[i].axvspan(lower, upper, alpha=0.2, color=moe_colors[k])
-
-                x_position = (lower + upper) / 2  # arithmetic mean in linear scale
-
-                # convert to data coordinates
-                coords_axes = (0, y_position_axes_coords)
-                _, y_position = axs[i].transData.inverted().transform(
-                    axs[i].transAxes.transform(coords_axes))
-
-                axs[i].text(
-                    x_position,
-                    y_position,
-                    category.replace(" ", "\n"),
-                    ha='center', 
-                    va='top',
-                    fontsize='small',
+            annotate_vertical_spans(
+                axs[i], 
+                moe_categories, 
+                moe_colors
                 )
-
-            # Update the limits.
-            set_even_ticks(axs[i], axis_type='x')
-            set_even_log_ticks(axs[i], axis_type='y')
-            if right_truncation:
-                axs[i].set_xlim(axs[i].get_xlim()[0], right_truncation)
 
         fig.tight_layout()
         fig.subplots_adjust(bottom=0.2)  
@@ -1206,8 +1184,53 @@ def prediction_interval(prediction, error):
     return lower_bound, upper_bound
 #endregion
 
+#region: annotate_vertical_spans
+def annotate_vertical_spans(ax, categories, colors, y_pos_axes=0.97):
+    '''
+    Annotate vertical spans and category labels in a matplotlib Axes object.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The Axes object in which to annotate vertical spans.
+    categories : dict
+        Dictionary defining the categories and their corresponding 
+        vertical span limits.
+    colors : list
+        List of colors for the vertical spans.
+    y_pos_axes : float
+        The y-position of the category labels in Axes fraction units.
+
+    Returns
+    -------
+    None
+    '''
+    for k, (category, (lower, upper)) in enumerate(categories.items()):
+        if lower == -np.inf:
+            # Extend the lower limit to the xmin of the Axes
+            lower = ax.get_xlim()[0]
+
+        ax.axvspan(lower, upper, alpha=0.2, color=colors[k])
+
+        x_pos_data = (lower + upper) / 2  # arithmetic mean in linear scale
+
+        # Convert to data coordinates
+        coords_axes = (0, y_pos_axes)
+        _, y_pos_data = ax.transData.inverted().transform(
+            ax.transAxes.transform(coords_axes))
+
+        ax.text(
+            x_pos_data,
+            y_pos_data,
+            category.replace(" ", "\n"),
+            ha='center', 
+            va='top',
+            fontsize='small',
+        )
+#endregion
+
 #region: set_even_ticks
-def set_even_ticks(ax, axis_type='x'):
+def set_even_ticks(ax, axis_type='x', data_type='line'):
     '''
     Set the ticks on an axis of a matplotlib Axes object to be at even 
     intervals.
@@ -1227,7 +1250,11 @@ def set_even_ticks(ax, axis_type='x'):
     nice_numbers = [
         1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
 
-    data_min, data_max = get_data_limits(ax, axis_type=axis_type)
+    data_min, data_max = get_data_limits(
+        ax, 
+        axis_type=axis_type, 
+        data_type=data_type
+        )
     
     # Handle when data_min or data_max is NaN
     if data_min is np.nan or data_max is np.nan:  
@@ -1257,7 +1284,7 @@ def set_even_ticks(ax, axis_type='x'):
 #endregion
 
 #region: set_even_log_ticks
-def set_even_log_ticks(ax, axis_type='x'):
+def set_even_log_ticks(ax, axis_type='x', data_type='line'):
     '''
     Set the ticks on a logarithmic axis of a matplotlib Axes object to be at 
     even intervals.
@@ -1274,7 +1301,11 @@ def set_even_log_ticks(ax, axis_type='x'):
     None
     '''
     # Get the limits of the data
-    data_min, data_max = get_data_limits(ax, axis_type)
+    data_min, data_max = get_data_limits(
+        ax, 
+        axis_type=axis_type, 
+        data_type=data_type
+        )
 
     # Get the powers of 10 that bound the data
     data_min_pow = np.floor(np.log10(data_min))
@@ -1299,7 +1330,7 @@ def set_even_log_ticks(ax, axis_type='x'):
 #endregion
 
 #region: get_data_limits
-def get_data_limits(ax, axis_type='x'):
+def get_data_limits(ax, axis_type='x', data_type='line'):
     '''
     Get the minimum and maximum limits of the data on a specific axis of a 
     matplotlib Axes object.
@@ -1310,22 +1341,30 @@ def get_data_limits(ax, axis_type='x'):
         The Axes object containing the data.
     axis_type : str
         The axis for which to get the data limits. Should be either 'x' or 'y'.
+    data_type : str
+        The type of data for which to get the limits. Should be either 'line' 
+        or 'fill'.
 
     Returns
     -------
     float, float
         The minimum and maximum data limits.
     '''
-    # Get the data
-    if axis_type == 'x':
-        lines = ax.get_lines()
-        data = np.concatenate([line.get_xdata() for line in lines])
-    elif axis_type == 'y':
-        lines = ax.get_lines()
-        data = np.concatenate([line.get_ydata() for line in lines])
+    if data_type == 'line':
+        # Get the data from line plots
+        if axis_type == 'x':
+            lines = ax.get_lines()
+            data = np.concatenate([line.get_xdata() for line in lines])
+        elif axis_type == 'y':
+            lines = ax.get_lines()
+            data = np.concatenate([line.get_ydata() for line in lines])
+    elif data_type == 'fill':
+        # Get the data from filled areas
+        collections = ax.collections
+        axis_index = 0 if axis_type == 'x' else 1
+        data = np.concatenate([collection.get_paths()[0].vertices[:, axis_index] for collection in collections])
     else:
-        raise ValueError(
-            f"Invalid axis_type: {axis_type}. Choose either 'x' or 'y'.")
+        raise ValueError(f"Invalid data_type: {data_type}. Choose either 'line' or 'fill'.")
 
     # Exclude NaN values
     data = data[~np.isnan(data)]
