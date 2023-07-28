@@ -1002,6 +1002,14 @@ def margins_of_exposure_cumulative(
     -------
     None
     '''
+    # Get the error estimate for prediction intervals.
+    rmse_for_model = (
+        workflow.concatenate_history('performances')
+        .xs('root_mean_squared_error', axis=1, level='metric')
+        .quantile()
+        .to_dict()
+    )
+
     # Define the y-limit of the vertical spans in Axes fraction units.
     y_position_axes_coords = 0.97
 
@@ -1038,6 +1046,8 @@ def margins_of_exposure_cumulative(
                 model_key,
                 inverse_transform=False
             )
+
+            rmse = rmse_for_model[model_key]
             
             for j, percentile in enumerate(exposure_df.columns):
 
@@ -1045,11 +1055,15 @@ def margins_of_exposure_cumulative(
                 margins_of_exposure = y_pred - exposure_estimates  # in log10 scale
                 sorted_moe = margins_of_exposure.sort_values()
                 cumulative_counts = np.arange(1, len(sorted_moe) + 1)
+                lb, ub = prediction_interval(sorted_moe, rmse)
 
-                axs[i].plot(
+                plot_with_prediction_interval(
+                    axs[i], 
                     sorted_moe, 
                     cumulative_counts, 
-                    color=colors[j],
+                    lb, 
+                    ub, 
+                    colors[j], 
                     label=label_for_exposure_column[percentile]
                     )
 
@@ -1114,7 +1128,82 @@ def margins_of_exposure_cumulative(
             margins_of_exposure_cumulative,
             combination_key
         )
+#endregion
 
+#region: plot_with_prediction_interval
+def plot_with_prediction_interval(
+        ax, 
+        sorted_values, 
+        cumulative_counts, 
+        lower_bound, 
+        upper_bound, 
+        color, 
+        label=None
+    ):
+    '''
+    Plot values with prediction interval.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The axes to draw on.
+    sorted_values : pd.Series
+        Sorted values in log10 scale.
+    cumulative_counts : np.ndarray
+        Cumulative counts for the sorted values.
+    lower_bound : pd.Series
+        Lower bound of the prediction interval.
+    upper_bound : pd.Series
+        Upper bound of the prediction interval.
+    color : str
+        Color of the plot.
+    label : str, optional
+        Label for the line plot.
+
+    Returns
+    -------
+    None
+    '''
+    # Plot the prediction interval
+    ax.fill_betweenx(
+        cumulative_counts, 
+        lower_bound, 
+        upper_bound, 
+        color=color, 
+        alpha=0.2
+        )
+
+    # Plot the main line
+    ax.plot(
+        sorted_values, 
+        cumulative_counts, 
+        color=color, 
+        label=label
+        )
+#endregion
+
+#region: prediction_interval
+def prediction_interval(prediction, error):
+    '''
+    Calculate the prediction interval.
+
+    Parameters
+    ----------
+    prediction : pd.Series
+        Predicted values in log10 scale.
+    error : float
+        Measure of uncertainty, such as the Root Mean Squared Error of a model.
+
+    Returns
+    -------
+    lower_bound : pd.Series
+        Lower bound of the prediction interval.
+    upper_bound : pd.Series
+        Upper bound of the prediction interval.
+    '''
+    lower_bound = prediction - 1.645 * error
+    upper_bound = prediction + 1.645 * error
+    return lower_bound, upper_bound
 #endregion
 
 #region: set_even_ticks
