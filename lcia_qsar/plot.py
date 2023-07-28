@@ -263,8 +263,7 @@ def performance_and_prediction_comparison(
     combination_key_groups = get_model_key_groups(
         workflow, model_key_names, 'model_build')
 
-    for combination_key, group in combination_key_groups:
-        model_keys = list(group)
+    for combination_key, model_keys in combination_key_groups:
 
         # Initialize a Figure for the subplot.
         fig = plt.figure()
@@ -553,8 +552,7 @@ def important_feature_counts(
         exclusion_string='without_selection'
     )
 
-    for combination_key, model_key_group in combination_key_groups:
-        model_keys = list(model_key_group)
+    for combination_key, model_keys in combination_key_groups:
         n_keys = len(model_keys)
 
         # Figure layout is adjusted to have one column per model key
@@ -826,8 +824,7 @@ def benchmarking_scatterplots(
     combination_key_groups = get_model_key_groups(
         workflow, model_key_names, 'target_effect')
 
-    for combination_key, group in combination_key_groups:
-        model_keys = list(group)
+    for combination_key, model_keys in combination_key_groups:
         num_subplots = len(model_keys)
 
         fig, ax_objs = plt.subplots(3, num_subplots, figsize=figsize)
@@ -1027,8 +1024,7 @@ def margins_of_exposure_cumulative(
     }
     moe_colors = sns.color_palette("Paired", len(moe_categories)+1)
 
-    for combination_key, group in combination_key_groups:
-        model_keys = list(group)
+    for combination_key, model_keys in combination_key_groups:
 
         fig, axs = plt.subplots(
             1,
@@ -1414,8 +1410,7 @@ def predictions_by_missing_feature(
             workflow, model_key_names, 'target_effect')
         
         # Iterate over combination_key_group
-        for combination_key, group in combination_key_groups:
-            model_keys = list(group)
+        for combination_key, model_keys in combination_key_groups:
             n_effects = len(model_keys)
 
             fig, axs = plt.subplots(
@@ -1654,7 +1649,7 @@ def _get_box_tick_labels(name, series):
 
 #region: get_model_key_groups
 def get_model_key_groups(
-        workflow, key_names, grouping_key, exclusion_string=None):
+        workflow, key_names, exclusion_key, exclusion_string=None):
     '''
     Get combination key group by sorting model keys based on combination key.
 
@@ -1664,7 +1659,7 @@ def get_model_key_groups(
         The workflow object containing the model keys.
     key_names : list
         List of key names to construct the model keys.
-    grouping_key : str
+    exclusion_key : str
         The key to exclude from the combination key.
     exclusion_string : str, optional
         The string to check for in the model keys. Keys containing this string 
@@ -1676,7 +1671,7 @@ def get_model_key_groups(
         Generator yielding combination key and group of model keys.
     '''
     # Get the index of the key to exclude in the key names
-    key_idx = key_names.index(grouping_key)
+    key_idx = key_names.index(exclusion_key)
 
     # Filter model keys to exclude those containing the exclusion_string
     model_keys = workflow.model_keys
@@ -1689,7 +1684,7 @@ def get_model_key_groups(
 
     # Define variable for clarity
     combination_key_groups = (
-        (combination_key, group)
+        (combination_key, list(group))
         for combination_key, group in itertools.groupby(
             sorted_model_keys, key=lambda x: tuple(
                 item for idx, item in enumerate(x) if idx != key_idx
