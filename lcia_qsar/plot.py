@@ -233,31 +233,34 @@ def proportions_incomplete(X_subset, AD_flags_subset):
     return sorted_proportions
 #endregion
 
-#region: performance_and_prediction_comparison
-def performance_and_prediction_comparison(
+#region: in_and_out_sample_comparisons
+def in_and_out_sample_comparisons(
         workflow, 
         label_for_metric, 
         label_for_model_build,
         label_for_effect,
         prediction_label, 
         ylim=(0., 1.)
-        ):
-    '''
-    Generate and plot categorical performances and predictions.
+    ):
+    """
+    Generate in-sample performance comparisons and out-of-sample prediction 
+    scatterplots.
     
     Parameters
     ----------
-    workflow : Workflow
-        The workflow object containing the data.
+    workflow : object
+        The Workflow object containing the data.
+    label_for_metric : dict
+        Dictionary mapping the metric names to their display names.
+    label_for_model_build : dict
+        Dictionary mapping the model build types to their display names.
+    label_for_effect : dict
+        Dictionary mapping the effect types to their display names.
+    prediction_label : str
+        Label to use for the predictions on the plots.
     ylim : tuple, optional
-        A tuple specifying the y-axis limits. Default is (0., 1.).
-
-    Returns
-    -------
-    dict
-        A dictionary of Figure objects, where the keys are unique combinations
-        of levels from the workflow data.
-    '''
+        Tuple specifying the y-axis limits. Default is (0., 1.).
+    """
     model_key_names = get_model_key_names(workflow)
     grouped_keys_outer = group_model_keys(
         workflow.model_keys, 
@@ -273,140 +276,89 @@ def performance_and_prediction_comparison(
             'model_build'
             )
         
-        # Initialize a Figure for the subplot.
-        fig = plt.figure(figsize=(7, 5))
-
-        gs1 = gridspec.GridSpec(2, 2)
-        gs2 = gridspec.GridSpec(6, 1)
-
-        _plot_prediction_scatterplots(
-            fig, 
-            gs1, 
+        in_sample_performance_comparisons(
             workflow, 
             grouped_keys_inner, 
             model_key_names,
-            label_for_metric,
-            label_for_model_build,
-            label_for_effect,
-            prediction_label
-            )
-        
-        _plot_performances_boxplots(
-            fig, 
-            gs2, 
-            workflow, 
-            grouped_keys_inner, 
+            grouping_key_outer,
             label_for_metric, 
             label_for_model_build,
+            label_for_effect,
+            prediction_label, 
             ylim=ylim
-            )
+        )
 
-        # adjust the 'right' value for gs1 and 'left' value for gs2
-        gs1.tight_layout(fig, rect=[0, 0, 0.7, 1]) 
-        gs2.tight_layout(fig, rect=[0.7, 0, 1, 1], h_pad=0.5)
-
-        save_figure(
-            fig, 
-            performance_and_prediction_comparison, 
-            grouping_key_outer
-            )
+        out_of_sample_prediction_scatterplots(
+            workflow, 
+            grouped_keys_inner,
+            grouping_key_outer, 
+            model_key_names, 
+            label_for_metric,
+            label_for_model_build,
+            label_for_effect, 
+            prediction_label
+    )
 #endregion
 
-#region: _plot_performances_boxplots
-def _plot_performances_boxplots(
+#region: in_sample_performance_comparisons
+def in_sample_performance_comparisons(
+        workflow, 
+        grouped_keys_inner, 
+        model_key_names,
+        grouping_key_outer,
+        label_for_metric, 
+        label_for_model_build,
+        label_for_effect,
+        prediction_label, 
+        ylim=(0., 1.)
+    ):
+    """
+    Generate in-sample performance comparisons plots using scatterplots and 
+    boxplots.
+    """
+    # Initialize a Figure for the subplot.
+    fig = plt.figure(figsize=(7, 5))
+
+    gs1 = gridspec.GridSpec(2, 2)
+    gs2 = gridspec.GridSpec(6, 1)
+
+    _in_sample_performance_scatterplots(
+        fig, 
+        gs1, 
+        workflow, 
+        grouped_keys_inner, 
+        model_key_names,
+        label_for_metric,
+        label_for_model_build,
+        label_for_effect,
+        prediction_label
+        )
+    
+    _in_sample_performance_boxplots(
         fig, 
         gs2, 
         workflow, 
         grouped_keys_inner, 
         label_for_metric, 
         label_for_model_build,
-        ylim=(0., 1.)
-        ):
-    '''
-    Plot a categorical combination using a boxplot on the left half of a figure.
-    
-    Parameters
-    ----------
-    fig : Figure
-        The figure on which to add the subplots.
-    gs2 : GridSpec
-        The GridSpec object used to specify the subplot layout.
-    workflow : Workflow
-        The workflow object containing the data.
-    model_keys : list
-        A list of model keys used to filter and format the data.
-    ylim : tuple, optional
-        A tuple specifying the y-axis limits. Default is (0., 1.).
-    '''
-    # TODO: Is all this necessary?
-    ## Prepare the data.
-    performances_wide = workflow.concatenate_history('performances')
-    # Filter the data.
-    where_subset_metrics = (
-        performances_wide.columns
-        .get_level_values('metric')
-        .isin(label_for_metric)
-    )
-    performances_wide = performances_wide.loc[:, where_subset_metrics]
-    # Rename the columns for visualization.
-    label_for_model_build = {
-        k : v.split(' ')[0] for k, v in label_for_model_build.items()}
-    label_for_column = {
-        **label_for_metric, 
-        **label_for_model_build
-    }
-    performances_wide = performances_wide.rename(label_for_column, axis=1)
+        ylim=ylim
+        )
 
-    ## Plot the data. 
+    # adjust the 'right' value for gs1 and 'left' value for gs2
+    gs1.tight_layout(fig, rect=[0, 0, 0.7, 1]) 
+    gs2.tight_layout(fig, rect=[0.7, 0, 1, 1], h_pad=0.5)
 
-    metrics = performances_wide.columns.unique(level='metric')
-
-    # Create a counter for the current row
-    index = 0
-    for i, (_, model_keys) in enumerate(grouped_keys_inner):
-
-        # The new keys will be used to get the data.
-        model_keys_renamed = [
-            tuple(label_for_column.get(k, k) for k in model_key) 
-            for model_key in model_keys
-        ]
-        
-        for j, metric in enumerate(metrics):
-
-            ax = fig.add_subplot(gs2[index])                
-
-            # Filter and format the data.
-            metric_data_long = (
-                performances_wide.xs(metric, axis=1, level='metric')
-                [model_keys_renamed]
-                .melt()
-            )
-
-            sns.boxplot(
-                data=metric_data_long,
-                y='model_build',  # swapped 'x' and 'y'
-                x='value',  # swapped 'x' and 'y'
-                ax=ax,
-                flierprops=_flierprops,
-                orient='h'  # added 'orient' to specify the orientation of the boxplots
-            )
-
-            # Set the x-axis limits.
-            ax.set_xlim(ylim)
-
-            # Re-format the labels.
-            ax.set_xlabel(metric, size='small') 
-            ax.set_ylabel('')
-            ax.tick_params(axis='both', labelsize='small')
-
-            # Increase the counter
-            index += 1
+    save_figure(
+        fig, 
+        in_sample_performance_comparisons, 
+        grouping_key_outer
+        )
 #endregion
 
 # TODO: Even tick values for log scale axes?
 
-#region: _plot_prediction_scatterplots
-def _plot_prediction_scatterplots(
+#region: _in_sample_performance_scatterplots
+def _in_sample_performance_scatterplots(
         fig, 
         gs1, 
         workflow, 
@@ -416,21 +368,11 @@ def _plot_prediction_scatterplots(
         label_for_model_build,
         label_for_effect, 
         prediction_label
-        ):
-    '''
-    Plot scatterplots of predictions on the right half of a figure.
-    
-    Parameters
-    ----------
-    fig : Figure
-        The figure on which to add the subplots.
-    gs1 : GridSpec
-        The GridSpec object used to specify the subplot layout.
-    workflow : Workflow
-        The workflow object containing the data.
-    model_keys : list
-        A list of model keys used to filter and format the data.
-    '''
+    ):
+    """
+    Generate scatterplots of observed vs predicted for the in-sample 
+    performance comparisons.
+    """
     all_axs = []
     # Initialize the limits.
     xmin, xmax = np.inf, -np.inf
@@ -475,6 +417,168 @@ def _plot_prediction_scatterplots(
     # Use the same scale.
     for ax in all_axs:
         plot_one_one_line(ax, xmin, xmax)
+#endregion
+
+#region: _in_sample_performance_boxplots
+def _in_sample_performance_boxplots(
+        fig, 
+        gs2, 
+        workflow, 
+        grouped_keys_inner, 
+        label_for_metric, 
+        label_for_model_build,
+        ylim=(0., 1.)
+        ):
+    '''
+    Create boxplots for in-sample performances across different models and 
+    metrics.
+    '''
+    # TODO: Is all this necessary?
+    ## Prepare the data.
+    performances_wide = workflow.concatenate_history('performances')
+    # Filter the data.
+    where_subset_metrics = (
+        performances_wide.columns
+        .get_level_values('metric')
+        .isin(label_for_metric)
+    )
+    performances_wide = performances_wide.loc[:, where_subset_metrics]
+    # Rename the columns for visualization.
+    label_for_model_build = {
+        k : v.split(' ')[0] for k, v in label_for_model_build.items()}
+    label_for_column = {
+        **label_for_metric, 
+        **label_for_model_build
+    }
+    performances_wide = performances_wide.rename(label_for_column, axis=1)
+
+    ## Plot the data. 
+
+    metrics = performances_wide.columns.unique(level='metric')
+
+    # Create a counter for the current row
+    index = 0
+    for _, model_keys in grouped_keys_inner:
+
+        # The new keys will be used to get the data.
+        model_keys_renamed = [
+            tuple(label_for_column.get(k, k) for k in model_key) 
+            for model_key in model_keys
+        ]
+        
+        for metric in metrics:
+
+            ax = fig.add_subplot(gs2[index])                
+
+            # Filter and format the data.
+            metric_data_long = (
+                performances_wide.xs(metric, axis=1, level='metric')
+                [model_keys_renamed]
+                .melt()
+            )
+
+            sns.boxplot(
+                data=metric_data_long,
+                y='model_build',  # swapped 'x' and 'y'
+                x='value',  # swapped 'x' and 'y'
+                ax=ax,
+                flierprops=_flierprops,
+                orient='h'  # added 'orient' to specify the orientation of the boxplots
+            )
+
+            # Set the x-axis limits.
+            ax.set_xlim(ylim)
+
+            # Re-format the labels.
+            ax.set_xlabel(metric, size='small') 
+            ax.set_ylabel('')
+            ax.tick_params(axis='both', labelsize='small')
+
+            # Increase the counter
+            index += 1
+#endregion
+
+#region: out_of_sample_prediction_scatterplots
+def out_of_sample_prediction_scatterplots(
+        workflow, 
+        grouped_keys_inner,
+        grouping_key_outer, 
+        model_key_names, 
+        label_for_metric,
+        label_for_model_build,
+        label_for_effect, 
+        prediction_label
+    ):
+    '''
+    Generate and plot scatterplots for out-of-sample predictions.
+    '''
+    fig, axs = plt.subplots(
+        ncols=len(grouped_keys_inner),
+        figsize=(7, 3.5),
+        sharey=True
+    )
+
+    # Initialize the limits.
+    xmin, xmax = np.inf, -np.inf
+
+    for i, (_, model_keys) in enumerate(grouped_keys_inner):
+            
+        ## Get the data.
+
+        key_without_selection = next(
+            k for k in model_keys if 'without_selection' in k)
+        key_with_selection = next(k for k in model_keys if 'with_selection' in k)
+
+        x, *_ = predict_out_of_sample(workflow, key_without_selection)
+        y, *_ = predict_out_of_sample(workflow, key_with_selection)
+
+        ## Define figure labels.
+
+        def create_label(model_build):
+            return f'{prediction_label} {label_for_model_build[model_build]}'
+        
+        xlabel = create_label('without_selection')
+
+        ylabel = ''
+        if i == 0:  # left Axes only
+            ylabel = create_label('with_selection')
+
+        # Set the title as the common effect.
+        effects = []
+        for model_key in model_keys:
+            key_for = dict(zip(model_key_names, model_key))
+            effects.append(key_for['target_effect'])
+        if not all(effect == effects[0] for effect in effects):
+            raise ValueError(f'Inconsistent target effects: {effects}')
+        title = label_for_effect[effects[0]]
+        
+        generate_scatterplot(
+            axs[i], 
+            x, 
+            y,
+            workflow, 
+            label_for_metric,
+            color='black',
+            title=title, 
+            xlabel=xlabel, 
+            ylabel=ylabel
+        )
+
+        # Update the limits for the one-one line.
+        xmin = min(xmin, *axs[i].get_xlim())
+        xmax = max(xmax, *axs[i].get_xlim())
+
+    # Use the same scale.
+    for ax in axs.flatten():
+        plot_one_one_line(ax, xmin, xmax)
+
+    fig.tight_layout()
+
+    save_figure(
+        fig, 
+        out_of_sample_prediction_scatterplots, 
+        grouping_key_outer
+        )
 #endregion
 
 #region: _comma_separated
