@@ -970,7 +970,7 @@ def benchmarking_scatterplots(
 
             # Use the same scale.
             for ax in ax_objs.flatten():
-                plot_one_one_line(ax, xmin, xmax)
+                plot_one_one_line(ax, xmin, xmax, color='#808080')
 
         fig.tight_layout()
         
@@ -1061,7 +1061,7 @@ def generate_scatterplot(
 #endregion
 
 #region: plot_one_one_line
-def plot_one_one_line(ax, xmin, xmax):
+def plot_one_one_line(ax, xmin, xmax, color='red'):
     '''
     Add one-one line to a subplot
 
@@ -1076,7 +1076,7 @@ def plot_one_one_line(ax, xmin, xmax):
     '''
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(xmin, xmax)
-    ax.plot([xmin, xmax], [xmin, xmax], color='#808080', 
+    ax.plot([xmin, xmax], [xmin, xmax], color=color, 
             linestyle='--', linewidth=1)
 #endregion
 
