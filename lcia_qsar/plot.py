@@ -403,6 +403,7 @@ def _plot_performances_boxplots(
             index += 1
 #endregion
 
+# TODO: Use labels only on the bordering Axes, like in benchmarking_.
 #region: _plot_prediction_scatterplots
 def _plot_prediction_scatterplots(
         fig, 
@@ -429,6 +430,10 @@ def _plot_prediction_scatterplots(
     model_keys : list
         A list of model keys used to filter and format the data.
     '''
+    all_axs = []
+    # Initialize the limits.
+    xmin, xmax = np.inf, -np.inf
+
     for i, (_, model_keys) in enumerate(grouped_keys_inner):
 
         for j, model_key in enumerate(model_keys):
@@ -436,6 +441,7 @@ def _plot_prediction_scatterplots(
             key_for = dict(zip(model_key_names, model_key))
 
             ax = fig.add_subplot(gs1[i, j])
+            all_axs.append(ax)
 
             y_pred, _, y_true = get_in_sample_prediction(workflow, model_key)
 
@@ -460,11 +466,15 @@ def _plot_prediction_scatterplots(
                 color='black'
             )
 
+            # Update the limits for the one-one line.
+            xmin = min(xmin, *ax.get_xlim())
+            xmax = max(xmax, *ax.get_xlim())
+
             ax.tick_params(axis='both', labelsize='small')
 
-            # TODO: Use the same scale in in benchmarking_scatter.
-            xmin, xmax = ax.get_xlim()
-            plot_one_one_line(ax, xmin, xmax)
+    # Use the same scale.
+    for ax in all_axs:
+        plot_one_one_line(ax, xmin, xmax)
 #endregion
 
 #region: _comma_separated
@@ -807,6 +817,7 @@ def benchmarking_scatterplots(
 
         fig, ax_objs = plt.subplots(3, num_subplots, figsize=figsize)
 
+        # Initialize the limits.
         xmin, xmax = np.inf, -np.inf
 
         for i, model_key in enumerate(model_keys):
@@ -849,9 +860,11 @@ def benchmarking_scatterplots(
                     ylabel=ylabel
                     )
 
+                # Update the limits for the one-one line.
                 xmin = min(xmin, *ax.get_xlim())
                 xmax = max(xmax, *ax.get_xlim())
 
+            # Use the same scale.
             for ax in ax_objs.flatten():
                 plot_one_one_line(ax, xmin, xmax)
 
