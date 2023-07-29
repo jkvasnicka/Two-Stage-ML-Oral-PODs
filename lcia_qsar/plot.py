@@ -443,21 +443,28 @@ def _plot_prediction_scatterplots(
             if i == len(grouped_keys_inner) - 1:
                 model_build = label_for_model_build[key_for['model_build']]
                 xlabel = f'{xlabel}\n' + model_build
-            ax.set_xlabel(xlabel, size='medium')
+            ax.set_xlabel(xlabel, size='small')
 
             ylabel = f'Predicted {prediction_label}'
             if j == 0:
                 effect = label_for_effect[key_for['target_effect']]
                 ylabel = f'{effect}\n' + ylabel
-            ax.set_ylabel(ylabel, size='medium')
+            ax.set_ylabel(ylabel, size='small')
 
-            _plot_prediction_scatterplot(
+            generate_scatterplot(
                 ax, 
                 y_true, 
-                y_pred, 
+                y_pred,
                 workflow, 
-                label_for_metric
-                )
+                label_for_metric,
+                color='black'
+            )
+
+            ax.tick_params(axis='both', labelsize='small')
+
+            # TODO: Use the same scale in in benchmarking_scatter.
+            xmin, xmax = ax.get_xlim()
+            plot_one_one_line(ax, xmin, xmax)
 #endregion
 
 #region: _comma_separated
@@ -961,12 +968,13 @@ def generate_scatterplot(
         size='small'
         )
 
+    fontsize = 'medium'
     if title:
-        ax.set_title(title, fontsize='medium')
+        ax.set_title(title, size=fontsize)
     if xlabel:
-        ax.set_xlabel(xlabel, size='small')
+        ax.set_xlabel(xlabel, size=fontsize)
     if ylabel:
-        ax.set_ylabel(ylabel, size='small')
+        ax.set_ylabel(ylabel, size=fontsize)
 #endregion
 
 #region: plot_one_one_line
