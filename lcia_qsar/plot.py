@@ -274,7 +274,7 @@ def performance_and_prediction_comparison(
             )
         
         # Initialize a Figure for the subplot.
-        fig = plt.figure(figsize=(7, 6))
+        fig = plt.figure(figsize=(7, 5))
 
         gs1 = gridspec.GridSpec(2, 2)
         gs2 = gridspec.GridSpec(6, 1)
