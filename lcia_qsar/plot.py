@@ -474,40 +474,6 @@ def _comma_separated(number):
     return '{:,}'.format(number)
 #endregion
 
-# TODO: Is this helper function needed?
-#region: _plot_prediction_scatterplot
-def _plot_prediction_scatterplot(
-        ax, 
-        x, 
-        y, 
-        workflow, 
-        label_for_metric,
-        title=None, 
-        xlabel=None, 
-        ylabel=None
-        ):
-    '''
-    '''
-    color = 'black'
-
-    generate_scatterplot(
-        ax, 
-        x,  
-        y,  
-        workflow, 
-        label_for_metric,
-        color=color, 
-        title=title, 
-        xlabel=xlabel, 
-        ylabel=ylabel
-    )
-
-    xmin, xmax = ax.get_xlim()
-    plot_one_one_line(ax, xmin, xmax)
-
-    ax.tick_params(axis='both', labelsize='small')
-#endregion
-
 #region: get_in_sample_prediction
 def get_in_sample_prediction(workflow, model_key, inverse_transform=False):
     '''
