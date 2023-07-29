@@ -403,7 +403,8 @@ def _plot_performances_boxplots(
             index += 1
 #endregion
 
-# TODO: Use labels only on the bordering Axes, like in benchmarking_.
+# TODO: Even tick values for log scale axes?
+
 #region: _plot_prediction_scatterplots
 def _plot_prediction_scatterplots(
         fig, 
@@ -445,16 +446,15 @@ def _plot_prediction_scatterplots(
 
             y_pred, _, y_true = get_in_sample_prediction(workflow, model_key)
 
-            xlabel = f'Observed {prediction_label}'
+            ## Set labels depending on the Axes.
+            xlabel, ylabel = '', ''
             if i == len(grouped_keys_inner) - 1:
                 model_build = label_for_model_build[key_for['model_build']]
-                xlabel = f'{xlabel}\n' + model_build
-            ax.set_xlabel(xlabel, size='small')
-
-            ylabel = f'Predicted {prediction_label}'
+                xlabel = f'Observed {prediction_label}\n{model_build}'
             if j == 0:
                 effect = label_for_effect[key_for['target_effect']]
-                ylabel = f'{effect}\n' + ylabel
+                ylabel = f'{effect}\nPredicted {prediction_label}'
+            ax.set_xlabel(xlabel, size='small')
             ax.set_ylabel(ylabel, size='small')
 
             generate_scatterplot(
