@@ -467,7 +467,7 @@ def _comma_separated(number):
     return '{:,}'.format(number)
 #endregion
 
-# TODO: Include sample size as text.
+# TODO: Is this helper function needed?
 #region: _plot_prediction_scatterplot
 def _plot_prediction_scatterplot(
         ax, 
@@ -898,6 +898,7 @@ def generate_scatterplot(
         y_pred, 
         workflow, 
         label_for_metric,
+        with_sample_size=True,
         color=None, 
         title='', 
         xlabel='', 
@@ -937,16 +938,28 @@ def generate_scatterplot(
     )
 
     ## Set the performance scores as text.
+
     float_to_string = lambda score : format(score, '.2f')  # limit precision
     dict_to_string = lambda d : '\n'.join([f'{k}: {v}' for k, v in d.items()])
     get_score = (
         lambda metric : workflow.function_for_metric[metric](y_true, y_pred))
-    score_text = dict_to_string(
-        {label : float_to_string(get_score(metric)) 
-         for metric, label in label_for_metric.items()}
-    )
-    ax.text(0.05, 0.95, score_text, transform=ax.transAxes,
-            va='top', ha='left', size='small')
+    
+    score_dict = {
+        label : float_to_string(get_score(metric)) 
+        for metric, label in label_for_metric.items()
+        }
+    if with_sample_size:
+        score_dict['n'] = _comma_separated(len(y_true))
+
+    ax.text(
+        0.05, 
+        0.95, 
+        dict_to_string(score_dict), 
+        transform=ax.transAxes,
+        va='top', 
+        ha='left', 
+        size='small'
+        )
 
     if title:
         ax.set_title(title, fontsize='medium')
