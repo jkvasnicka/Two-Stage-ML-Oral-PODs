@@ -242,7 +242,7 @@ def in_and_out_sample_comparisons(
         prediction_label, 
         ylim=(0., 1.)
     ):
-    """
+    '''
     Generate in-sample performance comparisons and out-of-sample prediction 
     scatterplots.
     
@@ -260,7 +260,7 @@ def in_and_out_sample_comparisons(
         Label to use for the predictions on the plots.
     ylim : tuple, optional
         Tuple specifying the y-axis limits. Default is (0., 1.).
-    """
+    '''
     model_key_names = get_model_key_names(workflow)
     grouped_keys_outer = group_model_keys(
         workflow.model_keys, 
@@ -312,10 +312,10 @@ def in_sample_performance_comparisons(
         prediction_label, 
         ylim=(0., 1.)
     ):
-    """
+    '''
     Generate in-sample performance comparisons plots using scatterplots and 
     boxplots.
-    """
+    '''
     # Initialize a Figure for the subplot.
     fig = plt.figure(figsize=(7, 5))
 
@@ -369,10 +369,13 @@ def _in_sample_performance_scatterplots(
         label_for_effect, 
         prediction_label
     ):
-    """
+    '''
     Generate scatterplots of observed vs predicted for the in-sample 
     performance comparisons.
-    """
+    '''
+
+    title = '(A) In-Sample Performance'
+
     all_axs = []
     # Initialize the limits.
     xmin, xmax = np.inf, -np.inf
@@ -396,8 +399,11 @@ def _in_sample_performance_scatterplots(
             if j == 0:
                 effect = label_for_effect[key_for['target_effect']]
                 ylabel = f'{effect}\nPredicted {prediction_label}'
+                if i == 0:
+                    ax.set_title(title, loc='left', size='small', style='italic')
             ax.set_xlabel(xlabel, size='small')
             ax.set_ylabel(ylabel, size='small')
+            
 
             generate_scatterplot(
                 ax, 
@@ -433,6 +439,9 @@ def _in_sample_performance_boxplots(
     Create boxplots for in-sample performances across different models and 
     metrics.
     '''
+
+    title = '(B) Out-of-Sample Performance'
+
     # TODO: Is all this necessary?
     ## Prepare the data.
     performances_wide = workflow.concatenate_history('performances')
@@ -458,7 +467,7 @@ def _in_sample_performance_boxplots(
 
     # Create a counter for the current row
     index = 0
-    for _, model_keys in grouped_keys_inner:
+    for i, (_, model_keys) in enumerate(grouped_keys_inner):
 
         # The new keys will be used to get the data.
         model_keys_renamed = [
@@ -466,7 +475,7 @@ def _in_sample_performance_boxplots(
             for model_key in model_keys
         ]
         
-        for metric in metrics:
+        for j, metric in enumerate(metrics):
 
             ax = fig.add_subplot(gs2[index])                
 
@@ -489,10 +498,12 @@ def _in_sample_performance_boxplots(
             # Set the x-axis limits.
             ax.set_xlim(ylim)
 
-            # Re-format the labels.
+            # Set labels. 
             ax.set_xlabel(metric, size='small') 
             ax.set_ylabel('')
             ax.tick_params(axis='both', labelsize='small')
+            if i == j == 0:
+                ax.set_title(title, size='small', loc='right', style='italic')
 
             # Increase the counter
             index += 1
