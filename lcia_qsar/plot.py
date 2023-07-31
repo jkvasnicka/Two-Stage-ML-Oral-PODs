@@ -1278,7 +1278,7 @@ def plot_with_prediction_interval(
 #endregion
 
 #region: prediction_interval
-def prediction_interval(prediction, error):
+def prediction_interval(prediction, error, z_score=1.645):
     '''
     Calculate the prediction interval.
 
@@ -1296,8 +1296,8 @@ def prediction_interval(prediction, error):
     upper_bound : pd.Series
         Upper bound of the prediction interval.
     '''
-    lower_bound = prediction - 1.645 * error
-    upper_bound = prediction + 1.645 * error
+    lower_bound = prediction - z_score*error
+    upper_bound = prediction + z_score*error
     return lower_bound, upper_bound
 #endregion
 
