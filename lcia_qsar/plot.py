@@ -488,11 +488,12 @@ def _in_sample_performance_boxplots(
 
             sns.boxplot(
                 data=metric_data_long,
-                y='model_build',  # swapped 'x' and 'y'
-                x='value',  # swapped 'x' and 'y'
+                y='model_build', 
+                x='value', 
                 ax=ax,
                 flierprops=_flierprops,
-                orient='h'  # added 'orient' to specify the orientation of the boxplots
+                orient='h' ,
+                linewidth=1.
             )
 
             # Set the x-axis limits.
