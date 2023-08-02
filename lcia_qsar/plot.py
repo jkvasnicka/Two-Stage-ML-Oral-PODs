@@ -109,7 +109,7 @@ def proportions_incomplete_subplot(
             X_subset, AD_flags_subset)
         
         # Reorder the valid_prop, missing_prop, and outside_AD_prop
-        valid_prop = valid_prop.sort_values(ascending=False)
+        valid_prop = valid_prop.sort_values(ascending=True)
         missing_prop = missing_prop.reindex(valid_prop.index)
         outside_AD_prop = outside_AD_prop.reindex(valid_prop.index)
 
@@ -194,7 +194,7 @@ def proportions_incomplete_barchart(
     ax.set_title(f'{title} (n={n_samples})', size='medium', loc='left')
     ax.set_xlim([0, 100])
     ax.grid(True, axis='x', linestyle='--', color='black', alpha=0.6)
-    ax.legend(fontsize='small', loc='lower right')
+    ax.legend(fontsize='small', loc='upper right')
 #endregion
 
 #region: proportions_incomplete
