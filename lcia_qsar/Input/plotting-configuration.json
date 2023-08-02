@@ -28,9 +28,9 @@
     },
 
     "label_for_exposure_column" : {
-      "95th percentile (mg/kg/day)" : "Exposure 95%ile",
-      "50th percentile (mg/kg/day)" : "Exposure 50%ile",
-      "5th percentile (mg/kg/day)" : "Exposure 5%ile"
+      "95th percentile (mg/kg/day)" : "Median Exposure 95%ile",
+      "50th percentile (mg/kg/day)" : "Median Exposure 50%ile",
+      "5th percentile (mg/kg/day)" : "Median Exposure 5%ile"
     },
 
     "prediction_label": "$log_{10}POD$",
