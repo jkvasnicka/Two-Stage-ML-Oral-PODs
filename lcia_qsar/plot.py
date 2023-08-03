@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt 
 import matplotlib.patches as mpatches
 import matplotlib.gridspec as gridspec
+from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -541,20 +542,11 @@ def out_of_sample_prediction_scatterplots(
             k for k in model_keys if 'without_selection' in k)
         key_with_selection = next(k for k in model_keys if 'with_selection' in k)
 
-        x, *_ = predict_out_of_sample(workflow, key_without_selection)
-        y, *_ = predict_out_of_sample(workflow, key_with_selection)
+        y_pred_without, *_ = predict_out_of_sample(workflow, key_without_selection)
+        y_pred_with, *_ = predict_out_of_sample(workflow, key_with_selection)
 
         ## Define figure labels.
-
-        def create_label(model_build):
-            return f'{prediction_label} {label_for_model_build[model_build]}'
         
-        xlabel = create_label('without_selection')
-
-        ylabel = ''
-        if i == 0:  # left Axes only
-            ylabel = create_label('with_selection')
-
         # Set the title as the common effect.
         effects = []
         for model_key in model_keys:
@@ -564,16 +556,19 @@ def out_of_sample_prediction_scatterplots(
             raise ValueError(f'Inconsistent target effects: {effects}')
         title = label_for_effect[effects[0]]
         
+        def create_label(model_build):
+            return f'{prediction_label} {label_for_model_build[model_build]}'
+        
         generate_scatterplot(
             axs[i], 
-            x, 
-            y,
+            y_pred_without, 
+            y_pred_with,
             workflow, 
             label_for_metric,
             color='black',
             title=title, 
-            xlabel=xlabel, 
-            ylabel=ylabel
+            xlabel=create_label('without_selection'), 
+            ylabel=create_label('with_selection') if i == 0 else ''
         )
 
         # Update the limits for the one-one line.
@@ -1086,8 +1081,16 @@ def plot_one_one_line(ax, xmin, xmax, color='red'):
     xmax : float
         Maximum limit for x and y axes.
     '''
+
+    # Set consistent limits.
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(xmin, xmax)
+
+    # Set consistent tick locations
+    locator = MaxNLocator(nbins=5)
+    ax.xaxis.set_major_locator(locator)
+    ax.yaxis.set_major_locator(locator)
+        
     ax.plot([xmin, xmax], [xmin, xmax], color=color, 
             linestyle='--', linewidth=1)
 #endregion
