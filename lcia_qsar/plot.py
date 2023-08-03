@@ -536,7 +536,7 @@ def out_of_sample_prediction_scatterplots(
 
     for i, (_, model_keys) in enumerate(grouped_keys_inner):
             
-        ## Get the data.
+        ## Get the predictions for all data.
 
         key_without_selection = next(
             k for k in model_keys if 'without_selection' in k)
@@ -559,13 +559,19 @@ def out_of_sample_prediction_scatterplots(
         def create_label(model_build):
             return f'{prediction_label} {label_for_model_build[model_build]}'
         
+        # The labeled samples will be plotted in a separate color.
+        _, y_true = workflow.load_features_and_target(**key_for)
+        labeled_samples = list(y_true.index)
+
         generate_scatterplot(
             axs[i], 
             y_pred_without, 
             y_pred_with,
             workflow, 
             label_for_metric,
-            color='black',
+            highlight_indices=labeled_samples,
+            main_label='Out of Sample',
+            highlight_label='In Sample',
             title=title, 
             xlabel=create_label('without_selection'), 
             ylabel=create_label('with_selection') if i == 0 else ''
@@ -996,11 +1002,16 @@ def generate_scatterplot(
         workflow, 
         label_for_metric,
         with_sample_size=True,
-        color=None, 
+        color='black', 
+        alpha=0.7,
+        highlight_color='#004488',  # blue
+        highlight_indices=None, 
+        main_label='Main',
+        highlight_label='Highlight', 
         title='', 
         xlabel='', 
         ylabel=''
-        ):
+    ):
     '''
     Generate a scatterplot comparing two sets of data.
 
@@ -1016,6 +1027,10 @@ def generate_scatterplot(
         The workflow object containing additional information.
     color : str
         The color for the scatterplot points.
+    highlight_color : str
+        The color for the highlighted scatterplot points.
+    highlight_indices : array-like
+        Indices for which to use the highlight color.
     title : str
         The title of the scatterplot.
     xlabel : str
@@ -1023,16 +1038,47 @@ def generate_scatterplot(
     ylabel : str
         The label for the y-axis.
     '''
+
     chem_intersection = y_true.index.intersection(y_pred.index)
     y_true = y_true.loc[chem_intersection]
     y_pred = y_pred.loc[chem_intersection]
 
-    ax.scatter(
-        y_true,
-        y_pred,
-        alpha=0.7,
-        color=color
-    )
+    if highlight_indices is not None:
+        # Divide the data into two sets and plot separately.
+        y_true_highlight = y_true.loc[highlight_indices]
+        y_pred_highlight = y_pred.loc[highlight_indices]
+        y_true_rest = y_true.drop(highlight_indices)
+        y_pred_rest = y_pred.drop(highlight_indices)
+        
+        ax.scatter(
+            y_true_rest, 
+            y_pred_rest, 
+            alpha=alpha, 
+            color=color,
+            label=main_label
+            )
+        ax.scatter(
+            y_true_highlight, 
+            y_pred_highlight, 
+            alpha=alpha, 
+            color=highlight_color,
+            label=highlight_label,
+            )
+        
+        ax.legend(
+            loc='lower right', 
+            fontsize='x-small', 
+            markerscale=0.8
+            )
+
+    else:
+
+        ax.scatter(
+            y_true, 
+            y_pred, 
+            alpha=alpha, 
+            color=color
+            )
 
     ## Set the performance scores as text.
 
@@ -1068,7 +1114,7 @@ def generate_scatterplot(
 #endregion
 
 #region: plot_one_one_line
-def plot_one_one_line(ax, xmin, xmax, color='red'):
+def plot_one_one_line(ax, xmin, xmax, color='#BB5566'):  # red
     '''
     Add one-one line to a subplot
 
