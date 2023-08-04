@@ -664,6 +664,8 @@ def important_feature_counts(
         # Figure layout is adjusted to have one column per model key
         fig, axs = plt.subplots(1, n_keys, figsize=(5*n_keys, 8), sharey=True)
 
+        sorted_features = None  # initialize
+
         for i, model_key in enumerate(model_keys):
             ## Prepare the data for plotting.
             features_for_final_model = workflow.get_important_features(model_key)
@@ -681,12 +683,13 @@ def important_feature_counts(
                     if feature in feature_counts:
                         feature_counts[feature] += 1
 
-            # Sort features based on their counts
-            sorted_features = sorted(
-                all_feature_names, 
-                key=lambda f: feature_counts[f], 
-                reverse=True
-            )
+            if sorted_features is None:
+                # Sort features based on their counts only for the left model.
+                sorted_features = sorted(
+                    all_feature_names, 
+                    key=lambda f: feature_counts[f], 
+                    reverse=True
+                )
 
             final_model_features = set(features_for_final_model)
             bar_positions = np.arange(len(all_feature_names))
@@ -781,7 +784,6 @@ def importances_replicates_boxplots(
         )
 #endregion
 
-# FIXME: Sort by median of -RMSE like in feature selection. 
 #region: _feature_importances_boxplots
 def _feature_importances_boxplots(
         df_wide, 
