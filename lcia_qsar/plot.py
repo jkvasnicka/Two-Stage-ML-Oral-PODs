@@ -815,11 +815,21 @@ def _feature_importances_boxplots(
 
         for i, (scoring, title) in enumerate(label_for_scoring.items()):
 
-            df_long = (
-                df_wide[model_key][scoring]
-                .melt()
-                .sort_values(by='value', ascending=False) 
+          # Compute median and sort by it
+            df_long = df_wide[model_key][scoring].melt()
+            medians = (
+                df_long.groupby('feature')['value']
+                .median()
+                .sort_values(ascending=False)
             )
+            sorted_features = medians.index.tolist()
+
+            # Sort DataFrame by median
+            df_long['feature'] = pd.Categorical(
+                df_long['feature'], 
+                categories=sorted_features, ordered=True
+                )
+            df_long.sort_values(by='feature', inplace=True)
         
             y, x = list(df_long.columns)
         
