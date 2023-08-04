@@ -639,6 +639,7 @@ def get_prediction(X, workflow, model_key, inverse_transform=False):
     return y_pred, X
 #endregion
 
+# FIXME: Double check label order, ensure consistency with boxplots.
 #region: important_feature_counts
 def important_feature_counts(
         workflow, 
@@ -780,6 +781,7 @@ def importances_replicates_boxplots(
         )
 #endregion
 
+# FIXME: Sort by median of -RMSE like in feature selection. 
 #region: _feature_importances_boxplots
 def _feature_importances_boxplots(
         df_wide, 
