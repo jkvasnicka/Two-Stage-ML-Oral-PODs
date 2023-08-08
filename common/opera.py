@@ -18,6 +18,20 @@ import re
 from common.input_output import json_to_dict
 from common.features import inverse_log10_transform
 
+#region: chemicals_to_exclude_from_qsar
+def chemicals_to_exclude_from_qsar(
+        chemical_id_file, chemical_structures_file):
+    '''Return a list of chemicals that did not pass the QSAR Standardization 
+    Workflow.
+    '''
+    raw_chemical_ids = set(pd.read_csv(chemical_id_file).squeeze())
+    qsar_ready_ids = set(
+        extract_dtxsid_from_structures_file(chemical_structures_file)
+    )
+
+    return list(raw_chemical_ids.difference(qsar_ready_ids))
+#endregion
+
 #region: process_all_batches
 def process_all_batches(
         main_dir, 
@@ -113,10 +127,9 @@ def parse_data_single_batch(
     pd.DataFrame
         A DataFrame with data from OPERA.
     '''
-    molecule_ids = extract_dtxsid_from_structures_file(
-        structures_file,
-        index_name
-        )
+    molecule_ids = extract_dtxsid_from_structures_file(structures_file)
+    molecule_ids = pd.Series(molecule_ids, name=index_name)
+
     # Remove duplicates, if any, and log the event
     if molecule_ids.duplicated().any():
         logging.warning(
@@ -139,7 +152,7 @@ def parse_data_single_batch(
 #endregion
 
 #region: extract_dtxsid_from_structures_file
-def extract_dtxsid_from_structures_file(structures_file, index_col):
+def extract_dtxsid_from_structures_file(structures_file):
     '''
     Extracts DTXSID values from a SMI file.
 
@@ -158,7 +171,7 @@ def extract_dtxsid_from_structures_file(structures_file, index_col):
     with open(structures_file, 'r') as f:
         # structure, dtxsid = line.split('\t')
         dtxsid = [line.split('\t')[1].strip() for line in f.readlines()]
-    return pd.Series(dtxsid, name=index_col)
+    return dtxsid
 #endregion
 
 #region: parse_data_with_applicability_domains

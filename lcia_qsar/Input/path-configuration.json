@@ -3,6 +3,8 @@
     
     "chemical_id_dev_file" : "Input/Raw/OPERA/Input/Development/chemical-identifiers.txt",
 
+    "chemical_structures_dev_file" :  "Input/Raw/OPERA/Input/Development/chemical-identifiers.smi",
+
     "chemical_id_app_file" : "Input/Raw/OPERA/Input/Application/chemical-identifiers.txt",
     
     "raw_comptox_features_file" : "Input/Raw/CompTox/CCD-OPERA-TEST-predictions.csv",
