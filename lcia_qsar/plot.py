@@ -20,12 +20,11 @@ _flierprops = dict(
     markeredgecolor='lightgray'
     )
 
-# TODO: Add in-sample/out-sample labels and colors to config.
-
 #region: pairwise_scatters_and_kde_subplots
 def pairwise_scatters_and_kde_subplots(
         features_file, 
         targets_file, 
+        config,
         figsize=(10, 10)
     ):
     '''
@@ -34,7 +33,6 @@ def pairwise_scatters_and_kde_subplots(
     Parameters
     ----------
     '''
-
     # TODO: Move to config?
     features_subset = [  
         'CATMoS_LD50_pred',
@@ -42,13 +40,13 @@ def pairwise_scatters_and_kde_subplots(
         'TopoPolSurfAir',
         'MolWeight'
     ]
-    color_for_category = {
-        False : 'black', 
-        True : '#004488'
-    }
     label_for_category = {
-        False : 'Out of Sample',
-        True : 'In Sample'
+        False : config.label_for_sample_type['out'],
+        True :  config.label_for_sample_type['in']
+    }
+    color_for_category = {
+        False : config.color_for_sample_type['out'], 
+        True : config.color_for_sample_type['in']
     }
 
     X = pd.read_csv(features_file, index_col=0)
@@ -734,8 +732,10 @@ def out_of_sample_prediction_scatterplots(
             workflow, 
             config.label_for_metric,
             highlight_indices=labeled_samples,
-            main_label='Out of Sample',
-            highlight_label='In Sample',
+            main_label=config.label_for_sample_type['out'],
+            highlight_label=config.label_for_sample_type['in'],
+            color=config.color_for_sample_type['out'], 
+            highlight_color=config.color_for_sample_type['in'],
             title=title, 
             xlabel=create_label('without_selection'), 
             ylabel=create_label('with_selection') if i == 0 else ''
