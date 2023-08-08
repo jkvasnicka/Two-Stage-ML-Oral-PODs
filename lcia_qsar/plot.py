@@ -21,7 +21,6 @@ _flierprops = dict(
     )
 
 # TODO: Add in-sample/out-sample labels and colors to config.
-# TODO: Pass config as argument.
 
 #region: pairwise_scatters_and_kde_subplots
 def pairwise_scatters_and_kde_subplots(
@@ -226,8 +225,7 @@ def proportions_incomplete_subplots(
         features_file, 
         AD_file, 
         targets_file, 
-        label_for_effect,
-        all_chemicals_label, 
+        config, 
         base_size_per_feature=(0.2, 6)
     ):
     '''
@@ -238,7 +236,7 @@ def proportions_incomplete_subplots(
 
     ## Plot the training set data.
     samples_for_effect = {
-        label_for_effect[effect] : y.dropna().index 
+        config.label_for_effect[effect] : y.dropna().index 
         for effect, y in ys.items()
         }
     proportions_incomplete_subplot(
@@ -252,7 +250,7 @@ def proportions_incomplete_subplots(
     proportions_incomplete_subplot(
         X, 
         AD_flags, 
-        {all_chemicals_label : X.index},
+        {config.all_chemicals_label : X.index},
         base_size_per_feature=base_size_per_feature
     )
 #endregion
@@ -436,14 +434,7 @@ def proportions_incomplete(X_subset, AD_flags_subset):
 #endregion
 
 #region: in_and_out_sample_comparisons
-def in_and_out_sample_comparisons(
-        workflow, 
-        label_for_metric, 
-        label_for_model_build,
-        label_for_effect,
-        prediction_label, 
-        ylim=(0., 1.)
-    ):
+def in_and_out_sample_comparisons(workflow, config, ylim=(0., 1.)):
     '''
     Generate in-sample performance comparisons and out-of-sample prediction 
     scatterplots.
@@ -452,14 +443,6 @@ def in_and_out_sample_comparisons(
     ----------
     workflow : object
         The Workflow object containing the data.
-    label_for_metric : dict
-        Dictionary mapping the metric names to their display names.
-    label_for_model_build : dict
-        Dictionary mapping the model build types to their display names.
-    label_for_effect : dict
-        Dictionary mapping the effect types to their display names.
-    prediction_label : str
-        Label to use for the predictions on the plots.
     ylim : tuple, optional
         Tuple specifying the y-axis limits. Default is (0., 1.).
     '''
@@ -483,10 +466,7 @@ def in_and_out_sample_comparisons(
             grouped_keys_inner, 
             model_key_names,
             grouping_key_outer,
-            label_for_metric, 
-            label_for_model_build,
-            label_for_effect,
-            prediction_label, 
+            config,
             ylim=ylim
         )
 
@@ -495,10 +475,7 @@ def in_and_out_sample_comparisons(
             grouped_keys_inner,
             grouping_key_outer, 
             model_key_names, 
-            label_for_metric,
-            label_for_model_build,
-            label_for_effect, 
-            prediction_label
+            config
     )
 #endregion
 
@@ -508,10 +485,7 @@ def in_sample_performance_comparisons(
         grouped_keys_inner, 
         model_key_names,
         grouping_key_outer,
-        label_for_metric, 
-        label_for_model_build,
-        label_for_effect,
-        prediction_label, 
+        config,
         ylim=(0., 1.)
     ):
     '''
@@ -530,10 +504,7 @@ def in_sample_performance_comparisons(
         workflow, 
         grouped_keys_inner, 
         model_key_names,
-        label_for_metric,
-        label_for_model_build,
-        label_for_effect,
-        prediction_label
+        config
         )
     
     _in_sample_performance_boxplots(
@@ -541,8 +512,7 @@ def in_sample_performance_comparisons(
         gs2, 
         workflow, 
         grouped_keys_inner, 
-        label_for_metric, 
-        label_for_model_build,
+        config,
         ylim=ylim
         )
 
@@ -566,10 +536,7 @@ def _in_sample_performance_scatterplots(
         workflow, 
         grouped_keys_inner, 
         model_key_names, 
-        label_for_metric,
-        label_for_model_build,
-        label_for_effect, 
-        prediction_label
+        config
     ):
     '''
     Generate scatterplots of observed vs predicted for the in-sample 
@@ -596,11 +563,11 @@ def _in_sample_performance_scatterplots(
             ## Set labels depending on the Axes.
             xlabel, ylabel = '', ''
             if i == len(grouped_keys_inner) - 1:
-                model_build = label_for_model_build[key_for['model_build']]
-                xlabel = f'Observed {prediction_label}\n{model_build}'
+                model_build = config.label_for_model_build[key_for['model_build']]
+                xlabel = f'Observed {config.prediction_label}\n{model_build}'
             if j == 0:
-                effect = label_for_effect[key_for['target_effect']]
-                ylabel = f'{effect}\nPredicted {prediction_label}'
+                effect = config.label_for_effect[key_for['target_effect']]
+                ylabel = f'{effect}\nPredicted {config.prediction_label}'
                 if i == 0:
                     ax.set_title(title, loc='left', size='small', style='italic')
             ax.set_xlabel(xlabel, size='small')
@@ -612,7 +579,7 @@ def _in_sample_performance_scatterplots(
                 y_true, 
                 y_pred,
                 workflow, 
-                label_for_metric,
+                config.label_for_metric,
                 color='black'
             )
 
@@ -633,8 +600,7 @@ def _in_sample_performance_boxplots(
         gs2, 
         workflow, 
         grouped_keys_inner, 
-        label_for_metric, 
-        label_for_model_build,
+        config,
         ylim=(0., 1.)
         ):
     '''
@@ -651,14 +617,14 @@ def _in_sample_performance_boxplots(
     where_subset_metrics = (
         performances_wide.columns
         .get_level_values('metric')
-        .isin(label_for_metric)
+        .isin(config.label_for_metric)
     )
     performances_wide = performances_wide.loc[:, where_subset_metrics]
     # Rename the columns for visualization.
     label_for_model_build = {
-        k : v.split(' ')[0] for k, v in label_for_model_build.items()}
+        k : v.split(' ')[0] for k, v in config.label_for_model_build.items()}
     label_for_column = {
-        **label_for_metric, 
+        **config.label_for_metric, 
         **label_for_model_build
     }
     performances_wide = performances_wide.rename(label_for_column, axis=1)
@@ -718,10 +684,7 @@ def out_of_sample_prediction_scatterplots(
         grouped_keys_inner,
         grouping_key_outer, 
         model_key_names, 
-        label_for_metric,
-        label_for_model_build,
-        label_for_effect, 
-        prediction_label
+        config
     ):
     '''
     Generate and plot scatterplots for out-of-sample predictions.
@@ -755,10 +718,10 @@ def out_of_sample_prediction_scatterplots(
             effects.append(key_for['target_effect'])
         if not all(effect == effects[0] for effect in effects):
             raise ValueError(f'Inconsistent target effects: {effects}')
-        title = label_for_effect[effects[0]]
+        title = config.label_for_effect[effects[0]]
         
         def create_label(model_build):
-            return f'{prediction_label} {label_for_model_build[model_build]}'
+            return f'{config.prediction_label} {config.label_for_model_build[model_build]}'
         
         # The labeled samples will be plotted in a separate color.
         _, y_true = workflow.load_features_and_target(**key_for)
@@ -769,7 +732,7 @@ def out_of_sample_prediction_scatterplots(
             y_pred_without, 
             y_pred_with,
             workflow, 
-            label_for_metric,
+            config.label_for_metric,
             highlight_indices=labeled_samples,
             main_label='Out of Sample',
             highlight_label='In Sample',
@@ -843,8 +806,7 @@ def get_prediction(X, workflow, model_key, inverse_transform=False):
 #region: important_feature_counts
 def important_feature_counts(
         workflow, 
-        label_for_effect, 
-        feature_names_label
+        config
         ):
     '''
     '''
@@ -906,9 +868,9 @@ def important_feature_counts(
             axs[i].tick_params(axis='y', pad=0)
             axs[i].invert_yaxis()
             axs[i].set_xlabel('Count', fontsize=12)
-            axs[i].set_ylabel(feature_names_label, fontsize=12)
+            axs[i].set_ylabel(config.feature_names_label, fontsize=12)
             axs[i].set_title(
-                label_for_effect[key_for['target_effect']], fontsize=12)
+                config.label_for_effect[key_for['target_effect']], fontsize=12)
 
             if i != 0:  # Only set ylabel for first subplot
                 axs[i].set_ylabel('')
@@ -939,8 +901,7 @@ def important_feature_counts(
 #region: importances_boxplots
 def importances_boxplots(
         workflow, 
-        label_for_scoring,
-        feature_names_label, 
+        config,
         xlabel='Δ Score',
         figsize=(8, 10)
         ):
@@ -953,9 +914,9 @@ def importances_boxplots(
         importances_wide, 
         model_keys, 
         importances_boxplots,
-        label_for_scoring,
+        config.label_for_scoring,
         xlabel=xlabel,
-        ylabel=feature_names_label,
+        ylabel=config.feature_names_label,
         figsize=figsize
         )
 #endregion
@@ -963,8 +924,7 @@ def importances_boxplots(
 #region: importances_replicates_boxplots
 def importances_replicates_boxplots(
         workflow, 
-        label_for_scoring,
-        feature_names_label,
+        config,
         xlabel='Δ Score',
         figsize=(8, 10)
         ):
@@ -977,9 +937,9 @@ def importances_replicates_boxplots(
         importances_wide, 
         model_keys, 
         importances_replicates_boxplots,
-        label_for_scoring,
+        config.label_for_scoring,
         xlabel=xlabel,
-        ylabel=feature_names_label,
+        ylabel=config.feature_names_label,
         figsize=figsize
         )
 #endregion
@@ -1100,10 +1060,7 @@ def benchmarking_scatterplots(
         workflow,
         y_regulatory_df,
         y_toxcast,
-        label_for_effect,
-        color_for_effect,
-        label_for_metric,
-        prediction_label,
+        config,
         figsize=(6, 9)
         ):
     '''
@@ -1119,18 +1076,8 @@ def benchmarking_scatterplots(
         The DataFrame containing the comparison data.
     y_toxcast : pd.DataFrame
         The ToxCast data for evaluation.
-    xlabel : str
-        The label for the x-axis.
-    ylabel : str
-        The label for the y-axis.
-    color_for_effect : dict
-        A dictionary mapping target effect to color.
-    label_for_effect : dict
-        A dictionary mapping target effect to label.
     figsize : tuple, optional
         Figure size. If None, a default size is used.
-    write_path : str, optional
-        If provided, save the figure to this path.
 
     Returns
     -------
@@ -1168,23 +1115,23 @@ def benchmarking_scatterplots(
 
                 ax = ax_objs[j, i]
 
-                color = color_for_effect[key_for['target_effect']]
+                color = config.color_for_effect[key_for['target_effect']]
 
                 ## Set labels depending on the Axes.
                 title, xlabel, ylabel = '', '', ''
                 if j == 0:  # first row
-                    title = label_for_effect[key_for['target_effect']]
+                    title = config.label_for_effect[key_for['target_effect']]
                 if j == len(y_evaluation_dict)-1:  # last row
-                    xlabel = f'Regulatory {prediction_label}'
+                    xlabel = f'Regulatory {config.prediction_label}'
                 if i == 0:  # first column
-                    ylabel = f'{label} {prediction_label}'
+                    ylabel = f'{label} {config.prediction_label}'
                 
                 generate_scatterplot(
                     ax, 
                     y_comparison, 
                     y_evaluation, 
                     workflow, 
-                    label_for_metric,
+                    config.label_for_metric,
                     color=color, 
                     title=title, 
                     xlabel=xlabel, 
@@ -1359,8 +1306,7 @@ def plot_one_one_line(ax, xmin, xmax, color='#BB5566'):  # red
 def margins_of_exposure_cumulative(
         workflow, 
         exposure_df, 
-        label_for_effect, 
-        label_for_exposure_column, 
+        config,
         right_truncation=None
         ):
     '''
@@ -1372,10 +1318,6 @@ def margins_of_exposure_cumulative(
         An object representing the workflow.
     exposure_df : pd.DataFrame
         DataFrame with exposure estimates.
-    label_for_effect : dict
-        Dictionary mapping target effects to their labels.
-    label_for_exposure_column : dict
-        Dictionary mapping percentile columns to their labels.
     right_truncation : float, optional
         If provided, sets the right truncation limit for x-axis.
 
@@ -1442,7 +1384,7 @@ def margins_of_exposure_cumulative(
                     lb, 
                     ub, 
                     colors[j], 
-                    label=label_for_exposure_column[percentile]
+                    label=config.label_for_exposure_column[percentile]
                     )
 
             ## Update the limits.
@@ -1454,7 +1396,7 @@ def margins_of_exposure_cumulative(
             ## Set labels, etc. 
             key_for = dict(zip(model_key_names, model_key))
             effect = key_for['target_effect']
-            axs[i].set_title(label_for_effect[effect])
+            axs[i].set_title(config.label_for_effect[effect])
             axs[i].set_xlabel("$log_{10}MOE$")
             axs[i].set_yscale('log')
             axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
@@ -1762,11 +1704,7 @@ def get_data_limits(ax, axis_type='x', data_type='line'):
 #endregion
 
 #region: predictions_by_missing_feature
-def predictions_by_missing_feature(
-    workflow, 
-    label_for_effect, 
-    prediction_label
-    ):
+def predictions_by_missing_feature(workflow, config):
     '''
     Generate and plot in-sample and out-of-sample predictions.
 
@@ -1774,8 +1712,6 @@ def predictions_by_missing_feature(
     ----------
     workflow : object
         The workflow object containing the trained model.
-    label_for_effect : dict
-        A dictionary mapping the effect to its label.
 
     Returns
     -------
@@ -1815,7 +1751,7 @@ def predictions_by_missing_feature(
                     X_out, 
                     all_samples_color, 
                     remaining_color,
-                    prediction_label
+                    config.prediction_label
                     )
                 # Use the sames sort order of boxes, based on the left Axes.
                 sort_order = list(dfs_out.keys())
@@ -1825,14 +1761,14 @@ def predictions_by_missing_feature(
                     X_in, 
                     all_samples_color, 
                     remaining_color, 
-                    prediction_label,
+                    config.prediction_label,
                     sort_order
                     )
 
                 _set_ytick_labels(axs[i, 0], dfs_out, True)
                 _set_ytick_labels(axs[i, 1], dfs_in, False)
                 
-                effect = label_for_effect[key_for['target_effect']]
+                effect = config.label_for_effect[key_for['target_effect']]
                 axs[i, 0].set_title(
                     f'{effect}\nAll Chemicals', size='medium', loc='left')
                 axs[i, 1].set_title(
