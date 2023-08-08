@@ -20,6 +20,207 @@ _flierprops = dict(
     markeredgecolor='lightgray'
     )
 
+# TODO: Add in-sample/out-sample labels and colors to config.
+# TODO: Pass config as argument.
+
+#region: pairwise_scatters_and_kde_subplots
+def pairwise_scatters_and_kde_subplots(
+        features_file, 
+        targets_file, 
+        figsize=(10, 10)
+    ):
+    '''
+    Create a grid of scatter and KDE plots for combinations of features.
+
+    Parameters
+    ----------
+    '''
+
+    # TODO: Move to config?
+    features_subset = [  
+        'CATMoS_LD50_pred',
+        'P_pred',
+        'TopoPolSurfAir',
+        'MolWeight'
+    ]
+    color_for_category = {
+        False : 'black', 
+        True : '#004488'
+    }
+    label_for_category = {
+        False : 'Out of Sample',
+        True : 'In Sample'
+    }
+
+    X = pd.read_csv(features_file, index_col=0)
+    X = X[features_subset]
+
+    # Log10-transform while preserving column order
+    old_name = 'P_pred'
+    new_name = '$log_{10}$' + old_name
+    X = X.rename({old_name : new_name}, axis=1)
+    X[new_name] = np.log10(X[new_name])
+
+    y = pd.read_csv(targets_file, index_col=0).squeeze()
+    chemical_union = list(y.index)  # across all effect types
+    categories = X.index.isin(chemical_union)
+    
+    ## Plot the data
+
+    fig, axs = plot_pairwise_scatters_and_kde(
+        X, 
+        categories, 
+        color_for_category, 
+        figsize=figsize
+        )
+
+    handles = [
+        plt.Line2D([0], [0], marker='o', color=color, linestyle='') 
+        for color in color_for_category.values()
+    ]
+    labels = [label_for_category[cat] for cat in color_for_category]
+    _ = fig.legend(
+        handles, 
+        labels, 
+        fontsize='small', 
+        ncol=len(labels),
+        bbox_to_anchor=(1., 0.)
+    )
+
+    save_figure(
+        fig, 
+        pairwise_scatters_and_kde_subplots, 
+        'all-opera-features-and-target-union'
+        )
+#endregion
+
+#region: plot_pairwise_scatters_and_kde
+def plot_pairwise_scatters_and_kde(
+        X, 
+        categories, 
+        color_for_category, 
+        figsize=None
+        ):
+    '''
+    Create a grid of scatter and KDE plots.
+
+    Parameters
+    ----------
+    X : pandas.DataFrame
+        Data for the features.
+    categories : pandas.Series
+        Categorical variable.
+    color_for_category : dict
+        Mapping of category to color.
+    '''
+    fig, axs = plt.subplots(
+        len(X.columns), 
+        len(X.columns), 
+        figsize=figsize
+    )
+    for row, feature_row in enumerate(X.columns):
+        for col, feature_col in enumerate(X.columns):
+            ax = axs[row, col]
+            if row == col:
+                plot_kde(
+                    ax, 
+                    X, 
+                    categories, 
+                    feature_row, 
+                    color_for_category
+                    )
+            elif row > col:
+                plot_scatter(
+                    ax, 
+                    X, 
+                    categories, 
+                    feature_col, 
+                    feature_row, 
+                    color_for_category
+                    )
+            else:
+                ax.set_visible(False)
+                
+            # Set x-label and y-label
+            if row == len(X.columns) - 1:
+                ax.set_xlabel(feature_col)
+            if col == 0:
+                ax.set_ylabel(feature_row)
+                
+    fig.tight_layout()
+    fig.subplots_adjust(bottom=0.07)
+
+    return fig, axs
+#endregion
+
+#region: plot_kde
+def plot_kde(
+        ax, 
+        X, 
+        categories, 
+        feature, 
+        color_for_category
+        ):
+    '''
+    Plot KDE on diagonal.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes
+        Axis to plot on.
+    X : pandas.DataFrame
+        Data for the features.
+    categories : pandas.Series
+        Categorical variable.
+    feature : str
+        Feature name.
+    color_for_category : dict
+        Mapping of category to color.
+    '''
+    for cat in list(color_for_category):
+        subset = X[categories == cat]
+        sns.kdeplot(subset[feature], ax=ax, color=color_for_category[cat])
+    ax.set_xlabel('')  
+    ax.set_ylabel('')
+#endregion
+
+#region: plot_scatter
+def plot_scatter(
+        ax, 
+        X, 
+        categories, 
+        feature_x, 
+        feature_y, 
+        color_for_category
+        ):
+    '''
+    Plot scatter plot in the lower triangle.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes
+        Axis to plot on.
+    X : pandas.DataFrame
+        Data for the features.
+    categories : pandas.Series
+        Categorical variable.
+    feature_x : str
+        Feature name for the x-axis.
+    feature_y : str
+        Feature name for the y-axis.
+    color_for_category : dict
+        Mapping of category to color.
+    '''
+    for cat in list(color_for_category):
+        subset = X[categories == cat]
+        ax.scatter(
+            subset[feature_x], 
+            subset[feature_y], 
+            c=color_for_category[cat], 
+            label=cat
+            )
+#endregion
+
 #region: proportions_incomplete_subplots
 def proportions_incomplete_subplots(
         features_file, 
@@ -639,7 +840,6 @@ def get_prediction(X, workflow, model_key, inverse_transform=False):
     return y_pred, X
 #endregion
 
-# FIXME: Double check label order, ensure consistency with boxplots.
 #region: important_feature_counts
 def important_feature_counts(
         workflow, 
