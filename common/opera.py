@@ -13,9 +13,24 @@ import pandas as pd
 import numpy as np
 import os
 import logging
+import re
 
 from common.input_output import json_to_dict
 from common.features import inverse_log10_transform
+
+#region: chemicals_to_exclude_from_qsar
+def chemicals_to_exclude_from_qsar(
+        chemical_id_file, chemical_structures_file):
+    '''Return a list of chemicals that did not pass the QSAR Standardization 
+    Workflow.
+    '''
+    raw_chemical_ids = set(pd.read_csv(chemical_id_file).squeeze())
+    qsar_ready_ids = set(
+        extract_dtxsid_from_structures_file(chemical_structures_file)
+    )
+
+    return list(raw_chemical_ids.difference(qsar_ready_ids))
+#endregion
 
 #region: process_all_batches
 def process_all_batches(
@@ -112,10 +127,9 @@ def parse_data_single_batch(
     pd.DataFrame
         A DataFrame with data from OPERA.
     '''
-    molecule_ids = extract_dtxsid_from_structures_file(
-        structures_file,
-        index_name
-        )
+    molecule_ids = extract_dtxsid_from_structures_file(structures_file)
+    molecule_ids = pd.Series(molecule_ids, name=index_name)
+
     # Remove duplicates, if any, and log the event
     if molecule_ids.duplicated().any():
         logging.warning(
@@ -138,7 +152,7 @@ def parse_data_single_batch(
 #endregion
 
 #region: extract_dtxsid_from_structures_file
-def extract_dtxsid_from_structures_file(structures_file, index_col):
+def extract_dtxsid_from_structures_file(structures_file):
     '''
     Extracts DTXSID values from a SMI file.
 
@@ -157,21 +171,31 @@ def extract_dtxsid_from_structures_file(structures_file, index_col):
     with open(structures_file, 'r') as f:
         # structure, dtxsid = line.split('\t')
         dtxsid = [line.split('\t')[1].strip() for line in f.readlines()]
-    return pd.Series(dtxsid, name=index_col)
+    return dtxsid
 #endregion
 
 #region: parse_data_with_applicability_domains
 def parse_data_with_applicability_domains(
-        data_dir, columns_mapper_path, data_file_namer, index_name=None, 
-        discrete_columns=None, discrete_suffix=None, log10_pat='Log', 
-        molecule_ids=None, data_write_path=None, flags_write_path=None):
+        data_dir, 
+        columns_mapper_path, 
+        data_file_namer, 
+        index_name=None, 
+        discrete_columns=None, 
+        discrete_suffix=None, 
+        log10_pat='Log', 
+        molecule_ids=None, 
+        data_write_path=None, 
+        flags_write_path=None
+        ):
     '''
     '''
     AD_flags = applicability_domain_flags(
         data_dir, 
         columns_mapper_path, 
         data_file_namer, 
-        index_name=index_name, 
+        index_name=index_name,
+        discrete_columns=discrete_columns, 
+        discrete_suffix=discrete_suffix,  
         log10_pat=log10_pat, 
         molecule_ids=molecule_ids, 
         write_path=flags_write_path
@@ -195,9 +219,17 @@ def parse_data_with_applicability_domains(
 
 #region: parse_data_from_csv_files
 def parse_data_from_csv_files(
-        data_dir, columns_mapper_path, data_file_namer, index_name=None, 
-        discrete_columns=None, discrete_suffix=None, log10_pat='Log', 
-        flags=None, molecule_ids=None, write_path=None):
+        data_dir, 
+        columns_mapper_path, 
+        data_file_namer, 
+        index_name=None, 
+        discrete_columns=None, 
+        discrete_suffix=None, 
+        log10_pat='Log', 
+        flags=None, 
+        molecule_ids=None, 
+        write_path=None
+        ):
     '''Load and parse the outputs as separate CSV file from OPERA 2.9.
 
     Parameters
@@ -248,19 +280,21 @@ def parse_data_from_csv_files(
         data_for_model.index.name = index_name
     if log10_pat is not None:
         data_for_model = inverse_log10_transform(data_for_model, log10_pat)
+    if discrete_columns is not None:
+        data_for_model = rename_discrete_columns(
+            data_for_model, discrete_columns, discrete_suffix)
     if flags is not None:
         data_for_model = set_unreliable_values(data_for_model, flags)
-    if discrete_columns is not None:
-        data_for_model = tag_discrete(
-            data_for_model, discrete_columns, discrete_suffix)
     if write_path is not None:
         data_for_model.to_csv(write_path)
 
     return data_for_model
 #endregion
 
-#region: tag_discrete
-def tag_discrete(data_for_model, discrete_columns, suffix):
+# TODO: Add a check to ensure correct spelling.
+#region: rename_discrete_columns
+def rename_discrete_columns(
+        data_for_model, discrete_columns, suffix):
     '''Tag discrete columns by adding a suffix.
 
     discrete_columns must be contained in data_for_model.columns.
@@ -299,8 +333,16 @@ def set_unreliable_values(data, AD_flags):
 
 #region: applicability_domain_flags
 def applicability_domain_flags(
-        data_dir, columns_mapper_path, data_file_namer, index_name=None, 
-        log10_pat=None, molecule_ids=None, write_path=None):
+        data_dir, 
+        columns_mapper_path, 
+        data_file_namer, 
+        index_name=None, 
+        discrete_columns=None, 
+        discrete_suffix=None, 
+        log10_pat=None, 
+        molecule_ids=None, 
+        write_path=None
+        ):
     '''Flag any features outside the respective model applicability domains.
 
     Returns a DataFrame corresponding to common.opera.data_from_csv_files().
@@ -351,6 +393,9 @@ def applicability_domain_flags(
         AD_flags.index.name = index_name
     if log10_pat is not None:
         AD_flags.columns = AD_flags.columns.str.replace(log10_pat, '')
+    if discrete_columns is not None:
+        AD_flags = rename_discrete_columns(
+            AD_flags, discrete_columns, discrete_suffix)
     if write_path is not None:
         AD_flags.to_csv(write_path)
 
@@ -423,4 +468,63 @@ def split_applicability_domain_columns(global_local_ADs):
     local_AD_indexes = global_local_ADs[local_AD_column].squeeze()
 
     return global_ADs, local_AD_indexes
+#endregion
+
+#region: get_failed_directories
+def get_failed_directories(main_dir, log_file_name):
+    '''
+    Get a list of directories with failed operations from the main log file.
+
+    Parameters
+    ----------
+    main_dir : str
+        The main directory containing the main log file.
+    log_file_name : str
+        The name of the main log file.
+
+    Returns
+    -------
+    list
+        List of directories with failed operations.
+    '''
+    failed_directories = []
+    main_log_file_path = os.path.join(main_dir, log_file_name)
+
+    try:
+        with open(main_log_file_path, 'r') as file:
+            for line in file:
+                if "Skipping directory" in line:
+                    dir_name = re.search(
+                        'Skipping directory (.*?) due to error', line).group(1)
+                    failed_directories.append(dir_name)
+    except Exception as e:
+        print(f"Could not open main log file due to error: {str(e)}")
+
+    return failed_directories
+#endregion
+
+#region: print_error_log_files
+def print_error_log_files(
+        main_dir, failed_directories, log_file_name="errorLogBatchRun.txt"):
+    '''
+    Print the contents of the log files located at the given paths.
+
+    Parameters
+    ----------
+    main_dir : str
+        The main directory.
+    failed_directories : list
+        List of directories with failed operations.
+    log_file_name : str, optional
+        The name of the log file. Defaults to "errorLogBatchRun.txt".
+    '''
+    for dir_name in failed_directories:
+        path = os.path.join(main_dir, dir_name, log_file_name)
+        try:
+            with open(path, 'r') as file:
+                print(f"Contents of log file at {path}:")
+                print(file.read())
+                print("\n----------\n")
+        except Exception as e:
+            print(f"Could not open and print the log file at {path} due to error: {str(e)}")
 #endregion

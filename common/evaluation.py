@@ -1,30 +1,63 @@
 '''Provide support for evaluating machine-learning estimator predictions.
 '''
 
-from sklearn import metrics
-import numpy as np 
+#region: MetricWrapper
+class MetricWrapper:
+    '''
+    A class for wrapping metrics.
 
-from common import custom_metrics
+    This class is designed to take a metric function as input and then 
+    store any additional kwargs that this function may require. This is 
+    particularly useful for metrics that require additional parameters 
+    beyond the true and predicted values.
 
-# Define names of all regression metric functions in sklearn.metrics.
-regression_metrics = [ 
-    'explained_variance_score', 
-    'max_error', 
-    'mean_absolute_error', 
-    'mean_squared_error', 
-    'mean_squared_log_error', 
-    'median_absolute_error', 
-    'mean_absolute_percentage_error', 
-    'mean_pinball_loss', 
-    'r2_score', 
-    'mean_tweedie_deviance', 
-    'mean_poisson_deviance', 
-    'mean_gamma_deviance', 
-    'd2_tweedie_score'
-]
+    Parameters
+    ----------
+    metric : callable
+        The metric function to be wrapped. This should be a function that 
+        takes as input two arrays: y_true and y_pred, which are the true 
+        and predicted values respectively, and returns a float.
+    **kwargs :
+        Additional keyword arguments that will be passed to the metric 
+        function when it is called.
 
-#region: scores
-def scores(y_true, y_pred, function_for_metric):
+    Attributes
+    ----------
+    metric : callable
+        The metric function to be used.
+    kwargs : dict
+        The keyword arguments for the metric function.
+    '''
+
+    def __init__(self, metric, **kwargs):
+        self.metric = metric
+        self.kwargs = kwargs
+
+    def __call__(self, y_true, y_pred):
+        '''
+        Call the wrapped metric function with the stored kwargs.
+
+        This method makes an instance of the MetricWrapper callable, 
+        so it can be used just like the original metric function, 
+        but with the stored kwargs automatically included.
+
+        Parameters
+        ----------
+        y_true : array-like
+            The true values.
+        y_pred : array-like
+            The predicted values.
+
+        Returns
+        -------
+        float
+            The result of the metric function.
+        '''
+        return self.metric(y_true, y_pred, **self.kwargs)
+#endregion
+
+#region: score
+def score(y_true, y_pred, function_for_metric):
     '''Score the predicted values for each metric.
 
     Parameters
@@ -34,8 +67,8 @@ def scores(y_true, y_pred, function_for_metric):
     y_pred : array-like of shape (n_samples,)
         Estimated target values.
     function_for_metric : dict[k] --> function
-       Scoring functions for model evaluation. These functions could be from 
-       sklearn.metrics or custom.
+    Scoring functions for model evaluation. These functions could be from 
+    sklearn.metrics or custom.
 
     Returns
     ----------
@@ -44,55 +77,4 @@ def scores(y_true, y_pred, function_for_metric):
     '''
     return {metric : score(y_true, y_pred) 
             for metric, score in function_for_metric.items()}
-#endregion
-
-#region: try_scores
-def try_scores(y_true, y_pred, function_for_metric):
-    '''Score the predicted values for each metric.
-
-    This function is like scores() but returns NaN where an error would 
-    otherwise be raised. Can be used to determine which metrics to keep.
-    '''
-    # Initialize the container.
-    score_for_metric = {}
-    for metric, score in function_for_metric.items():
-        try:
-            score_for_metric[metric] = score(y_true, y_pred)
-        except:
-            # Score cannot be computed on these data.
-            score_for_metric[metric] = np.nan
-    return score_for_metric
-#endregion
-
-#region: get_scoring_functions
-def get_scoring_functions(metrics_keys):
-    '''Return a dict containing functions for model evaluation/scoring.
-
-    Parameters
-    ----------
-    metrics_keys : list of str
-        Names of metric functions. Must correspond to functions in 
-        sklearn.metrics or custom.
-
-    See Also
-    --------
-    '''
-    # Initialize the container.
-    function_for_metric = {}
-    for metric in metrics_keys:
-        try:
-            function_for_metric[metric] = sklearn_metrics_get(metric)
-        except AttributeError:
-            function_for_metric[metric] = getattr(custom_metrics, metric)
-    return function_for_metric
-#endregion
-
-# FIXME: This function may not be necessary.
-#region: sklearn_metrics_get
-def sklearn_metrics_get(attr_name):
-    '''Get the specified attribute from sklearn.metrics.
-
-    The attribute name could correspond a scoring function.
-    '''
-    return getattr(metrics, attr_name)
 #endregion
