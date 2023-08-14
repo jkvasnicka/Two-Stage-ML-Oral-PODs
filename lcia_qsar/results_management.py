@@ -15,6 +15,7 @@ import os
 import pandas as pd
 import json
 import joblib
+import itertools
 
 #region: ResultsManager
 class ResultsManager:
@@ -218,6 +219,36 @@ class ResultsManager:
         return os.path.join(directory, f'{result_type}.{extension}')
     #endregion
 
+    #region: _convert_model_key
+    def _convert_model_key(self, model_key=None, directory_name=None):
+        '''
+        Convert between model key and directory name representations.
+
+        Parameters
+        ----------
+        model_key : tuple of str, optional
+            Model key to be converted into directory name.
+        directory_name : str, optional
+            Directory name to be converted into model key.
+
+        Returns
+        -------
+        str or tuple of str
+            Converted directory name (if model_key is provided) or model key 
+            (if directory_name is provided).
+
+        Notes
+        -----
+        Either model_key or directory_name must be provided, but not both.
+        '''
+        if model_key:
+            # Build directory name
+            return '-'.join(model_key)
+        elif directory_name:
+            # Collapse directory name into model key
+            return tuple(directory_name.split('-'))
+    #endregion
+
     #region: _ensure_directory
     def _ensure_directory(self, path):
         '''
@@ -379,36 +410,6 @@ class ResultsManager:
         return dict(zip(self.model_key_names, model_key))
     #endregion
 
-    #region: _convert_model_key
-    def _convert_model_key(self, model_key=None, directory_name=None):
-        '''
-        Convert between model key and directory name representations.
-
-        Parameters
-        ----------
-        model_key : tuple of str, optional
-            Model key to be converted into directory name.
-        directory_name : str, optional
-            Directory name to be converted into model key.
-
-        Returns
-        -------
-        str or tuple of str
-            Converted directory name (if model_key is provided) or model key 
-            (if directory_name is provided).
-
-        Notes
-        -----
-        Either model_key or directory_name must be provided, but not both.
-        '''
-        if model_key:
-            # Build directory name
-            return '-'.join(model_key)
-        elif directory_name:
-            # Collapse directory name into model key
-            return tuple(directory_name.split('-'))
-    #endregion
-
     #region: write_all_metadata
     def write_all_metadata(self, metadata):
         '''
@@ -461,4 +462,74 @@ class ResultsManager:
             Path to the metadata file.
         '''
         return os.path.join(self.output_dir, 'metadata.json')
+    #endregion
+
+    #region: group_model_keys
+    def group_model_keys(
+            self,
+            exclusion_key_names , 
+            string_to_exclude=None,
+            model_keys=None,
+        ):
+        '''
+        Group model keys by grouping keys. A grouping key is formed by taking a model 
+        key and excluding one or more of its elements.
+
+        Parameters
+        ----------
+        exclusion_key_names : str or list of str
+            Names of keys (which should be in the model key names stored in the class) to 
+            exclude when forming the grouping key.
+        string_to_exclude : str, optional
+            String to exclude model keys containing it. If a model key contains this 
+            string, it will be excluded from the final output. If None, no model keys 
+            are excluded based on this criterion.
+        model_keys : list of tuples, optional
+            Model keys to be grouped. Each tuple represents a model key. If None, 
+            all model keys available in the ResultsManager object will be used.
+
+        Returns
+        -------
+        grouped_model_keys : list of 2-tuple
+            Contains each grouping key and its corresponding group of model keys.
+
+        Note
+        ----
+        This method assumes that the model keys and key names are stored within the
+        ResultsManager object.
+        '''
+        if model_keys is None:
+            # Use all model keys.
+            model_keys = self.list_model_keys()
+
+        if isinstance(exclusion_key_names , str):
+            exclusion_key_names  = [exclusion_key_names]
+
+        if string_to_exclude:
+            # Exclude model keys that contain string_to_exclude
+            model_keys = [k for k in model_keys if string_to_exclude not in k]
+
+        # Get the indices of the keys to exclude in the key names
+        exclusion_key_indices = [
+            self.read_model_key_names().index(key) 
+            for key in exclusion_key_names
+            ]
+
+        def create_grouping_key(model_key):
+            return tuple(item for idx, item in enumerate(model_key) 
+                        if idx not in exclusion_key_indices)
+
+        # Sort model keys by grouping key
+        # This is necessary because itertools.groupby() groups only consecutive 
+        # elements with the same key
+        sorted_model_keys = sorted(model_keys, key=create_grouping_key)
+
+        # Group the sorted keys by grouping key
+        grouped_model_keys = [
+            (grouping_key, list(group))
+            for grouping_key, group in itertools.groupby(
+            sorted_model_keys, key=create_grouping_key)
+        ]
+
+        return grouped_model_keys
     #endregion
