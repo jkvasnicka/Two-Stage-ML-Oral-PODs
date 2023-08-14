@@ -28,6 +28,15 @@
     "n_features": 10
   },
 
+  "model_key_names" : [
+    "target_effect", 
+    "features_source", 
+    "ld50_type", 
+    "data_condition",
+    "model_build",
+    "estimator"
+  ],   
+
   "instruction_keys": [
     [
       "general",
@@ -57,7 +66,7 @@
       "missing",
       "with_selection"
     ]
-  ],
+  ],      
 
   "preprocessors_for_condition": {
     "missing": [

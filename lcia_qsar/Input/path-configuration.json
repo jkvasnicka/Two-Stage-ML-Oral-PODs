@@ -41,6 +41,8 @@
 
     "seem3_exposure_file" : "Input/Raw/SEEM3/Exposure_download_v1_Data.csv",
 
-    "opera_application_batches_dir" : "Input/Raw/OPERA/Input/Application/OPERA2.9_batches"
+    "opera_application_batches_dir" : "Input/Raw/OPERA/Input/Application/OPERA2.9_batches",
+
+    "results_dir" : "Results"
     
 }

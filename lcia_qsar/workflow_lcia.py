@@ -18,6 +18,7 @@ from history import LciaQsarHistory
 from common.features import with_common_index 
 from common.transform import select_columns_without_pattern
 from common.evaluation import MetricWrapper
+from results_management import ResultsManager
 
 #region: LciaQsarModelingWorkflow.__init__
 class LciaQsarModelingWorkflow(
@@ -34,7 +35,7 @@ class LciaQsarModelingWorkflow(
         
         LciaQsarHistory.__init__(self)
         
-        # TODO: Add the estimator level?
+        # TODO: Delete
         self.instruction_names = [
             'target_effect', 
             'features_source', 
@@ -52,20 +53,27 @@ class LciaQsarModelingWorkflow(
 
         Save the results to disk.
         '''
-        for keys in self.instruction_keys:
-            key_for = dict(zip(self.instruction_names, keys))
+        results_manager = ResultsManager(output_dir=self.results_dir)
+        results_manager.write_model_key_names(self.model_key_names)
+
+        for instruction_key in self.instruction_keys:
+            key_for = dict(zip(self.instruction_names, instruction_key))
 
             self.X, self.y = self.load_features_and_target(**key_for)            
             
-            estimators = self._instantiate_estimators(key_for['data_condition'])
-            for estimator in estimators:
+            estimator_for_name = self._instantiate_estimators(key_for['data_condition'])
+            for est_name, estimator in estimator_for_name.items():
+                # Define a unique identifier for the model
+                model_key = (*instruction_key, est_name)
 
                 # Set the current estimator.
                 self.estimator = estimator
 
                 build_model = self._get_model_build_function(
                     key_for['model_build'])
-                build_model()
+                build_model(results_manager, model_key)
+
+                results_manager.write_estimator(estimator, model_key)
 
         if scores_to_csv is True:
             self.write_score_histories_to_csv(path_subdir)
@@ -83,7 +91,7 @@ class LciaQsarModelingWorkflow(
     #endregion
     
     #region: _build_model_with_selection
-    def _build_model_with_selection(self):
+    def _build_model_with_selection(self, results_manager, model_key):
         '''Augment the corresponding method of the base class.
 
         The results are saved to disk.
@@ -96,12 +104,13 @@ class LciaQsarModelingWorkflow(
             self.function_for_metric, 
             **self.kwargs_build_model
             )
-        for k, v in results_dict.items():
-            setattr(self, k, v)
+        for result_type, df in results_dict.items():
+            setattr(self, result_type, df)
+            results_manager.write_result(df, model_key, result_type)
     #endregion
              
     #region: _build_model_without_selection
-    def _build_model_without_selection(self):
+    def _build_model_without_selection(self, results_manager, model_key):
         '''Augment the corresponding method of the base class.
 
         The results are saved to disk.
@@ -113,6 +122,7 @@ class LciaQsarModelingWorkflow(
             self.function_for_metric, 
             **self.kwargs_build_model
             )
+        results_manager.write_result(self.performances, model_key, 'performances')
     #endregion
 
     #region: load_features_and_target
@@ -175,7 +185,7 @@ class LciaQsarModelingWorkflow(
         '''For the current workflow instructions.
         '''
         # Initialize the container.
-        estimators = []
+        estimator_for_name = {}
 
         for name, config in self.config_for_estimator.items():
             module = importlib.import_module(config['module'])
@@ -187,9 +197,9 @@ class LciaQsarModelingWorkflow(
             # All final estimators receive the same seed.
             setattr(final_estimator, 'random_state', self.random_state_estimator)
             estimator = make_pipeline(*pre_steps, final_estimator)
-            estimators.append(estimator)
+            estimator_for_name[name] = estimator
 
-        return estimators
+        return estimator_for_name
     #endregion
     
     # TODO: Move to a PipelineBuilder class?
