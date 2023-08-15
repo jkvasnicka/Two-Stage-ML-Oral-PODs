@@ -3,8 +3,6 @@
 
 from json import loads
 from os import path
-import numpy as np
-
 
 #region: BaseConfiguration.__init__
 class BaseConfiguration:
@@ -94,22 +92,9 @@ class LciaQsarConfiguration(BaseConfiguration):
             all(isinstance(value, (list, tuple)) for value in instructions)
     #endregion
 
+    # TODO: Only used in the History class
     #region: estimator_names
     @property
     def estimator_names(self):
         return list(self.config_for_estimator)
-    #endregion
-
-    #region: random_state_estimator & seed_estimator
-    @property
-    def random_state_estimator(self):
-        return self._random_state_estimator
-
-    @property
-    def seed_estimator(self):
-        return self._random_state_estimator.get_state()[1][0]
-
-    @seed_estimator.setter
-    def seed_estimator(self, seed):
-        self._random_state_estimator = np.random.RandomState(seed=seed)
     #endregion

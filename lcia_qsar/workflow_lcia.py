@@ -3,6 +3,7 @@
 
 import os
 import pandas as pd
+import numpy as np
 import importlib
 from sklearn.compose import make_column_transformer
 from sklearn.pipeline import make_pipeline
@@ -32,6 +33,9 @@ class LciaQsarModelingWorkflow(
         '''
         LciaQsarConfiguration.__init__(
             self, path_config_file, model_config_file)
+        
+        # TODO: Move to separate `EstimatorInstantiator` class
+        self.random_state_estimator = np.random.RandomState(seed=self.seed_estimator)
         
         LciaQsarHistory.__init__(self)
         
