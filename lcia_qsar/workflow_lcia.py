@@ -14,7 +14,6 @@ from joblib import dump as joblib_dump
 import sys
 sys.path.append('..')
 from common.workflow_base import SupervisedLearningWorkflow
-from configuration import LciaQsarConfiguration
 from history import LciaQsarHistory
 from common.features import with_common_index 
 from common.transform import select_columns_without_pattern
@@ -23,23 +22,21 @@ from results_management import ResultsManager
 
 #region: LciaQsarModelingWorkflow.__init__
 class LciaQsarModelingWorkflow(
-        LciaQsarConfiguration, SupervisedLearningWorkflow, LciaQsarHistory):
+        SupervisedLearningWorkflow, LciaQsarHistory):
     '''Take some data & instructions. Generate X & y. Learn an estimator's
     parameters and make predictions.
     '''
-    def __init__(
-            self, path_config_file, model_config_file):
+    def __init__(self, config):
         '''
         '''
-        LciaQsarConfiguration.__init__(
-            self, path_config_file, model_config_file)
-        
+        self.config = config 
+
         # TODO: Move to separate `EstimatorInstantiator` class
-        self.random_state_estimator = np.random.RandomState(seed=self.seed_estimator)
+        self.random_state_estimator = np.random.RandomState(seed=self.config.model.seed_estimator)
         
         LciaQsarHistory.__init__(self)
         
-        # TODO: Delete
+        # TODO: Where should this go?
         self.instruction_names = [
             'target_effect', 
             'features_source', 
@@ -57,10 +54,10 @@ class LciaQsarModelingWorkflow(
 
         Save the results to disk.
         '''
-        results_manager = ResultsManager(output_dir=self.results_dir)
-        results_manager.write_model_key_names(self.model_key_names)
+        results_manager = ResultsManager(output_dir=self.config.path.results_dir)
+        results_manager.write_model_key_names(self.config.model.model_key_names)
 
-        for instruction_key in self.instruction_keys:
+        for instruction_key in self.config.model.instruction_keys:
             key_for = dict(zip(self.instruction_names, instruction_key))
 
             self.X, self.y = self.load_features_and_target(**key_for)            
@@ -104,9 +101,9 @@ class LciaQsarModelingWorkflow(
 
         results_dict = base.build_model_with_selection(
             self, 
-            self.feature_importance_scorings, 
+            self.config.model.feature_importance_scorings, 
             self.function_for_metric, 
-            **self.kwargs_build_model
+            **self.config.model.kwargs_build_model
             )
         for result_type, df in results_dict.items():
             setattr(self, result_type, df)
@@ -124,7 +121,7 @@ class LciaQsarModelingWorkflow(
         self.performances = base.build_model_without_selection(
             self, 
             self.function_for_metric, 
-            **self.kwargs_build_model
+            **self.config.model.kwargs_build_model
             )
         results_manager.write_result(self.performances, model_key, 'performances')
     #endregion
@@ -155,20 +152,20 @@ class LciaQsarModelingWorkflow(
             self, *, features_source, ld50_type, data_condition, **kwargs):
         '''Return the current features (X) as a pandas.DataFrame.
         '''
-        features_path = self.file_for_features_source[features_source]
+        features_path = self.config.path.file_for_features_source[features_source]
         X = pd.read_csv(features_path, index_col=0)
 
-        if self.use_experimental_for_ld50[ld50_type] is True:
+        if self.config.model.use_experimental_for_ld50[ld50_type] is True:
             ld50s_experimental = (
                 pd.read_csv(
-                    self.ld50_experimental_file, index_col=0).squeeze())
+                    self.config.path.ld50_experimental_file, index_col=0).squeeze())
             X = LciaQsarModelingWorkflow._swap_column(
                 X, 
-                self.ld50_pred_column_for_source[features_source], 
+                self.config.model.ld50_pred_column_for_source[features_source], 
                 ld50s_experimental
                 )
             
-        if self.drop_missing_for_condition[data_condition] is True:
+        if self.config.model.drop_missing_for_condition[data_condition] is True:
             # Use only samples with complete data.
             X = X.dropna(how='any')
         
@@ -179,7 +176,7 @@ class LciaQsarModelingWorkflow(
     def load_target(self, *, target_effect, **kwargs):
         '''Return the current target variable (y) as a pandas.Series.
         '''
-        ys = pd.read_csv(self.surrogate_pods_file, index_col=0)
+        ys = pd.read_csv(self.config.path.surrogate_pods_file, index_col=0)
         return ys[target_effect].squeeze().dropna()
     #endregion
 
@@ -191,7 +188,7 @@ class LciaQsarModelingWorkflow(
         # Initialize the container.
         estimator_for_name = {}
 
-        for name, config in self.config_for_estimator.items():
+        for name, config in self.config.model.config_for_estimator.items():
             module = importlib.import_module(config['module'])
             class_name = config.get('class', name)
             kwargs = config.get('kwargs', {})
@@ -217,12 +214,12 @@ class LciaQsarModelingWorkflow(
         configuring the transform() output globally via sklearn.set_config(). A 
         workaround is implemented below.
         '''    
-        preprocessor_names = self.preprocessors_for_condition[data_condition]
+        preprocessor_names = self.config.model.preprocessors_for_condition[data_condition]
     
         # Initialize the container.
         pre_steps = []
         for name in preprocessor_names:
-            config = self.config_for_preprocessor[name]
+            config = self.config.model.config_for_preprocessor[name]
             module = importlib.import_module(config['module'])
             class_name = config.get('class', name)
             kwargs = config.get('kwargs', {})
@@ -243,7 +240,7 @@ class LciaQsarModelingWorkflow(
         '''Make a ColumnTransformer to "pass-through" discrete features.
         '''
         select_continuous = select_columns_without_pattern(
-            self.discrete_column_suffix+'$')  # matches at the end
+            self.config.model.discrete_column_suffix+'$')  # matches at the end
         return make_column_transformer(
             (transformer, select_continuous),
             remainder='passthrough',
@@ -258,7 +255,7 @@ class LciaQsarModelingWorkflow(
         '''        
         function_for_metric = {}
 
-        for name, config in self.config_for_metric.items():
+        for name, config in self.config.model.config_for_metric.items():
             module = importlib.import_module(config['module'])
             class_name = config.get('class', name)
             kwargs = config.get('kwargs', {})
@@ -295,7 +292,7 @@ class LciaQsarModelingWorkflow(
     def get_important_features(self, model_key):
         '''Augment the method from the mix-in by providing arguments.
         '''
-        kwargs = self.kwargs_build_model
+        kwargs = self.config.model.kwargs_build_model
         args = (
             kwargs['criterion_metric'],
             kwargs['n_features']
@@ -312,7 +309,7 @@ class LciaQsarModelingWorkflow(
     def get_important_features_replicates(self, model_key):
         '''Augment the method from the mix-in by providing arguments.
         '''
-        kwargs = self.kwargs_build_model
+        kwargs = self.config.model.kwargs_build_model
         stride = (
             kwargs['n_splits_select'] 
             * kwargs['n_repeats_select'] 

@@ -1,100 +1,119 @@
-'''Define global configuration settings for the LCIA QSAR Project.
+'''
+This module provides a class to manage and access configuration settings 
+related to different categories such as paths, models, and plotting. By 
+unifying the configuration into a single object, it allows for a more 
+streamlined access to settings throughout the code.
+
+Classes
+-------
+- UnifiedConfiguration : A unified configuration object to manage various 
+  settings.
+
+Example
+-------
+config_files_dict = {
+    'path': 'path-configuration.json',
+    'model': 'model-configuration.json',
+    'plotting': 'plotting-configuration.json'
+}
+config = UnifiedConfiguration(config_files_dict)
+model_settings = config.model
 '''
 
-from json import loads
-from os import path
+import json
+from types import SimpleNamespace
 
-#region: BaseConfiguration.__init__
-class BaseConfiguration:
+#region: UnifiedConfiguration.__init__
+class UnifiedConfiguration:
     '''
+    This class provides a unified interface to access configuration settings 
+    related to different categories such as paths, models, and plotting. The 
+    configuration files for each category are loaded and made accessible as 
+    attributes.
+
+    Parameters
+    ----------
+    config_files_dict : dict
+        Dictionary mapping categories to configuration file paths.
+
+    Attributes
+    ----------
+    path : SimpleNamespace (optional)
+        Configuration settings related to paths.
+    model : SimpleNamespace (optional)
+        Configuration settings related to models.
+    plotting : SimpleNamespace (optional)
+        Configuration settings related to plotting.
+
+    Example
+    -------
+        config_files_dict = {
+            'path': 'path-configuration.json',
+            'model': 'model-configuration.json',
+            'plotting': 'plotting-configuration.json'
+        }
+        config = UnifiedConfiguration(config_files_dict)
+        model_settings = config.model
     '''
-    def __init__(self, *config_files):
-        for config_file in config_files:
-            self._set_configuration_attributes(config_file)
+
+    VALID_CATEGORIES = {'path', 'model', 'plotting'}
+
+    def __init__(self, config_files_dict):
+        '''
+        Initialize the UnifiedConfiguration object.
+
+        Parameters
+        ----------
+        config_files_dict : dict
+            Dictionary mapping categories to configuration file paths.
+            Supported categories: 'path', 'model', 'plotting'.
+        '''
+        # Validate the input categories
+        input_categories = set(config_files_dict)
+        difference = input_categories - self.VALID_CATEGORIES
+        if difference:
+            raise ValueError(
+                f'Invalid categories {difference}.\n'
+                f'Expected: {self.VALID_CATEGORIES}')
+
+        self._config_for_category = {}  # initialize
+
+        # Load each file into its category
+        for category, file_path in config_files_dict.items():
+            with open(file_path, 'r') as config_file:
+                config_dict = json.load(config_file)
+                setattr(self, category, SimpleNamespace(**config_dict))
 #endregion
 
-    #region: _set_configuration_attributes
-    def _set_configuration_attributes(self, config_file):
+    # TODO:
+    # region: validate
+    def validate(self):
         '''
+        Validate the configuration settings.
+
+        This method can be implemented to perform specific validation checks 
+        on the configuration settings, ensuring they meet the expected 
+        criteria.
         '''
-        config_dict = BaseConfiguration.load_configuration_file(config_file)
-        for k, v in config_dict.items():
-            setattr(self, k, v)
+        pass
     #endregion
 
-    #region: load_configuration_file
-    @staticmethod
-    def load_configuration_file(config_file, prefix=str(), prefix_contents=False):
-        '''Load the configuration JSON file as a dictionary.
+    # TODO: 
+    #region: set_defaults
+    def set_defaults(self):
         '''
-        config_file = path.join(prefix, config_file)
+        Set default values for configuration settings.
 
-        with open(config_file) as f:
-            config_dict = loads(f.read())
-
-        if prefix_contents is True:
-            config_dict = BaseConfiguration.transform_recursively(
-                config_dict, lambda v : path.join(prefix, v))
-        
-        return config_dict
+        This method can be implemented to set default values for specific
+        configuration settings that may not be provided in the configuration 
+        files.
+        '''
+        pass
     #endregion
 
-    #region: transform_recursively
-    @staticmethod
-    def transform_recursively(d, func):
-        '''Traverse a possibly-nested dictionary, depth first, and apply a 
-        function to all its terminal nodes/values.
-
-        Returns
-        -------
-        dict    
-        '''
-        # The "base case" is covered by the "else" condition in the following.
-        if isinstance(d, dict):
-            # The following will eventually be the final return.
-            return {k: BaseConfiguration.transform_recursively(v, func) 
-                    for k, v in d.items()}
-        if isinstance(d, list):
-            return [BaseConfiguration.transform_recursively(v, func) 
-                    for v in d]
-        else:
-            return func(d)
-    #endregion
-
-#region: LciaQsarConfiguration.__init__
-class LciaQsarConfiguration(BaseConfiguration):
-    '''Mix-in class, provides configuration attributes and related logic.
-    '''
-    def __init__(self, path_config_file, model_config_file):
-        super().__init__(path_config_file, model_config_file)
-#endregion
-
-    #region: instruction_keys
-    @property
-    def instruction_keys(self):
-        return self._instruction_keys
-    @instruction_keys.setter
-    def instruction_keys(self, instructions):
-        '''
-        '''
-        if not self._is_nested_sequence(instructions):
-            instructions = [instructions]
-            
-        self._instruction_keys = [tuple(keys) for keys in instructions]
-    #endregion
-
-    #region: _is_nested_sequence
-    @staticmethod
-    def _is_nested_sequence(instructions):
-        '''
-        '''
-        return isinstance(instructions, (list, tuple)) and \
-            all(isinstance(value, (list, tuple)) for value in instructions)
-    #endregion
-
-    # TODO: Only used in the History class
+    # TODO: May become obsolete. Only used in the History class
     #region: estimator_names
     @property
     def estimator_names(self):
-        return list(self.config_for_estimator)
+        return list(self.model.config_for_estimator)
     #endregion

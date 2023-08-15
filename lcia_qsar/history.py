@@ -66,7 +66,7 @@ class LciaQsarHistory:
         if not hasattr(self, '_model_keys'):
             # Set the attribute (lazy evaluation).
             cartesian_product = itertools.product(
-                self._instruction_keys, self.estimator_names)
+                self.config.model.instruction_keys, self.config.estimator_names)
             self._model_keys = [(*instruction_key, est_name) 
                     for instruction_key, est_name in cartesian_product]
             
