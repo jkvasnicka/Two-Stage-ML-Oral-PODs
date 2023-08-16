@@ -42,7 +42,7 @@ class UnifiedConfiguration:
         Configuration settings related to paths.
     model : SimpleNamespace (optional)
         Configuration settings related to models.
-    plotting : SimpleNamespace (optional)
+    plot : SimpleNamespace (optional)
         Configuration settings related to plotting.
 
     Example
@@ -50,13 +50,13 @@ class UnifiedConfiguration:
         config_files_dict = {
             'path': 'path-configuration.json',
             'model': 'model-configuration.json',
-            'plotting': 'plotting-configuration.json'
+            'plot': 'plot-configuration.json'
         }
         config = UnifiedConfiguration(config_files_dict)
         model_settings = config.model
     '''
 
-    VALID_CATEGORIES = {'path', 'model', 'plotting'}
+    VALID_CATEGORIES = {'path', 'model', 'plot'}
 
     def __init__(self, config_files_dict):
         '''
@@ -66,7 +66,7 @@ class UnifiedConfiguration:
         ----------
         config_files_dict : dict
             Dictionary mapping categories to configuration file paths.
-            Supported categories: 'path', 'model', 'plotting'.
+            Supported categories: 'path', 'model', 'plot'.
         '''
         # Validate the input categories
         input_categories = set(config_files_dict)
