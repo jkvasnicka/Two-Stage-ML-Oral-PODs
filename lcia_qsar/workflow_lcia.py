@@ -13,7 +13,6 @@ from joblib import dump as joblib_dump
 import sys
 sys.path.append('..')
 from common.workflow_base import SupervisedLearningWorkflow
-from history import LciaQsarHistory
 from common.transform import select_columns_without_pattern
 from common.evaluation import MetricWrapper
 
@@ -21,8 +20,7 @@ from data_management import DataManager
 from results_management import ResultsManager
 
 #region: LciaQsarModelingWorkflow.__init__
-class LciaQsarModelingWorkflow(
-        SupervisedLearningWorkflow, LciaQsarHistory):
+class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
     '''Take some data & instructions. Generate X & y. Learn an estimator's
     parameters and make predictions.
     '''
@@ -33,9 +31,7 @@ class LciaQsarModelingWorkflow(
 
         # TODO: Move to separate `EstimatorInstantiator` class
         self.random_state_estimator = np.random.RandomState(seed=self.config.model.seed_estimator)
-        
-        LciaQsarHistory.__init__(self)
-        
+                
         # TODO: Where should this go?
         self.instruction_names = [
             'target_effect', 
@@ -45,11 +41,12 @@ class LciaQsarModelingWorkflow(
             'model_build'
         ]
 
+        # TODO: Decouple this from the workflow
         self.function_for_metric = self._instantiate_metrics()
 #endregion
     
     #region: run
-    def run(self, scores_to_csv=False, path_subdir=str()):
+    def run(self):
         '''Build and evaluate a model for each sequence of instructions.
 
         Save the results to disk.
@@ -76,9 +73,6 @@ class LciaQsarModelingWorkflow(
                 build_model(results_manager, model_key)
 
                 results_manager.write_estimator(estimator, model_key)
-
-        if scores_to_csv is True:
-            self.write_score_histories_to_csv(path_subdir)
 
         # Write the workflow object to disk.
         self.dump()
@@ -224,46 +218,4 @@ class LciaQsarModelingWorkflow(
         workflow_file_path = os.path.join(
             path_results_dir, workflow_file_name)
         joblib_dump(self, workflow_file_path)
-    #endregion
-
-    # TODO: Move to ResultsAnalyzer class.
-    #region: get_important_features
-    def get_important_features(self, model_key):
-        '''Augment the method from the mix-in by providing arguments.
-        '''
-        kwargs = self.config.model.kwargs_build_model
-        args = (
-            kwargs['criterion_metric'],
-            kwargs['n_features']
-        )
-        
-        return LciaQsarHistory.get_important_features(
-            self, 
-            model_key,
-            SupervisedLearningWorkflow.select_features, 
-            args=args)
-    #endregion
-
-    # TODO: Move to ResultsAnalyzer class.
-    #region: get_important_features_replicates
-    def get_important_features_replicates(self, model_key):
-        '''Augment the method from the mix-in by providing arguments.
-        '''
-        kwargs = self.config.model.kwargs_build_model
-        stride = (
-            kwargs['n_splits_select'] 
-            * kwargs['n_repeats_select'] 
-            * kwargs['n_repeats_perm']
-        )
-        args = (
-            kwargs['criterion_metric'],
-            kwargs['n_features']
-        )
-
-        return LciaQsarHistory.get_important_features_replicates(
-            self,
-            model_key,
-            stride,
-            SupervisedLearningWorkflow.select_features, 
-            args=args)
     #endregion
