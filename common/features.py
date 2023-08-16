@@ -7,27 +7,6 @@ import warnings
 
 # TODO: Split into submodules? 
 
-#region: with_common_index
-def with_common_index(*pandas_objects):
-    '''Return a list pandas objects with a common index (intersection).
-
-    Parameters
-    ----------
-    pandas_objects : pandas.DataFrame or Series objects
-    '''
-    original_obj_for_key = {k : v for k, v in enumerate(pandas_objects)}
-    multiindex_frame = pd.concat(original_obj_for_key, join='inner', axis=1)
-
-    # Initialize a container.
-    common_objects = []
-    for k, original_obj in original_obj_for_key.items():
-        new_obj = multiindex_frame[k]
-        if isinstance(original_obj, pd.Series):
-            new_obj = new_obj.squeeze()
-        common_objects.append(new_obj)
-    return common_objects
-#endregion
-
 #region: center_scale
 def center_scale(X, u, s):
     '''Standardize a dataset (X).

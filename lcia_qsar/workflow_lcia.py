@@ -2,7 +2,6 @@
 '''
 
 import os
-import pandas as pd
 import numpy as np
 import importlib
 from sklearn.compose import make_column_transformer
@@ -15,9 +14,10 @@ import sys
 sys.path.append('..')
 from common.workflow_base import SupervisedLearningWorkflow
 from history import LciaQsarHistory
-from common.features import with_common_index 
 from common.transform import select_columns_without_pattern
 from common.evaluation import MetricWrapper
+
+from data_management import DataManager
 from results_management import ResultsManager
 
 #region: LciaQsarModelingWorkflow.__init__
@@ -54,13 +54,14 @@ class LciaQsarModelingWorkflow(
 
         Save the results to disk.
         '''
+        data_manager = DataManager(self.config)
         results_manager = ResultsManager(output_dir=self.config.path.results_dir)
         results_manager.write_model_key_names(self.config.model.model_key_names)
 
         for instruction_key in self.config.model.instruction_keys:
             key_for = dict(zip(self.instruction_names, instruction_key))
 
-            self.X, self.y = self.load_features_and_target(**key_for)            
+            self.X, self.y = data_manager.load_features_and_target(**key_for)            
             
             estimator_for_name = self._instantiate_estimators(key_for['data_condition'])
             for est_name, estimator in estimator_for_name.items():
@@ -124,60 +125,6 @@ class LciaQsarModelingWorkflow(
             **self.config.model.kwargs_build_model
             )
         results_manager.write_result(self.performances, model_key, 'performances')
-    #endregion
-
-    #region: load_features_and_target
-    def load_features_and_target(
-            self, *, target_effect, features_source, ld50_type, data_condition, 
-            **kwargs):
-        '''
-        X, y are grouped together because they must share a common index.
-
-        ** collects any unneeded key-value pairs from self.model_keys.
-        '''
-        X = self.load_features(
-            features_source=features_source, 
-            ld50_type=ld50_type, 
-            data_condition=data_condition
-            )
-
-        y = self.load_target(target_effect=target_effect)
-
-        # Use the intersection of chemicals.
-        return with_common_index(X, y)
-    #endregion
-
-    #region: load_features
-    def load_features(
-            self, *, features_source, ld50_type, data_condition, **kwargs):
-        '''Return the current features (X) as a pandas.DataFrame.
-        '''
-        features_path = self.config.path.file_for_features_source[features_source]
-        X = pd.read_csv(features_path, index_col=0)
-
-        if self.config.model.use_experimental_for_ld50[ld50_type] is True:
-            ld50s_experimental = (
-                pd.read_csv(
-                    self.config.path.ld50_experimental_file, index_col=0).squeeze())
-            X = LciaQsarModelingWorkflow._swap_column(
-                X, 
-                self.config.model.ld50_pred_column_for_source[features_source], 
-                ld50s_experimental
-                )
-            
-        if self.config.model.drop_missing_for_condition[data_condition] is True:
-            # Use only samples with complete data.
-            X = X.dropna(how='any')
-        
-        return X
-    #endregion
-
-    #region: load_target
-    def load_target(self, *, target_effect, **kwargs):
-        '''Return the current target variable (y) as a pandas.Series.
-        '''
-        ys = pd.read_csv(self.config.path.surrogate_pods_file, index_col=0)
-        return ys[target_effect].squeeze().dropna()
     #endregion
 
     # TODO: Move to a PipelineBuilder class?
@@ -279,15 +226,7 @@ class LciaQsarModelingWorkflow(
         joblib_dump(self, workflow_file_path)
     #endregion
 
-    #region: _swap_column
-    @staticmethod
-    def _swap_column(X, column_old, column_new):
-        '''
-        '''
-        X = X.drop(column_old, axis=1)
-        return pd.concat([X, column_new], axis=1)
-    #endregion
-
+    # TODO: Move to ResultsAnalyzer class.
     #region: get_important_features
     def get_important_features(self, model_key):
         '''Augment the method from the mix-in by providing arguments.
@@ -305,6 +244,7 @@ class LciaQsarModelingWorkflow(
             args=args)
     #endregion
 
+    # TODO: Move to ResultsAnalyzer class.
     #region: get_important_features_replicates
     def get_important_features_replicates(self, model_key):
         '''Augment the method from the mix-in by providing arguments.
