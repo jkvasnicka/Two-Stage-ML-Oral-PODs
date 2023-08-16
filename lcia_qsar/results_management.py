@@ -188,6 +188,44 @@ class ResultsManager:
         return result_df
     #endregion
 
+    #region: combine_results
+    def combine_results(self, model_keys, result_type):
+        '''
+        Combine results from multiple model keys into a single DataFrame with 
+        MultiIndex columns.
+
+        Parameters
+        ----------
+        model_keys : list of tuple
+            List of model keys for which to retrieve the results.
+        result_type : str
+            The type of result to retrieve, e.g., 'performances', 
+            'importances', etc. Must match the name used when saving the 
+            results.
+
+        Returns
+        -------
+        combined_df : pandas.DataFrame
+            Combined DataFrame with MultiIndex columns. The first level of the 
+            MultiIndex contains the model keys, and the remaining levels are 
+            taken from the original columns of the individual result DataFrames.
+        '''
+        combined_data = {
+            key: self.read_result(key, result_type) 
+            for key in model_keys
+            }
+        combined_df = pd.concat(combined_data, axis=1)
+
+        model_key_names = self.read_model_key_names()
+        first_df = next(iter(combined_data.values()))
+        combined_df.columns.names = (
+            model_key_names 
+            + list(first_df.columns.names)
+        )
+
+        return combined_df
+    #endregion
+
     #region: _build_path
     def _build_path(self, model_key, result_type, extension):
         '''
@@ -336,9 +374,22 @@ class ResultsManager:
     #endregion
 
     #region: list_model_keys
-    def list_model_keys(self):
+    def list_model_keys(self, inclusion_string=None, exclusion_string=None):
         '''
-        List all model keys present in the output directory.
+        List all model keys present in the output directory. 
+        
+        The keys are optionally filtered by inclusion or exclusion criteria.
+
+        Parameters
+        ----------
+        inclusion_string : str, optional
+            String to use for including model keys. If a model key contains this 
+            string, it will be included in the final output. If None, no inclusion 
+            filtering is applied.
+        exclusion_string : str, optional
+            String to use for excluding model keys. If a model key contains this 
+            string, it will be excluded from the final output. If None, no exclusion 
+            filtering is applied.
 
         Returns
         -------
@@ -354,6 +405,11 @@ class ResultsManager:
             if os.path.isdir(entry_path):
                 model_key = self._convert_model_key(directory_name=entry)
                 model_keys.append(model_key)
+
+        if inclusion_string:
+            model_keys = [k for k in model_keys if inclusion_string in k]
+        if exclusion_string:
+            model_keys = [k for k in model_keys if exclusion_string not in k]
 
         return model_keys   
     #endregion

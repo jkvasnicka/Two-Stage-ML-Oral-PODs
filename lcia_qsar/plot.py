@@ -9,7 +9,6 @@ from matplotlib.ticker import MaxNLocator
 import seaborn as sns
 import pandas as pd
 import numpy as np
-import itertools
 
 # TODO: Move to configuration file.
 _flierprops = dict(
@@ -24,7 +23,7 @@ _flierprops = dict(
 def pairwise_scatters_and_kde_subplots(
         features_file, 
         targets_file, 
-        config,
+        plot_settings,
         figsize=(10, 10)
     ):
     '''
@@ -33,7 +32,7 @@ def pairwise_scatters_and_kde_subplots(
     Parameters
     ----------
     '''
-    # TODO: Move to config?
+    # TODO: Move to plot_settings?
     features_subset = [  
         'CATMoS_LD50_pred',
         'P_pred',
@@ -41,12 +40,12 @@ def pairwise_scatters_and_kde_subplots(
         'MolWeight'
     ]
     label_for_category = {
-        False : config.label_for_sample_type['out'],
-        True :  config.label_for_sample_type['in']
+        False : plot_settings.label_for_sample_type['out'],
+        True :  plot_settings.label_for_sample_type['in']
     }
     color_for_category = {
-        False : config.color_for_sample_type['out'], 
-        True : config.color_for_sample_type['in']
+        False : plot_settings.color_for_sample_type['out'], 
+        True : plot_settings.color_for_sample_type['in']
     }
 
     X = pd.read_csv(features_file, index_col=0)
@@ -223,7 +222,7 @@ def proportions_incomplete_subplots(
         features_file, 
         AD_file, 
         targets_file, 
-        config, 
+        plot_settings, 
         base_size_per_feature=(0.2, 6)
     ):
     '''
@@ -234,7 +233,7 @@ def proportions_incomplete_subplots(
 
     ## Plot the training set data.
     samples_for_effect = {
-        config.label_for_effect[effect] : y.dropna().index 
+        plot_settings.label_for_effect[effect] : y.dropna().index 
         for effect, y in ys.items()
         }
     proportions_incomplete_subplot(
@@ -248,7 +247,7 @@ def proportions_incomplete_subplots(
     proportions_incomplete_subplot(
         X, 
         AD_flags, 
-        {config.all_chemicals_label : X.index},
+        {plot_settings.all_chemicals_label : X.index},
         base_size_per_feature=base_size_per_feature
     )
 #endregion
@@ -431,59 +430,58 @@ def proportions_incomplete(X_subset, AD_flags_subset):
     return sorted_proportions
 #endregion
 
+# TODO: Decouple function_for_metric from workflow
 #region: in_and_out_sample_comparisons
-def in_and_out_sample_comparisons(workflow, config, ylim=(0., 1.)):
+def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_metric, ylim=(0., 1.)):
     '''
     Generate in-sample performance comparisons and out-of-sample prediction 
     scatterplots.
     
     Parameters
     ----------
-    workflow : object
-        The Workflow object containing the data.
     ylim : tuple, optional
         Tuple specifying the y-axis limits. Default is (0., 1.).
     '''
-    model_key_names = get_model_key_names(workflow)
-    grouped_keys_outer = group_model_keys(
-        workflow.model_keys, 
-        model_key_names, 
+    model_key_names = results_analyzer.results_manager.read_model_key_names()
+    grouped_keys_outer = results_analyzer.results_manager.group_model_keys(
         ['target_effect', 'model_build']
         )
 
     for grouping_key_outer, model_keys in grouped_keys_outer:
 
-        grouped_keys_inner = group_model_keys(
-            model_keys, 
-            model_key_names, 
-            'model_build'
+        grouped_keys_inner = results_analyzer.results_manager.group_model_keys(
+            'model_build',
+            model_keys=model_keys
             )
         
         in_sample_performance_comparisons(
-            workflow, 
+            results_analyzer, 
             grouped_keys_inner, 
             model_key_names,
             grouping_key_outer,
-            config,
+            function_for_metric,
+            plot_settings,
             ylim=ylim
         )
 
         out_of_sample_prediction_scatterplots(
-            workflow, 
+            results_analyzer, 
             grouped_keys_inner,
             grouping_key_outer, 
             model_key_names, 
-            config
+            function_for_metric,
+            plot_settings
     )
 #endregion
 
 #region: in_sample_performance_comparisons
 def in_sample_performance_comparisons(
-        workflow, 
+        results_analyzer, 
         grouped_keys_inner, 
         model_key_names,
         grouping_key_outer,
-        config,
+        function_for_metric,
+        plot_settings,
         ylim=(0., 1.)
     ):
     '''
@@ -499,18 +497,19 @@ def in_sample_performance_comparisons(
     _in_sample_performance_scatterplots(
         fig, 
         gs1, 
-        workflow, 
+        results_analyzer, 
         grouped_keys_inner, 
         model_key_names,
-        config
+        function_for_metric,
+        plot_settings
         )
     
     _in_sample_performance_boxplots(
         fig, 
         gs2, 
-        workflow, 
+        results_analyzer, 
         grouped_keys_inner, 
-        config,
+        plot_settings,
         ylim=ylim
         )
 
@@ -531,10 +530,11 @@ def in_sample_performance_comparisons(
 def _in_sample_performance_scatterplots(
         fig, 
         gs1, 
-        workflow, 
+        results_analyzer, 
         grouped_keys_inner, 
         model_key_names, 
-        config
+        function_for_metric,
+        plot_settings
     ):
     '''
     Generate scatterplots of observed vs predicted for the in-sample 
@@ -556,28 +556,27 @@ def _in_sample_performance_scatterplots(
             ax = fig.add_subplot(gs1[i, j])
             all_axs.append(ax)
 
-            y_pred, _, y_true = get_in_sample_prediction(workflow, model_key)
+            y_pred, _, y_true = results_analyzer.get_in_sample_prediction(model_key)
 
             ## Set labels depending on the Axes.
             xlabel, ylabel = '', ''
             if i == len(grouped_keys_inner) - 1:
-                model_build = config.label_for_model_build[key_for['model_build']]
-                xlabel = f'Observed {config.prediction_label}\n{model_build}'
+                model_build = plot_settings.label_for_model_build[key_for['model_build']]
+                xlabel = f'Observed {plot_settings.prediction_label}\n{model_build}'
             if j == 0:
-                effect = config.label_for_effect[key_for['target_effect']]
-                ylabel = f'{effect}\nPredicted {config.prediction_label}'
+                effect = plot_settings.label_for_effect[key_for['target_effect']]
+                ylabel = f'{effect}\nPredicted {plot_settings.prediction_label}'
                 if i == 0:
                     ax.set_title(title, loc='left', size='small', style='italic')
             ax.set_xlabel(xlabel, size='small')
             ax.set_ylabel(ylabel, size='small')
             
-
             generate_scatterplot(
                 ax, 
                 y_true, 
                 y_pred,
-                workflow, 
-                config.label_for_metric,
+                function_for_metric, 
+                plot_settings.label_for_metric,
                 color='black'
             )
 
@@ -596,9 +595,9 @@ def _in_sample_performance_scatterplots(
 def _in_sample_performance_boxplots(
         fig, 
         gs2, 
-        workflow, 
+        results_analyzer, 
         grouped_keys_inner, 
-        config,
+        plot_settings,
         ylim=(0., 1.)
         ):
     '''
@@ -608,32 +607,30 @@ def _in_sample_performance_boxplots(
 
     title = '(B) Out-of-Sample Performance'
 
-    # TODO: Is all this necessary?
-    ## Prepare the data.
-    performances_wide = workflow.concatenate_history('performances')
-    # Filter the data.
-    where_subset_metrics = (
-        performances_wide.columns
-        .get_level_values('metric')
-        .isin(config.label_for_metric)
-    )
-    performances_wide = performances_wide.loc[:, where_subset_metrics]
-    # Rename the columns for visualization.
-    label_for_model_build = {
-        k : v.split(' ')[0] for k, v in config.label_for_model_build.items()}
-    label_for_column = {
-        **config.label_for_metric, 
-        **label_for_model_build
-    }
-    performances_wide = performances_wide.rename(label_for_column, axis=1)
-
-    ## Plot the data. 
-
-    metrics = performances_wide.columns.unique(level='metric')
-
     # Create a counter for the current row
     index = 0
     for i, (_, model_keys) in enumerate(grouped_keys_inner):
+
+        # TODO: Is all this necessary?
+        ## Prepare the data
+        performances_wide = results_analyzer.results_manager.combine_results(model_keys, 'performances')
+        # Filter the data.
+        where_subset_metrics = (
+            performances_wide.columns
+            .get_level_values('metric')
+            .isin(plot_settings.label_for_metric)
+        )
+        performances_wide = performances_wide.loc[:, where_subset_metrics]
+        # Rename the columns for visualization.
+        label_for_model_build = {
+            k : v.split(' ')[0] for k, v in plot_settings.label_for_model_build.items()}
+        label_for_column = {
+            **plot_settings.label_for_metric, 
+            **label_for_model_build
+        }
+        performances_wide = performances_wide.rename(label_for_column, axis=1)
+
+        metrics = performances_wide.columns.unique(level='metric')
 
         # The new keys will be used to get the data.
         model_keys_renamed = [
@@ -678,11 +675,12 @@ def _in_sample_performance_boxplots(
 
 #region: out_of_sample_prediction_scatterplots
 def out_of_sample_prediction_scatterplots(
-        workflow, 
+        results_analyzer, 
         grouped_keys_inner,
         grouping_key_outer, 
         model_key_names, 
-        config
+        function_for_metric,
+        plot_settings
     ):
     '''
     Generate and plot scatterplots for out-of-sample predictions.
@@ -704,8 +702,8 @@ def out_of_sample_prediction_scatterplots(
             k for k in model_keys if 'without_selection' in k)
         key_with_selection = next(k for k in model_keys if 'with_selection' in k)
 
-        y_pred_without, *_ = predict_out_of_sample(workflow, key_without_selection)
-        y_pred_with, *_ = predict_out_of_sample(workflow, key_with_selection)
+        y_pred_without, *_ = results_analyzer.predict_out_of_sample(key_without_selection)
+        y_pred_with, *_ = results_analyzer.predict_out_of_sample(key_with_selection)
 
         ## Define figure labels.
         
@@ -716,26 +714,26 @@ def out_of_sample_prediction_scatterplots(
             effects.append(key_for['target_effect'])
         if not all(effect == effects[0] for effect in effects):
             raise ValueError(f'Inconsistent target effects: {effects}')
-        title = config.label_for_effect[effects[0]]
+        title = plot_settings.label_for_effect[effects[0]]
         
         def create_label(model_build):
-            return f'{config.prediction_label} {config.label_for_model_build[model_build]}'
+            return f'{plot_settings.prediction_label} {plot_settings.label_for_model_build[model_build]}'
         
         # The labeled samples will be plotted in a separate color.
-        _, y_true = workflow.load_features_and_target(**key_for)
+        _, y_true = results_analyzer.data_manager.load_features_and_target(**key_for)
         labeled_samples = list(y_true.index)
 
         generate_scatterplot(
             axs[i], 
             y_pred_without, 
             y_pred_with,
-            workflow, 
-            config.label_for_metric,
+            function_for_metric, 
+            plot_settings.label_for_metric,
             highlight_indices=labeled_samples,
-            main_label=config.label_for_sample_type['out'],
-            highlight_label=config.label_for_sample_type['in'],
-            color=config.color_for_sample_type['out'], 
-            highlight_color=config.color_for_sample_type['in'],
+            main_label=plot_settings.label_for_sample_type['out'],
+            highlight_label=plot_settings.label_for_sample_type['in'],
+            color=plot_settings.color_for_sample_type['out'], 
+            highlight_color=plot_settings.color_for_sample_type['in'],
             title=title, 
             xlabel=create_label('without_selection'), 
             ylabel=create_label('with_selection') if i == 0 else ''
@@ -765,48 +763,10 @@ def _comma_separated(number):
     return '{:,}'.format(number)
 #endregion
 
-#region: get_in_sample_prediction
-def get_in_sample_prediction(workflow, model_key, inverse_transform=False):
-    '''
-    '''
-    model_key_names = get_model_key_names(workflow)
-    key_for = dict(zip(model_key_names, model_key))
-    X, y_true = workflow.load_features_and_target(**key_for)
-
-    y_pred, X = get_prediction(X, workflow, model_key, inverse_transform)
-
-    return y_pred, X, y_true
-#endregion
-
-#region: predict_out_of_sample
-def predict_out_of_sample(workflow, model_key, inverse_transform=False):
-    '''
-    '''
-    model_key_names = get_model_key_names(workflow)
-    key_for = dict(zip(model_key_names, model_key))
-    X = workflow.load_features(**key_for)
-
-    y_pred, X = get_prediction(X, workflow, model_key, inverse_transform)
-
-    return y_pred, X
-#endregion
-
-#region: get_prediction
-def get_prediction(X, workflow, model_key, inverse_transform=False):
-    '''
-    '''
-    estimator = workflow.get_estimator(model_key)
-    X = X[estimator.feature_names_in_]
-    y_pred = pd.Series(estimator.predict(X), index=X.index)
-    if inverse_transform:
-        y_pred = 10**y_pred
-    return y_pred, X
-#endregion
-
 #region: important_feature_counts
 def important_feature_counts(
-        workflow, 
-        config
+        results_analyzer, 
+        plot_settings
         ):
     '''
     '''
@@ -814,9 +774,9 @@ def important_feature_counts(
     color_filled = '#1f77b4'  # Blue
     color_unfilled = '#dcdcdc'  # Light gray
 
-    model_key_names = get_model_key_names(workflow)
-    grouped_keys = group_model_keys(
-        workflow.model_keys, model_key_names, 'target_effect', 
+    model_key_names = results_analyzer.results_manager.read_model_key_names()
+    grouped_keys = results_analyzer.results_manager.group_model_keys(
+        'target_effect', 
         string_to_exclude='without_selection'
     )
 
@@ -830,13 +790,13 @@ def important_feature_counts(
 
         for i, model_key in enumerate(model_keys):
             ## Prepare the data for plotting.
-            features_for_final_model = workflow.get_important_features(model_key)
+            features_for_final_model = results_analyzer.get_important_features(model_key)
             features_for_replicate_model = (
-                workflow.get_important_features_replicates(model_key))
+                results_analyzer.get_important_features_replicates(model_key))
 
             # Initialize feature_counts dictionary
             key_for = dict(zip(model_key_names, model_key))
-            all_feature_names = list(workflow.load_features(**key_for))
+            all_feature_names = list(results_analyzer.data_manager.load_features(**key_for))
             feature_counts = {feature: 0 for feature in all_feature_names}
 
             # Count the occurrences of each feature
@@ -868,9 +828,9 @@ def important_feature_counts(
             axs[i].tick_params(axis='y', pad=0)
             axs[i].invert_yaxis()
             axs[i].set_xlabel('Count', fontsize=12)
-            axs[i].set_ylabel(config.feature_names_label, fontsize=12)
+            axs[i].set_ylabel(plot_settings.feature_names_label, fontsize=12)
             axs[i].set_title(
-                config.label_for_effect[key_for['target_effect']], fontsize=12)
+                plot_settings.label_for_effect[key_for['target_effect']], fontsize=12)
 
             if i != 0:  # Only set ylabel for first subplot
                 axs[i].set_ylabel('')
@@ -898,56 +858,52 @@ def important_feature_counts(
             )
 #endregion
 
+# TODO: Collapse into a single function?
 #region: importances_boxplots
 def importances_boxplots(
-        workflow, 
-        config,
+        results_analyzer, 
+        plot_settings,
         xlabel='Δ Score',
         figsize=(8, 10)
         ):
     '''
     '''
-    importances_wide = workflow.concatenate_history('importances')
-    model_keys = [k for k in workflow.model_keys if 'with_selection' in k]
-
     _feature_importances_boxplots(
-        importances_wide, 
-        model_keys, 
+        results_analyzer,
+        'importances',
         importances_boxplots,
-        config.label_for_scoring,
+        plot_settings.label_for_scoring,
         xlabel=xlabel,
-        ylabel=config.feature_names_label,
+        ylabel=plot_settings.feature_names_label,
         figsize=figsize
         )
 #endregion
 
+# TODO: Ditto
 #region: importances_replicates_boxplots
 def importances_replicates_boxplots(
-        workflow, 
-        config,
+        results_analyzer, 
+        plot_settings,
         xlabel='Δ Score',
         figsize=(8, 10)
         ):
     '''
     '''
-    importances_wide = workflow.concatenate_history('importances_replicates')
-    model_keys = [k for k in workflow.model_keys if 'with_selection' in k]
-
     _feature_importances_boxplots(
-        importances_wide, 
-        model_keys, 
+        results_analyzer, 
+        'importances_replicates',
         importances_replicates_boxplots,
-        config.label_for_scoring,
+        plot_settings.label_for_scoring,
         xlabel=xlabel,
-        ylabel=config.feature_names_label,
+        ylabel=plot_settings.feature_names_label,
         figsize=figsize
         )
 #endregion
 
 #region: _feature_importances_boxplots
 def _feature_importances_boxplots(
-        df_wide, 
-        model_keys,
+        results_analyzer,
+        result_type,
         function, 
         label_for_scoring,
         xlabel,
@@ -967,6 +923,7 @@ def _feature_importances_boxplots(
     -------
     None : None
     '''
+    model_keys = results_analyzer.results_manager.list_model_keys(exclusion_string='without_selection')
     for model_key in model_keys:
         
         fig, axs = plt.subplots(
@@ -975,10 +932,12 @@ def _feature_importances_boxplots(
             figsize=figsize
         )
 
+        df_wide = results_analyzer.results_manager.read_result(model_key, result_type)
+
         for i, (scoring, title) in enumerate(label_for_scoring.items()):
 
           # Compute median and sort by it
-            df_long = df_wide[model_key][scoring].melt()
+            df_long = df_wide[scoring].melt()
             medians = (
                 df_long.groupby('feature')['value']
                 .median()
@@ -1057,10 +1016,11 @@ def sns_boxplot_wrapper(
 
 #region: benchmarking_scatterplots
 def benchmarking_scatterplots(
-        workflow,
+        results_analyzer,
         y_regulatory_df,
         y_toxcast,
-        config,
+        function_for_metric,
+        plot_settings,
         figsize=(6, 9)
         ):
     '''
@@ -1070,8 +1030,6 @@ def benchmarking_scatterplots(
 
     Parameters
     ----------
-    workflow : object
-        The workflow object containing the model keys.
     y_regulatory_df : pd.DataFrame
         The DataFrame containing the comparison data.
     y_toxcast : pd.DataFrame
@@ -1086,9 +1044,8 @@ def benchmarking_scatterplots(
     axs : list
         List of axes corresponding to the figures.
     '''
-    model_key_names = get_model_key_names(workflow)
-    grouped_keys = group_model_keys(
-        workflow.model_keys, model_key_names, 'target_effect')
+    model_key_names = results_analyzer.results_manager.read_model_key_names()
+    grouped_keys = results_analyzer.results_manager.group_model_keys('target_effect')
 
     for grouping_key, model_keys in grouped_keys:
         num_subplots = len(model_keys)
@@ -1100,7 +1057,7 @@ def benchmarking_scatterplots(
 
         for i, model_key in enumerate(model_keys):
             
-            y_pred, _, y_true = get_in_sample_prediction(workflow, model_key)
+            y_pred, _, y_true = results_analyzer.get_in_sample_prediction(model_key)
 
             key_for = dict(zip(model_key_names, model_key))
             y_comparison = y_regulatory_df[key_for['target_effect']].dropna()
@@ -1115,23 +1072,23 @@ def benchmarking_scatterplots(
 
                 ax = ax_objs[j, i]
 
-                color = config.color_for_effect[key_for['target_effect']]
+                color = plot_settings.color_for_effect[key_for['target_effect']]
 
                 ## Set labels depending on the Axes.
                 title, xlabel, ylabel = '', '', ''
                 if j == 0:  # first row
-                    title = config.label_for_effect[key_for['target_effect']]
+                    title = plot_settings.label_for_effect[key_for['target_effect']]
                 if j == len(y_evaluation_dict)-1:  # last row
-                    xlabel = f'Regulatory {config.prediction_label}'
+                    xlabel = f'Regulatory {plot_settings.prediction_label}'
                 if i == 0:  # first column
-                    ylabel = f'{label} {config.prediction_label}'
+                    ylabel = f'{label} {plot_settings.prediction_label}'
                 
                 generate_scatterplot(
                     ax, 
                     y_comparison, 
                     y_evaluation, 
-                    workflow, 
-                    config.label_for_metric,
+                    function_for_metric, 
+                    plot_settings.label_for_metric,
                     color=color, 
                     title=title, 
                     xlabel=xlabel, 
@@ -1160,7 +1117,7 @@ def generate_scatterplot(
         ax, 
         y_true, 
         y_pred, 
-        workflow, 
+        function_for_metric, 
         label_for_metric,
         with_sample_size=True,
         color='black', 
@@ -1246,7 +1203,7 @@ def generate_scatterplot(
     float_to_string = lambda score : format(score, '.2f')  # limit precision
     dict_to_string = lambda d : '\n'.join([f'{k}: {v}' for k, v in d.items()])
     get_score = (
-        lambda metric : workflow.function_for_metric[metric](y_true, y_pred))
+        lambda metric : function_for_metric[metric](y_true, y_pred))
     
     score_dict = {
         label : float_to_string(get_score(metric)) 
@@ -1304,9 +1261,9 @@ def plot_one_one_line(ax, xmin, xmax, color='#BB5566'):  # red
 
 #region: margins_of_exposure_cumulative
 def margins_of_exposure_cumulative(
-        workflow, 
+        results_analyzer, 
         exposure_df, 
-        config,
+        plot_settings,
         right_truncation=None
         ):
     '''
@@ -1314,8 +1271,6 @@ def margins_of_exposure_cumulative(
 
     Parameters
     ----------
-    workflow : object
-        An object representing the workflow.
     exposure_df : pd.DataFrame
         DataFrame with exposure estimates.
     right_truncation : float, optional
@@ -1325,20 +1280,10 @@ def margins_of_exposure_cumulative(
     -------
     None
     '''
-    # Get the error estimate for prediction intervals.
-    rmse_for_model = (
-        workflow.concatenate_history('performances')
-        .xs('root_mean_squared_error', axis=1, level='metric')
-        .quantile()
-        .to_dict()
-    )
-
     exposure_df = np.log10(exposure_df)
 
-    model_key_names = get_model_key_names(workflow)
-    grouped_keys = group_model_keys(
-        workflow.model_keys, model_key_names, 'target_effect'
-    )
+    model_key_names = results_analyzer.results_manager.read_model_key_names()
+    grouped_keys = results_analyzer.results_manager.group_model_keys('target_effect')
 
     colors = sns.color_palette("Set2", len(exposure_df.columns))
 
@@ -1360,13 +1305,12 @@ def margins_of_exposure_cumulative(
 
         for i, model_key in enumerate(model_keys):
 
-            y_pred, *_ = predict_out_of_sample(
-                workflow,
+            y_pred, *_ = results_analyzer.predict_out_of_sample(
                 model_key,
                 inverse_transform=False
             )
 
-            rmse = rmse_for_model[model_key]
+            rmse = results_analyzer.results_manager.read_result(model_key, 'performances')['root_mean_squared_error'].quantile()
             
             for j, percentile in enumerate(exposure_df.columns):
 
@@ -1384,7 +1328,7 @@ def margins_of_exposure_cumulative(
                     lb, 
                     ub, 
                     colors[j], 
-                    label=config.label_for_exposure_column[percentile]
+                    label=plot_settings.label_for_exposure_column[percentile]
                     )
 
             ## Update the limits.
@@ -1396,7 +1340,7 @@ def margins_of_exposure_cumulative(
             ## Set labels, etc. 
             key_for = dict(zip(model_key_names, model_key))
             effect = key_for['target_effect']
-            axs[i].set_title(config.label_for_effect[effect])
+            axs[i].set_title(plot_settings.label_for_effect[effect])
             axs[i].set_xlabel("$log_{10}MOE$")
             axs[i].set_yscale('log')
             axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
@@ -1704,14 +1648,12 @@ def get_data_limits(ax, axis_type='x', data_type='line'):
 #endregion
 
 #region: predictions_by_missing_feature
-def predictions_by_missing_feature(workflow, config):
+def predictions_by_missing_feature(results_analyzer, plot_settings):
     '''
     Generate and plot in-sample and out-of-sample predictions.
 
     Parameters
     ----------
-    workflow : object
-        The workflow object containing the trained model.
 
     Returns
     -------
@@ -1723,11 +1665,10 @@ def predictions_by_missing_feature(workflow, config):
         all_samples_color = '#00008b'  # dark blue
         remaining_color = '#ffff99'  # pale yellow
 
-        model_key_names = get_model_key_names(workflow)
+        model_key_names = results_analyzer.results_manager.read_model_key_names()
 
         # Use the helper function to get the combination key group
-        grouped_keys = group_model_keys(
-            workflow.model_keys, model_key_names, 'target_effect')
+        grouped_keys = results_analyzer.results_manager.group_model_keys('target_effect')
         
         # Iterate over grouping_key_group
         for grouping_key, model_keys in grouped_keys:
@@ -1742,8 +1683,8 @@ def predictions_by_missing_feature(workflow, config):
             for i, model_key in enumerate(model_keys):
                 key_for = dict(zip(model_key_names, model_key))
 
-                y_pred_out, X_out, *_ = predict_out_of_sample(workflow, model_key)
-                y_pred_in, X_in, *_ = get_in_sample_prediction(workflow, model_key)
+                y_pred_out, X_out, *_ = results_analyzer.predict_out_of_sample(model_key)
+                y_pred_in, X_in, *_ = results_analyzer.get_in_sample_prediction(model_key)
 
                 dfs_out = _boxplot_by_missing_feature(
                     axs[i, 0], 
@@ -1751,7 +1692,7 @@ def predictions_by_missing_feature(workflow, config):
                     X_out, 
                     all_samples_color, 
                     remaining_color,
-                    config.prediction_label
+                    plot_settings.prediction_label
                     )
                 # Use the sames sort order of boxes, based on the left Axes.
                 sort_order = list(dfs_out.keys())
@@ -1761,14 +1702,14 @@ def predictions_by_missing_feature(workflow, config):
                     X_in, 
                     all_samples_color, 
                     remaining_color, 
-                    config.prediction_label,
+                    plot_settings.prediction_label,
                     sort_order
                     )
 
                 _set_ytick_labels(axs[i, 0], dfs_out, True)
                 _set_ytick_labels(axs[i, 1], dfs_in, False)
                 
-                effect = config.label_for_effect[key_for['target_effect']]
+                effect = plot_settings.label_for_effect[key_for['target_effect']]
                 axs[i, 0].set_title(
                     f'{effect}\nAll Chemicals', size='medium', loc='left')
                 axs[i, 1].set_title(
@@ -1965,74 +1906,6 @@ def _get_box_tick_labels(name, series):
     sample_size_label = _comma_separated(len(series))
 
     return feature_label, sample_size_label 
-#endregion
-
-#region: group_model_keys
-def group_model_keys(
-        model_keys, 
-        key_names, 
-        exclusion_key_names , 
-        string_to_exclude=None
-    ):
-    '''
-    Group model keys by grouping keys. A grouping key is formed by taking a model 
-    key and excluding one or more of its elements.
-
-    Parameters
-    ----------
-    model_keys : list of tuples
-        Model keys to be grouped. Each tuple represents a model key.
-    key_names : list
-        Names of keys corresponding to elements in the model keys. The order of 
-        names should match the order of elements in each tuple of model_keys.
-    exclusion_key_names  : str or list of str
-        Names of keys (which should be in key_names) to exclude when forming 
-        the grouping key.
-    string_to_exclude : str, optional
-        String to exclude model keys containing it. If a model key contains this 
-        string, it will be excluded from the final output. If None, no model keys 
-        are excluded based on this criterion.
-
-    Returns
-    -------
-    grouped_model_keys : list of 2-tuple
-        Contains each grouping key and its corresponding group of model keys.
-    '''
-
-    # Convert exclusion_key_names  to list if it's a string
-    if isinstance(exclusion_key_names , str):
-        exclusion_key_names  = [exclusion_key_names ]
-
-    # Exclude model keys that contain string_to_exclude
-    if string_to_exclude:
-        model_keys = [k for k in model_keys if string_to_exclude not in k]
-
-    # Get the indices of the keys to exclude in the key names
-    exclusion_key_indices = [key_names.index(key) for key in exclusion_key_names ]
-
-    def create_grouping_key(model_key):
-        return tuple(item for idx, item in enumerate(model_key) 
-                     if idx not in exclusion_key_indices)
-
-    # Sort model keys by grouping key
-    # This is necessary because itertools.groupby() groups only consecutive 
-    # elements with the same key
-    sorted_model_keys = sorted(model_keys, key=create_grouping_key)
-
-    # Group the sorted keys by grouping key
-    grouped_model_keys = [
-        (grouping_key, list(group))
-        for grouping_key, group in itertools.groupby(
-        sorted_model_keys, key=create_grouping_key)
-    ]
-
-    return grouped_model_keys
-#endregion
-
-# TODO: Move this to the Workflow.History?
-#region: get_model_key_names
-def get_model_key_names(workflow):
-    return workflow.instruction_names + ['estimator']
 #endregion
 
 #region: save_figure
