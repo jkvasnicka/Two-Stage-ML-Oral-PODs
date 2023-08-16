@@ -442,14 +442,14 @@ def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_
     ylim : tuple, optional
         Tuple specifying the y-axis limits. Default is (0., 1.).
     '''
-    model_key_names = results_analyzer.results_manager.read_model_key_names()
-    grouped_keys_outer = results_analyzer.results_manager.group_model_keys(
+    model_key_names = results_analyzer.read_model_key_names()
+    grouped_keys_outer = results_analyzer.group_model_keys(
         ['target_effect', 'model_build']
         )
 
     for grouping_key_outer, model_keys in grouped_keys_outer:
 
-        grouped_keys_inner = results_analyzer.results_manager.group_model_keys(
+        grouped_keys_inner = results_analyzer.group_model_keys(
             'model_build',
             model_keys=model_keys
             )
@@ -613,7 +613,7 @@ def _in_sample_performance_boxplots(
 
         # TODO: Is all this necessary?
         ## Prepare the data
-        performances_wide = results_analyzer.results_manager.combine_results(model_keys, 'performances')
+        performances_wide = results_analyzer.combine_results(model_keys, 'performances')
         # Filter the data.
         where_subset_metrics = (
             performances_wide.columns
@@ -720,7 +720,7 @@ def out_of_sample_prediction_scatterplots(
             return f'{plot_settings.prediction_label} {plot_settings.label_for_model_build[model_build]}'
         
         # The labeled samples will be plotted in a separate color.
-        _, y_true = results_analyzer.data_manager.load_features_and_target(**key_for)
+        _, y_true = results_analyzer.load_features_and_target(**key_for)
         labeled_samples = list(y_true.index)
 
         generate_scatterplot(
@@ -774,8 +774,8 @@ def important_feature_counts(
     color_filled = '#1f77b4'  # Blue
     color_unfilled = '#dcdcdc'  # Light gray
 
-    model_key_names = results_analyzer.results_manager.read_model_key_names()
-    grouped_keys = results_analyzer.results_manager.group_model_keys(
+    model_key_names = results_analyzer.read_model_key_names()
+    grouped_keys = results_analyzer.group_model_keys(
         'target_effect', 
         string_to_exclude='without_selection'
     )
@@ -796,7 +796,7 @@ def important_feature_counts(
 
             # Initialize feature_counts dictionary
             key_for = dict(zip(model_key_names, model_key))
-            all_feature_names = list(results_analyzer.data_manager.load_features(**key_for))
+            all_feature_names = list(results_analyzer.load_features(**key_for))
             feature_counts = {feature: 0 for feature in all_feature_names}
 
             # Count the occurrences of each feature
@@ -923,7 +923,7 @@ def _feature_importances_boxplots(
     -------
     None : None
     '''
-    model_keys = results_analyzer.results_manager.list_model_keys(exclusion_string='without_selection')
+    model_keys = results_analyzer.list_model_keys(exclusion_string='without_selection')
     for model_key in model_keys:
         
         fig, axs = plt.subplots(
@@ -932,7 +932,7 @@ def _feature_importances_boxplots(
             figsize=figsize
         )
 
-        df_wide = results_analyzer.results_manager.read_result(model_key, result_type)
+        df_wide = results_analyzer.read_result(model_key, result_type)
 
         for i, (scoring, title) in enumerate(label_for_scoring.items()):
 
@@ -1044,8 +1044,8 @@ def benchmarking_scatterplots(
     axs : list
         List of axes corresponding to the figures.
     '''
-    model_key_names = results_analyzer.results_manager.read_model_key_names()
-    grouped_keys = results_analyzer.results_manager.group_model_keys('target_effect')
+    model_key_names = results_analyzer.read_model_key_names()
+    grouped_keys = results_analyzer.group_model_keys('target_effect')
 
     for grouping_key, model_keys in grouped_keys:
         num_subplots = len(model_keys)
@@ -1282,8 +1282,8 @@ def margins_of_exposure_cumulative(
     '''
     exposure_df = np.log10(exposure_df)
 
-    model_key_names = results_analyzer.results_manager.read_model_key_names()
-    grouped_keys = results_analyzer.results_manager.group_model_keys('target_effect')
+    model_key_names = results_analyzer.read_model_key_names()
+    grouped_keys = results_analyzer.group_model_keys('target_effect')
 
     colors = sns.color_palette("Set2", len(exposure_df.columns))
 
@@ -1310,7 +1310,7 @@ def margins_of_exposure_cumulative(
                 inverse_transform=False
             )
 
-            rmse = results_analyzer.results_manager.read_result(model_key, 'performances')['root_mean_squared_error'].quantile()
+            rmse = results_analyzer.read_result(model_key, 'performances')['root_mean_squared_error'].quantile()
             
             for j, percentile in enumerate(exposure_df.columns):
 
@@ -1665,10 +1665,10 @@ def predictions_by_missing_feature(results_analyzer, plot_settings):
         all_samples_color = '#00008b'  # dark blue
         remaining_color = '#ffff99'  # pale yellow
 
-        model_key_names = results_analyzer.results_manager.read_model_key_names()
+        model_key_names = results_analyzer.read_model_key_names()
 
         # Use the helper function to get the combination key group
-        grouped_keys = results_analyzer.results_manager.group_model_keys('target_effect')
+        grouped_keys = results_analyzer.group_model_keys('target_effect')
         
         # Iterate over grouping_key_group
         for grouping_key, model_keys in grouped_keys:

@@ -258,3 +258,69 @@ class ResultsAnalyzer:
             
         return list_of_df
     #endregion
+
+#region: list_model_keys
+    def list_model_keys(
+            self, 
+            inclusion_string=None, 
+            exclusion_string=None
+            ):
+        '''Refer to `ResultsManager.list_model_keys` for documentation'''
+        return self.results_manager.list_model_keys(
+            inclusion_string, 
+            exclusion_string
+            )
+#endregion
+
+#region: group_model_keys
+    def group_model_keys(
+            self, 
+            exclusion_key_names, 
+            string_to_exclude=None, 
+            model_keys=None
+            ):
+        '''Refer to `ResultsManager.group_model_keys` for documentation'''
+        return self.results_manager.group_model_keys(
+            exclusion_key_names, 
+            string_to_exclude, 
+            model_keys
+            )
+#endregion
+
+#region: read_model_key_names
+    def read_model_key_names(self):
+        '''Refer to `ResultsManager.read_model_key_names` for documentation'''
+        return self.results_manager.read_model_key_names()
+#endregion
+
+#region: read_result
+    def read_result(self, model_key, result_type):
+        '''Refer to `ResultsManager` for documentation'''
+        return self.results_manager.read_result(model_key, result_type)
+#endregion
+
+#region: combine_results   
+    def combine_results(self, model_keys, result_type):
+        '''Refer to `ResultsManager.combine_results` for documentation'''
+        return self.results_manager.combine_results(model_keys, result_type)
+#endregion
+
+#region: load_features_and_target    
+    def load_features_and_target(self, *args, **kwargs):
+        '''
+        Refer to `DataManager.load_features_and_target` for documentation
+        '''
+        return self.data_manager.load_features_and_target(*args, **kwargs)
+#endregion
+
+#region: load_features
+    def load_features(self, *args, **kwargs):
+        '''Refer to `DataManager.load_features` for documentation'''
+        return self.data_manager.load_features(*args, **kwargs)
+#endregion
+
+#region: load_target
+    def load_target(self, *args, **kwargs):
+        '''Refer to `DataManager.load_target` for documentation'''
+        return self.data_manager.load_target(*args, **kwargs)
+#endregion
