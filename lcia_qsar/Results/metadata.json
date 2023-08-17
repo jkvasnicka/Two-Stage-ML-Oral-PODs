@@ -1,1 +1,0 @@
-{"model_key_names": ["target_effect", "features_source", "ld50_type", "data_condition", "model_build", "estimator"], "level_names_for_result": {"performances": ["metric"], "importances_replicates": ["metric", "feature"], "importances": ["metric", "feature"]}}
