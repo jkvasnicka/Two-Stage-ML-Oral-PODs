@@ -1,12 +1,10 @@
 '''Provide support for managing workflows in the LCIA QSAR project.
 '''
 
-import os
 import numpy as np
 import importlib
 from sklearn.compose import make_column_transformer
 from sklearn.pipeline import make_pipeline
-from joblib import dump as joblib_dump
 
 from data_management import DataManager
 from transform import select_columns_without_pattern
@@ -67,9 +65,6 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
                 build_model(results_manager, model_key)
 
                 results_manager.write_estimator(estimator, model_key)
-
-        # Write the workflow object to disk.
-        self.dump()
     #endregion
     
     #region: _get_model_build_function
@@ -179,15 +174,4 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
             remainder='passthrough',
             verbose_feature_names_out=False,
             )    
-    #endregion
-
-    # TODO: Define from configuration instead of hard-coding?
-    #region: dump
-    def dump(self, path_results_dir=str()):
-        '''Save the current workflow to disk.
-        '''
-        workflow_file_name = 'workflow.joblib'
-        workflow_file_path = os.path.join(
-            path_results_dir, workflow_file_name)
-        joblib_dump(self, workflow_file_path)
     #endregion
