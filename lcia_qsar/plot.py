@@ -1262,7 +1262,6 @@ def plot_one_one_line(ax, xmin, xmax, color='#BB5566'):  # red
 #region: margins_of_exposure_cumulative
 def margins_of_exposure_cumulative(
         results_analyzer, 
-        exposure_df, 
         plot_settings,
         right_truncation=None
         ):
@@ -1271,8 +1270,6 @@ def margins_of_exposure_cumulative(
 
     Parameters
     ----------
-    exposure_df : pd.DataFrame
-        DataFrame with exposure estimates.
     right_truncation : float, optional
         If provided, sets the right truncation limit for x-axis.
 
@@ -1280,7 +1277,7 @@ def margins_of_exposure_cumulative(
     -------
     None
     '''
-    exposure_df = np.log10(exposure_df)
+    exposure_df = results_analyzer.load_exposure_data()
 
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys = results_analyzer.group_model_keys('target_effect')
@@ -1305,21 +1302,16 @@ def margins_of_exposure_cumulative(
 
         for i, model_key in enumerate(model_keys):
 
-            y_pred, *_ = results_analyzer.predict_out_of_sample(
-                model_key,
-                inverse_transform=False
-            )
+            y_pred, *_ = results_analyzer.predict_out_of_sample(model_key)
+            moes = results_analyzer.margins_of_exposure(y_pred, exposure_df)
 
             rmse = results_analyzer.read_result(model_key, 'performances')['root_mean_squared_error'].quantile()
             
             for j, percentile in enumerate(exposure_df.columns):
 
-                ## Get the data for plotting.
-                exposure_estimates = exposure_df[percentile]
-                margins_of_exposure = y_pred - exposure_estimates  # in log10 scale
-                sorted_moe = margins_of_exposure.sort_values()
+                sorted_moe = moes[percentile].sort_values()
                 cumulative_counts = np.arange(1, len(sorted_moe) + 1)
-                lb, ub = prediction_interval(sorted_moe, rmse)
+                lb, ub = results_analyzer.prediction_interval(sorted_moe, rmse)
 
                 plot_with_prediction_interval(
                     axs[i], 
@@ -1424,30 +1416,6 @@ def plot_with_prediction_interval(
         color=color, 
         label=label
         )
-#endregion
-
-#region: prediction_interval
-def prediction_interval(prediction, error, z_score=1.645):
-    '''
-    Calculate the prediction interval.
-
-    Parameters
-    ----------
-    prediction : pd.Series
-        Predicted values in log10 scale.
-    error : float
-        Measure of uncertainty, such as the Root Mean Squared Error of a model.
-
-    Returns
-    -------
-    lower_bound : pd.Series
-        Lower bound of the prediction interval.
-    upper_bound : pd.Series
-        Upper bound of the prediction interval.
-    '''
-    lower_bound = prediction - z_score*error
-    upper_bound = prediction + z_score*error
-    return lower_bound, upper_bound
 #endregion
 
 #region: annotate_vertical_spans

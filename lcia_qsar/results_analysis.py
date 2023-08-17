@@ -12,12 +12,12 @@ ResultsAnalyzer
 '''
 
 import pandas as pd 
+import numpy as np
 
 import sys
 sys.path.append('..')
 from common.workflow_base import SupervisedLearningWorkflow
 
-# TODO: The entire config may not be needed
 #region: ResultsAnalyzer.__init__
 class ResultsAnalyzer:
     '''
@@ -155,6 +155,115 @@ class ResultsAnalyzer:
         return y_pred, X
     #endregion
 
+    #region: prediction_interval
+    @staticmethod
+    def prediction_interval(prediction, error, z_score=1.645):
+        '''
+        Calculate the prediction interval.
+
+        Parameters
+        ----------
+        prediction : pd.Series
+            Predicted values in log10 scale.
+        error : float
+            Measure of uncertainty, such as the Root Mean Squared Error.
+
+        Returns
+        -------
+        lower_bound : pd.Series
+            Lower bound of the prediction interval.
+        upper_bound : pd.Series
+            Upper bound of the prediction interval.
+        '''
+        lower_bound = prediction - z_score*error
+        upper_bound = prediction + z_score*error
+        return lower_bound, upper_bound
+    #endregion
+
+    #region: load_exposure_data
+    def load_exposure_data(self, index_col='DTXSID', log10_transform=True):
+        '''
+        Load exposure data and optionally apply a log10 transformation.
+
+        Parameters
+        ----------
+        index_col : str, optional
+            Column name to set as the DataFrame index, default is 'DTXSID'.
+        log10_transform : bool, optional
+            If True, applies a log10 transformation to the exposure data, 
+            default is True.
+
+        Returns
+        -------
+        exposure_df : pandas.DataFrame
+            DataFrame containing exposure predictions, with columns sorted.
+        '''
+        # TODO: Move to config for flexibility?
+        sorted_columns = [
+            '95th percentile (mg/kg/day)',
+            '50th percentile (mg/kg/day)',
+            '5th percentile (mg/kg/day)'
+        ]
+
+        exposure_df = (
+            pd.read_csv(
+                self.config.path.seem3_exposure_file,
+                encoding='latin-1',
+                index_col=index_col)
+            [sorted_columns]
+        )
+
+        if log10_transform:
+            exposure_df = np.log10(exposure_df)
+
+        return exposure_df
+    #endregion
+
+    #region: margins_of_exposure
+    @staticmethod
+    def margins_of_exposure(pods, exposures, log10_units=True):
+        '''
+        Compute the margins of exposure (MOE) between predicted effects (pods) and 
+        exposures. The function aligns the indices of pods and exposures, keeping 
+        only their intersection, and computes the MOE accordingly.
+
+        Parameters
+        ----------
+        pods : pandas.Series
+            Predicted points of departure, indexed by chemical identifier.
+        exposures : pandas.DataFrame or pandas.Series
+            Exposure data, indexed by chemical identifier. If a DataFrame, each 
+            column represents a different exposure estimate.
+        log10_units : bool, optional
+            If True, computes the MOE in log10 units (default is True). If False,
+            returns the MOE in original units.
+
+        Returns
+        -------
+        pandas.DataFrame or pandas.Series
+            Margins of exposure, with the same shape as exposures, containing the 
+            MOE values for the aligned indices.
+
+        Notes
+        -----
+        The function aligns the indices of pods and exposures using an inner join,
+        meaning that only the overlapping indices are included in the result.
+        '''
+        pods_aligned, exposures_aligned = pods.align(exposures, join='inner')
+
+        operation = np.subtract if log10_units else np.divide
+
+        if isinstance(exposures_aligned, pd.DataFrame):
+            moe = exposures_aligned.apply(
+                lambda col: operation(pods_aligned, col), 
+                axis=0
+                )
+        else:
+            moe = operation(pods_aligned, exposures_aligned)
+
+        return moe
+    #endregion
+
     #region: get_important_features
     def get_important_features(self, model_key):
         '''
@@ -259,7 +368,7 @@ class ResultsAnalyzer:
         return list_of_df
     #endregion
 
-#region: list_model_keys
+    #region: list_model_keys
     def list_model_keys(
             self, 
             inclusion_string=None, 
@@ -270,9 +379,9 @@ class ResultsAnalyzer:
             inclusion_string, 
             exclusion_string
             )
-#endregion
+    #endregion
 
-#region: group_model_keys
+    #region: group_model_keys
     def group_model_keys(
             self, 
             exclusion_key_names, 
@@ -285,42 +394,42 @@ class ResultsAnalyzer:
             string_to_exclude, 
             model_keys
             )
-#endregion
+    #endregion
 
-#region: read_model_key_names
+    #region: read_model_key_names
     def read_model_key_names(self):
         '''Refer to `ResultsManager.read_model_key_names` for documentation'''
         return self.results_manager.read_model_key_names()
 #endregion
 
-#region: read_result
+    #region: read_result
     def read_result(self, model_key, result_type):
         '''Refer to `ResultsManager` for documentation'''
         return self.results_manager.read_result(model_key, result_type)
 #endregion
 
-#region: combine_results   
+    #region: combine_results   
     def combine_results(self, model_keys, result_type):
         '''Refer to `ResultsManager.combine_results` for documentation'''
         return self.results_manager.combine_results(model_keys, result_type)
-#endregion
+    #endregion
 
-#region: load_features_and_target    
+    #region: load_features_and_target    
     def load_features_and_target(self, *args, **kwargs):
         '''
         Refer to `DataManager.load_features_and_target` for documentation
         '''
         return self.data_manager.load_features_and_target(*args, **kwargs)
-#endregion
+    #endregion
 
-#region: load_features
+    #region: load_features
     def load_features(self, *args, **kwargs):
         '''Refer to `DataManager.load_features` for documentation'''
         return self.data_manager.load_features(*args, **kwargs)
-#endregion
+    #endregion
 
-#region: load_target
+    #region: load_target
     def load_target(self, *args, **kwargs):
         '''Refer to `DataManager.load_target` for documentation'''
         return self.data_manager.load_target(*args, **kwargs)
-#endregion
+    #endregion
