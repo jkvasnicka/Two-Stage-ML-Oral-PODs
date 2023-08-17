@@ -9,10 +9,7 @@ import re
 
 # TODO: Finish docstrings.
 
-# Enable modules to be imported from the parent directory.
-import sys
-sys.path.append('..')
-from common import pattern
+import pattern
 
 #region: surrogate_toxicity_values_from_excel
 def surrogate_toxicity_values_from_excel(
