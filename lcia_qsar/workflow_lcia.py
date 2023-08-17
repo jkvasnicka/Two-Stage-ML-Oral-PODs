@@ -196,7 +196,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         '''        
         function_for_metric = {}
 
-        for name, config in self.config.model.config_for_metric.items():
+        for name, config in self.config.to_dict('metrics').items():
             module = importlib.import_module(config['module'])
             class_name = config.get('class', name)
             kwargs = config.get('kwargs', {})

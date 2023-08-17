@@ -55,8 +55,12 @@ class UnifiedConfiguration:
         config = UnifiedConfiguration(config_files_dict)
         model_settings = config.model
     '''
-
-    VALID_CATEGORIES = {'path', 'model', 'plot'}
+    VALID_CATEGORIES = {
+        'path', 
+        'metrics', 
+        'model', 
+        'plot'
+        }
 
     def __init__(self, config_files_dict):
         '''
@@ -84,6 +88,31 @@ class UnifiedConfiguration:
                 config_dict = json.load(config_file)
                 setattr(self, category, SimpleNamespace(**config_dict))
 #endregion
+
+    #region: to_dict
+    def to_dict(self, category):
+        '''
+        Convert the configuration settings of the specified category to a 
+        dictionary.
+
+        Parameters
+        ----------
+        category : str
+            The name of the category (e.g., 'model', 'path', 'plot') whose 
+            configuration settings are to be converted to a dictionary.
+
+        Returns
+        -------
+        dict
+            A dictionary representation of the configuration settings for the 
+            specified category.
+
+        Example
+        -------
+            metrics_dict = config.to_dict('metrics')
+        '''
+        return getattr(self, category).__dict__
+    #endregion
 
     # TODO:
     # region: validate

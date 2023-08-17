@@ -156,37 +156,6 @@
 
   "discrete_column_suffix": "_discrete",
 
-  "config_for_metric": {
-    "explained_variance_score": {
-      "module": "sklearn.metrics"
-    },
-    "max_error": {
-      "module": "sklearn.metrics"
-    },
-    "mean_absolute_error": {
-      "module": "sklearn.metrics"
-    },
-    "mean_squared_error": {
-      "module": "sklearn.metrics"
-    },
-    "root_mean_squared_error": {
-      "module": "sklearn.metrics",
-      "class": "mean_squared_error",
-      "kwargs": {
-        "squared": false
-      }
-    },
-    "median_absolute_error": {
-      "module": "sklearn.metrics"
-    },
-    "mean_absolute_percentage_error": {
-      "module": "sklearn.metrics"
-    },
-    "r2_score": {
-      "module": "sklearn.metrics"
-    }
-  },
-
   "feature_importance_scorings": [
     "explained_variance",
     "max_error",
