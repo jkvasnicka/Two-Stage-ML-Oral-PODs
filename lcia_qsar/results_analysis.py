@@ -14,9 +14,7 @@ ResultsAnalyzer
 import pandas as pd 
 import numpy as np
 
-import sys
-sys.path.append('..')
-from common.workflow_base import SupervisedLearningWorkflow
+from workflow_base import SupervisedLearningWorkflow
 
 #region: ResultsAnalyzer.__init__
 class ResultsAnalyzer:

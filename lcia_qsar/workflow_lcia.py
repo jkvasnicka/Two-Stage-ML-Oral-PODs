@@ -8,15 +8,10 @@ from sklearn.compose import make_column_transformer
 from sklearn.pipeline import make_pipeline
 from joblib import dump as joblib_dump
 
-# TODO: May be a better way, e.g., sklearn imports 'from ..base import'
-# Enable modules to be imported from the parent directory.
-import sys
-sys.path.append('..')
-from common.workflow_base import SupervisedLearningWorkflow
-from common.transform import select_columns_without_pattern
-from common.evaluation import MetricWrapper
-
 from data_management import DataManager
+from transform import select_columns_without_pattern
+from evaluation import MetricWrapper
+from workflow_base import SupervisedLearningWorkflow
 from results_management import ResultsManager
 
 #region: LciaQsarModelingWorkflow.__init__

@@ -90,7 +90,7 @@
       }
     },
     "MissingValuesSelector": {
-      "module": "common.transform",
+      "module": "transform",
       "kwargs": {
         "threshold": 0.3
       }
@@ -109,7 +109,7 @@
       }
     },
     "MedianScaler": {
-      "module": "common.transform",
+      "module": "transform",
       "do_column_select": true
     }
   },

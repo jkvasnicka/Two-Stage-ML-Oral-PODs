@@ -9,10 +9,8 @@ import numpy as np
 import re 
 import warnings
 
-from common import (
-    features,
-    pattern
-)
+import features
+import pattern
 
 #region: opera_test_predictions_from_csv
 def opera_test_predictions_from_csv(

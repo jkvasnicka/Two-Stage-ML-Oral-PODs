@@ -13,10 +13,7 @@ from sklearn.model_selection import RepeatedKFold
 from sklearn.inspection import permutation_importance
 from joblib import Parallel, delayed
 
-# Enable modules to be imported from the parent directory.
-import sys
-sys.path.append('..')
-from common import evaluation
+import evaluation
 
 # TODO: Change name, ModelEvaluator? Use a config file for the arguments.
 #region: SupervisedLearningWorkflow.__init__

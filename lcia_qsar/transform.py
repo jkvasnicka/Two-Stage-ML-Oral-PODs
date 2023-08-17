@@ -21,7 +21,7 @@ from sklearn.base import (
 from sklearn.feature_selection import SelectorMixin
 from sklearn.utils.validation import check_is_fitted
 
-from common import features
+import features
 
 #region: MissingValuesSelector
 class MissingValuesSelector(TransformerMixin, BaseEstimator):

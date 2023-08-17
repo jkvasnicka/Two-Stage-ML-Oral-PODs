@@ -15,8 +15,8 @@ import os
 import logging
 import re
 
-from common.input_output import json_to_dict
-from common.features import inverse_log10_transform
+from input_output import json_to_dict
+from features import inverse_log10_transform
 
 #region: chemicals_to_exclude_from_qsar
 def chemicals_to_exclude_from_qsar(
