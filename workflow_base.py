@@ -13,8 +13,6 @@ from sklearn.model_selection import RepeatedKFold
 from sklearn.inspection import permutation_importance
 from joblib import Parallel, delayed
 
-import evaluation
-
 # TODO: Change name, ModelEvaluator? Use a config file for the arguments.
 #region: SupervisedLearningWorkflow.__init__
 class SupervisedLearningWorkflow:
@@ -31,7 +29,7 @@ class SupervisedLearningWorkflow:
 
     #region: build_model_with_selection
     def build_model_with_selection(
-            self, scoring,  function_for_metric, criterion_metric=None, n_features=10,
+            self, scoring, criterion_metric=None, n_features=10,
             n_splits_cv=5, n_repeats_cv=50, random_state_cv=None,
             n_splits_select=5, n_repeats_select=50, random_state_select=None, 
             n_repeats_perm=5, random_state_perm=None, n_jobs=None, **kwargs):
@@ -44,7 +42,6 @@ class SupervisedLearningWorkflow:
         performances, importances_replicates = (
              self._repeated_kfold_with_nested_selection(
                 scoring,  
-                function_for_metric, 
                 criterion_metric=criterion_metric,
                 n_features=n_features,
                 n_splits_cv=n_splits_cv, 
@@ -87,7 +84,7 @@ class SupervisedLearningWorkflow:
 
     #region: _repeated_kfold_with_nested_selection
     def _repeated_kfold_with_nested_selection(
-            self, scoring,  function_for_metric, criterion_metric=None, n_features=10,
+            self, scoring, criterion_metric=None, n_features=10,
             n_splits_cv=5, n_repeats_cv=50, random_state_cv=None,
             n_splits_select=5, n_repeats_select=50, random_state_select=None, 
             n_repeats_perm=5, random_state_perm=None, n_jobs=None):
@@ -128,7 +125,7 @@ class SupervisedLearningWorkflow:
             self.estimator.fit(X_train[important_features], y_train)
 
             y_pred = self.estimator.predict(X_test[important_features])
-            performances.append(evaluation.score(y_test, y_pred, function_for_metric)) 
+            performances.append(self.metrics_manager.score(y_test, y_pred)) 
         
         performances = pd.DataFrame(performances)
         performances.columns.names = ['metric']
@@ -247,7 +244,7 @@ class SupervisedLearningWorkflow:
 
     #region: build_model_without_selection
     def build_model_without_selection(
-            self, function_for_metric, n_splits_cv=5, n_repeats_cv=50, 
+            self, n_splits_cv=5, n_repeats_cv=50, 
             random_state_cv=None, n_jobs=None, **kwargs):
         '''Build a model, without feature selection, for out-of-sample 
         prediction.
@@ -255,7 +252,6 @@ class SupervisedLearningWorkflow:
         Evaluate its generalization error via a cross validation.
         '''
         performances = self._repeated_kfold_all_data(
-            function_for_metric, 
             n_splits_cv=n_splits_cv, 
             n_repeats_cv=n_repeats_cv, 
             random_state_cv=random_state_cv, 
@@ -270,7 +266,7 @@ class SupervisedLearningWorkflow:
 
     #region: _repeated_kfold_all_data
     def _repeated_kfold_all_data(
-            self, function_for_metric, n_splits_cv=5, n_repeats_cv=50, 
+            self, n_splits_cv=5, n_repeats_cv=50, 
             random_state_cv=None, n_jobs=None):
         '''Execute a repeated k-fold cross validation with all data. 
         '''
@@ -285,7 +281,6 @@ class SupervisedLearningWorkflow:
                 y, 
                 train_ix, 
                 test_ix, 
-                function_for_metric
                 ) for train_ix, test_ix in rkf.split(X)
             )
         performances = pd.DataFrame(performances)
@@ -296,7 +291,7 @@ class SupervisedLearningWorkflow:
 
     #region: _split_fit_predict_and_score
     def _split_fit_predict_and_score(
-                self, X, y, train_ix, test_ix, function_for_metric):
+                self, X, y, train_ix, test_ix):
             '''Split the data, fit and evaluate the estimator for one fold.
 
             Enables parallelized cross validation via joblib.
@@ -307,7 +302,7 @@ class SupervisedLearningWorkflow:
             self.estimator.fit(X_train, y_train)
 
             y_pred = self.estimator.predict(X_test)
-            return evaluation.score(y_test, y_pred, function_for_metric)
+            return self.metrics_manager.score(y_test, y_pred)
     #endregion
 
     # TODO: May be obsolete?

@@ -10,7 +10,7 @@ from joblib import dump as joblib_dump
 
 from data_management import DataManager
 from transform import select_columns_without_pattern
-from evaluation import MetricWrapper
+from metrics_management import MetricsManager
 from workflow_base import SupervisedLearningWorkflow
 from results_management import ResultsManager
 
@@ -23,6 +23,8 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         '''
         '''
         self.config = config 
+        # TODO: model_evaluator = ModelEvaluator(metrics_manager)
+        self.metrics_manager = MetricsManager(self.config.to_dict('metrics'))
 
         # TODO: Move to separate `EstimatorInstantiator` class
         self.random_state_estimator = np.random.RandomState(seed=self.config.model.seed_estimator)
@@ -35,9 +37,6 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
             'data_condition',
             'model_build'
         ]
-
-        # TODO: Decouple this from the workflow
-        self.function_for_metric = self._instantiate_metrics()
 #endregion
     
     #region: run
@@ -92,7 +91,6 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         results_dict = base.build_model_with_selection(
             self, 
             self.config.model.feature_importance_scorings, 
-            self.function_for_metric, 
             **self.config.model.kwargs_build_model
             )
         for result_type, df in results_dict.items():
@@ -110,7 +108,6 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
 
         self.performances = base.build_model_without_selection(
             self, 
-            self.function_for_metric, 
             **self.config.model.kwargs_build_model
             )
         results_manager.write_result(self.performances, model_key, 'performances')
@@ -182,26 +179,6 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
             remainder='passthrough',
             verbose_feature_names_out=False,
             )    
-    #endregion
-
-    #region: _instantiate_metrics
-    def _instantiate_metrics(self):
-        '''
-        Return a dictionary of scoring functions.
-        '''        
-        function_for_metric = {}
-
-        for name, config in self.config.to_dict('metrics').items():
-            module = importlib.import_module(config['module'])
-            class_name = config.get('class', name)
-            kwargs = config.get('kwargs', {})
-            
-            metric = getattr(module, class_name)
-            metric_instance = MetricWrapper(metric, **kwargs)
-
-            function_for_metric[name] = metric_instance
-
-        return function_for_metric
     #endregion
 
     # TODO: Define from configuration instead of hard-coding?
