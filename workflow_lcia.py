@@ -53,7 +53,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         for instruction_key in self.config.model.instruction_keys:
             key_for = dict(zip(self.instruction_names, instruction_key))
 
-            self.X, self.y = data_manager.load_features_and_target(**key_for)            
+            X, y = data_manager.load_features_and_target(**key_for)            
             
             preprocessor_names = self.config.model.preprocessors_for_condition[key_for['data_condition']]
             estimator_for_name = self.pipeline_builder.instantiate_estimators(preprocessor_names)
@@ -67,7 +67,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
 
                 build_model = self._get_model_build_function(
                     key_for['model_build'])
-                build_model(results_manager, model_key)
+                build_model(X, y, results_manager, model_key)
 
                 results_manager.write_estimator(estimator, model_key)
     #endregion
@@ -81,27 +81,27 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
     #endregion
     
     #region: _build_model_with_selection
-    def _build_model_with_selection(self, results_manager, model_key):
+    def _build_model_with_selection(self, X, y, results_manager, model_key):
         '''Augment the corresponding method of the base class.
 
         The results are saved to disk.
         '''
         base = SupervisedLearningWorkflow
 
-        results_dict = base.build_model_with_selection(self)
+        results_dict = base.build_model_with_selection(self, X, y)
         for result_type, df in results_dict.items():
             setattr(self, result_type, df)
             results_manager.write_result(df, model_key, result_type)
     #endregion
              
     #region: _build_model_without_selection
-    def _build_model_without_selection(self, results_manager, model_key):
+    def _build_model_without_selection(self, X, y, results_manager, model_key):
         '''Augment the corresponding method of the base class.
 
         The results are saved to disk.
         '''
         base = SupervisedLearningWorkflow
 
-        self.performances = base.build_model_without_selection(self)
+        self.performances = base.build_model_without_selection(self, X, y)
         results_manager.write_result(self.performances, model_key, 'performances')
     #endregion

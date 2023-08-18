@@ -26,17 +26,16 @@ class SupervisedLearningWorkflow:
 #endregion
 
     #region: build_model_with_selection
-    def build_model_with_selection(self):
+    def build_model_with_selection(self, X, y):  # X & y for all data
         '''Build a model, with feature selection, for out-of-sample 
         prediction.
 
         Evaluate its generalization error via a nested cross validation.
         '''
         ## Estimate the model's generalization error via "pseudo models."
-        performances, importances_replicates = self._repeated_kfold_with_nested_selection()
+        performances, importances_replicates = self._repeated_kfold_with_nested_selection(X, y)
 
         ## Build the model for out-of-sample prediction.
-        X, y = self.X, self.y  # all data
         important_features, importances = self._nested_feature_selection(X, y)
         self.estimator.fit(X[important_features], y)
         
@@ -48,12 +47,9 @@ class SupervisedLearningWorkflow:
     #endregion
 
     #region: _repeated_kfold_with_nested_selection
-    def _repeated_kfold_with_nested_selection(self):
+    def _repeated_kfold_with_nested_selection(self, X, y):  # X & y for all data
         '''
         '''
-        # Start with all data.
-        X, y = self.X, self.y
-
         # Initialize containers for the results.
         performances, importances_replicates = [], []
 
@@ -175,26 +171,24 @@ class SupervisedLearningWorkflow:
     #endregion
 
     #region: build_model_without_selection
-    def build_model_without_selection(self):
+    def build_model_without_selection(self, X, y):  # all data
         '''Build a model, without feature selection, for out-of-sample 
         prediction.
 
         Evaluate its generalization error via a cross validation.
         '''
-        performances = self._repeated_kfold_all_data()
+        performances = self._repeated_kfold_all_data(X, y)
 
         # Fit the model to all data.
-        self.estimator.fit(self.X, self.y)
+        self.estimator.fit(X, y)
 
         return performances
     #endregion
 
     #region: _repeated_kfold_all_data
-    def _repeated_kfold_all_data(self):
+    def _repeated_kfold_all_data(self, X, y):
         '''Execute a repeated k-fold cross validation with all data. 
         '''
-        X, y = self.X, self.y  # all data
-
         rkf = RepeatedKFold(
             n_splits=self.model_settings.n_splits_cv, 
             n_repeats=self.model_settings.n_repeats_cv, 
