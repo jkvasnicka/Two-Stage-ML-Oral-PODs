@@ -18,7 +18,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         self.config = config 
 
         # TODO: model_evaluator = ModelEvaluator(metrics_manager)
-        self.metrics_manager = MetricsManager(self.config.to_dict('metrics'))
+        self.metrics_manager = MetricsManager(self.config.to_dict('metric'))
 
         self.pipeline_builder = PipelineBuilder(
             self.config.to_dict('estimator'), 

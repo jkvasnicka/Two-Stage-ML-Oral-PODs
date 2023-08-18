@@ -59,7 +59,7 @@ class UnifiedConfiguration:
         'path',
         'preprocessor',
         'estimator', 
-        'metrics', 
+        'metric', 
         'model', 
         'plot'
         }
@@ -140,11 +140,4 @@ class UnifiedConfiguration:
         files.
         '''
         pass
-    #endregion
-
-    # TODO: May become obsolete. Only used in the History class
-    #region: estimator_names
-    @property
-    def estimator_names(self):
-        return list(self.model.config_for_estimator)
     #endregion
