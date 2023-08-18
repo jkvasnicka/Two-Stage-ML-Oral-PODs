@@ -26,10 +26,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
             self.config.to_dict('preprocessor'),
             self.config.model.discrete_column_suffix
             )
-                
-        # TODO: Move to separate `EstimatorInstantiator` class
-        self.random_state = np.random.RandomState(seed=0)
-
+            
         # TODO: Where should this go?
         self.instruction_names = [
             'target_effect', 
@@ -57,7 +54,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
             self.X, self.y = data_manager.load_features_and_target(**key_for)            
             
             # TODO: Allow optional subset of preprocessors for data condition
-            estimator_for_name = self.pipeline_builder.instantiate_estimators(self.random_state)
+            estimator_for_name = self.pipeline_builder.instantiate_estimators()
             
             for est_name, estimator in estimator_for_name.items():
                 # Define a unique identifier for the model

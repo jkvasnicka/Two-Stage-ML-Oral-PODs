@@ -27,7 +27,7 @@ class PipelineBuilder:
         self._default_seed = default_seed
 
     #region: instantiate_estimators
-    def instantiate_estimators(self, random_state):
+    def instantiate_estimators(self):
         '''For the current workflow instructions.
         '''
         # Initialize the container.
@@ -40,9 +40,9 @@ class PipelineBuilder:
 
             pre_steps = self.instantiate_preprocessors()                
 
-            # # Use the estimator-specific seed if provided, else use the default
-            # seed = kwargs.pop('seed', self._default_seed)
-            # random_state = np.random.RandomState(seed=seed)
+            # Use the estimator-specific seed if provided, else use the default
+            seed = kwargs.pop('seed', self._default_seed)
+            random_state = np.random.RandomState(seed=seed)
             final_estimator = getattr(module, class_name)(**kwargs)
             final_estimator.random_state = random_state
             
