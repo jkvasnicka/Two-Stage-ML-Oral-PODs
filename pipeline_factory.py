@@ -27,7 +27,7 @@ class PipelineBuilder:
         self._default_seed = default_seed
 
     #region: instantiate_estimators
-    def instantiate_estimators(self):
+    def instantiate_estimators(self, preprocessor_names=None):
         '''For the current workflow instructions.
         '''
         # Initialize the container.
@@ -38,7 +38,7 @@ class PipelineBuilder:
             class_name = config.get('class', name)
             kwargs = config.get('kwargs', {})
 
-            pre_steps = self.instantiate_preprocessors()                
+            pre_steps = self.instantiate_preprocessors(preprocessor_names)                
 
             # Use the estimator-specific seed if provided, else use the default
             seed = kwargs.pop('seed', self._default_seed)
@@ -53,7 +53,7 @@ class PipelineBuilder:
     #endregion
 
     #region: instantiate_preprocessors
-    def instantiate_preprocessors(self):
+    def instantiate_preprocessors(self, preprocessor_names=None):
         '''Return a list of preprocessing steps for the Pipeline.
 
         Note
@@ -65,12 +65,17 @@ class PipelineBuilder:
         # Initialize the container.
         pre_steps = []
         for name, config in self.preprocessor_settings.items():
+
+            # Skip preprocessors not in preprocessor_names if provided
+            if preprocessor_names and name not in preprocessor_names:
+                continue 
+
             module = importlib.import_module(config['module'])
             class_name = config.get('class', name)
             kwargs = config.get('kwargs', {})
             preprocessor = getattr(module, class_name)(**kwargs)
             if config.get('do_column_select', False) is True:
-                preprocessor = self.make_column_transformer(preprocessor)
+                preprocessor = self._make_column_transformer(preprocessor)
             if hasattr(preprocessor, 'set_output'):
                 # NOTE: See note in the docstring.
                 preprocessor.set_output(transform='pandas')
@@ -79,8 +84,8 @@ class PipelineBuilder:
         return pre_steps
     #endregion
 
-    #region: make_column_transformer
-    def make_column_transformer(self, transformer):
+    #region: _make_column_transformer
+    def _make_column_transformer(self, transformer):
         '''Make a ColumnTransformer to "pass-through" discrete features.
         '''
         select_continuous = select_columns_without_pattern(

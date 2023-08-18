@@ -53,8 +53,8 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
 
             self.X, self.y = data_manager.load_features_and_target(**key_for)            
             
-            # TODO: Allow optional subset of preprocessors for data condition
-            estimator_for_name = self.pipeline_builder.instantiate_estimators()
+            preprocessor_names = self.config.model.preprocessors_for_condition[key_for['data_condition']]
+            estimator_for_name = self.pipeline_builder.instantiate_estimators(preprocessor_names)
             
             for est_name, estimator in estimator_for_name.items():
                 # Define a unique identifier for the model
