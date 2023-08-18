@@ -1,7 +1,6 @@
 '''Provide support for managing workflows in the LCIA QSAR project.
 '''
 
-import numpy as np
 from data_management import DataManager
 from metrics_management import MetricsManager
 from pipeline_factory import PipelineBuilder
