@@ -1,19 +1,5 @@
 {
 
-  "config_for_estimator": {
-    "RandomForestRegressor": {
-      "module": "sklearn.ensemble",
-      "kwargs": {
-        "max_features": 0.3333333333333333
-      }
-    },
-    "Ridge": {
-      "module": "sklearn.linear_model"
-    }
-  },
-
-  "seed_estimator": 0,
-
   "kwargs_build_model": {
     "n_splits_cv": 2,
     "n_repeats_cv": 1,
@@ -80,38 +66,6 @@
       "PowerTransformer",
       "MedianScaler"
     ]
-  },
-
-  "config_for_preprocessor": {
-    "VarianceThreshold": {
-      "module": "sklearn.feature_selection",
-      "kwargs": {
-        "threshold": 0
-      }
-    },
-    "MissingValuesSelector": {
-      "module": "transform",
-      "kwargs": {
-        "threshold": 0.3
-      }
-    },
-    "PowerTransformer": {
-      "module": "sklearn.preprocessing",
-      "kwargs": {
-        "standardize": false
-      },
-      "do_column_select": true
-    },
-    "SimpleImputer": {
-      "module": "sklearn.impute",
-      "kwargs": {
-        "strategy": "median"
-      }
-    },
-    "MedianScaler": {
-      "module": "transform",
-      "do_column_select": true
-    }
   },
 
   "ld50_pred_column_for_source": {

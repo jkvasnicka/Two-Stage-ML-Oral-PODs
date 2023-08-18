@@ -1,0 +1,14 @@
+{
+
+  "RandomForestRegressor": {
+    "module": "sklearn.ensemble",
+    "kwargs": {
+      "max_features": 0.3333333333333333
+    }
+
+  },
+  "Ridge": {
+    "module": "sklearn.linear_model"
+  }
+  
+}

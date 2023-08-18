@@ -2,13 +2,9 @@
 '''
 
 import numpy as np
-import importlib
-from sklearn.compose import make_column_transformer
-from sklearn.pipeline import make_pipeline
-
 from data_management import DataManager
-from transform import select_columns_without_pattern
 from metrics_management import MetricsManager
+from pipeline_factory import PipelineBuilder
 from workflow_base import SupervisedLearningWorkflow
 from results_management import ResultsManager
 
@@ -21,12 +17,19 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         '''
         '''
         self.config = config 
+
         # TODO: model_evaluator = ModelEvaluator(metrics_manager)
         self.metrics_manager = MetricsManager(self.config.to_dict('metrics'))
 
-        # TODO: Move to separate `EstimatorInstantiator` class
-        self.random_state_estimator = np.random.RandomState(seed=self.config.model.seed_estimator)
+        self.pipeline_builder = PipelineBuilder(
+            self.config.to_dict('estimator'), 
+            self.config.to_dict('preprocessor'),
+            self.config.model.discrete_column_suffix
+            )
                 
+        # TODO: Move to separate `EstimatorInstantiator` class
+        self.random_state = np.random.RandomState(seed=0)
+
         # TODO: Where should this go?
         self.instruction_names = [
             'target_effect', 
@@ -43,6 +46,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
 
         Save the results to disk.
         '''
+        # TODO: Move these to __init__?
         data_manager = DataManager(self.config)
         results_manager = ResultsManager(output_dir=self.config.path.results_dir)
         results_manager.write_model_key_names(self.config.model.model_key_names)
@@ -52,7 +56,9 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
 
             self.X, self.y = data_manager.load_features_and_target(**key_for)            
             
-            estimator_for_name = self._instantiate_estimators(key_for['data_condition'])
+            # TODO: Allow optional subset of preprocessors for data condition
+            estimator_for_name = self.pipeline_builder.instantiate_estimators(self.random_state)
+            
             for est_name, estimator in estimator_for_name.items():
                 # Define a unique identifier for the model
                 model_key = (*instruction_key, est_name)
@@ -106,72 +112,4 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
             **self.config.model.kwargs_build_model
             )
         results_manager.write_result(self.performances, model_key, 'performances')
-    #endregion
-
-    # TODO: Move to a PipelineBuilder class?
-    #region: _instantiate_estimators
-    def _instantiate_estimators(self, data_condition):
-        '''For the current workflow instructions.
-        '''
-        # Initialize the container.
-        estimator_for_name = {}
-
-        for name, config in self.config.model.config_for_estimator.items():
-            module = importlib.import_module(config['module'])
-            class_name = config.get('class', name)
-            kwargs = config.get('kwargs', {})
-
-            pre_steps = self._instantiate_preprocessors(data_condition)                
-            final_estimator = getattr(module, class_name)(**kwargs)
-            # All final estimators receive the same seed.
-            setattr(final_estimator, 'random_state', self.random_state_estimator)
-            estimator = make_pipeline(*pre_steps, final_estimator)
-            estimator_for_name[name] = estimator
-
-        return estimator_for_name
-    #endregion
-    
-    # TODO: Move to a PipelineBuilder class?
-    #region: _instantiate_preprocessors
-    def _instantiate_preprocessors(self, data_condition):
-        '''Return a list of preprocessing steps for the Pipeline.
-
-        Note
-        -----
-        There was a bug in sklearn.preprocessing.PowerTransformer which prevented
-        configuring the transform() output globally via sklearn.set_config(). A 
-        workaround is implemented below.
-        '''    
-        preprocessor_names = self.config.model.preprocessors_for_condition[data_condition]
-    
-        # Initialize the container.
-        pre_steps = []
-        for name in preprocessor_names:
-            config = self.config.model.config_for_preprocessor[name]
-            module = importlib.import_module(config['module'])
-            class_name = config.get('class', name)
-            kwargs = config.get('kwargs', {})
-            preprocessor = getattr(module, class_name)(**kwargs)
-            if config.get('do_column_select', False) is True:
-                preprocessor = self._make_column_transformer(preprocessor)
-            if hasattr(preprocessor, 'set_output'):
-                # NOTE: See note in the docstring.
-                preprocessor.set_output(transform='pandas')
-            pre_steps.append(preprocessor)
-
-        return pre_steps
-    #endregion
-
-    # TODO: Move to a PipelineBuilder class?
-    #region: _make_column_transformer
-    def _make_column_transformer(self, transformer):
-        '''Make a ColumnTransformer to "pass-through" discrete features.
-        '''
-        select_continuous = select_columns_without_pattern(
-            self.config.model.discrete_column_suffix+'$')  # matches at the end
-        return make_column_transformer(
-            (transformer, select_continuous),
-            remainder='passthrough',
-            verbose_feature_names_out=False,
-            )    
     #endregion

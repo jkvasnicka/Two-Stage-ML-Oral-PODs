@@ -56,7 +56,9 @@ class UnifiedConfiguration:
         model_settings = config.model
     '''
     VALID_CATEGORIES = {
-        'path', 
+        'path',
+        'preprocessor',
+        'estimator', 
         'metrics', 
         'model', 
         'plot'
