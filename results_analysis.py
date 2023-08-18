@@ -1,8 +1,7 @@
 '''
-This module is responsible for analyzing
-the results of machine learning models. It includes functionalities for
-in-sample and out-of-sample predictions, feature importance analysis, and
-other result-related tasks.
+This module is responsible for analyzing the results of machine learning 
+models. It includes functionalities for in-sample and out-of-sample 
+predictions, feature importance analysis, and other result-related tasks.
 
 Classes
 -------
@@ -37,8 +36,6 @@ class ResultsAnalyzer:
         Get in-sample predictions.
     predict_out_of_sample(model_key, inverse_transform=False) 
         Predict out-of-sample data.
-    get_prediction(model_key, X, inverse_transform=False) 
-        Get predictions for given input.
     get_important_features(model_key) 
         Get important features for the model.
     get_important_features_replicates(model_key) 
@@ -88,7 +85,7 @@ class ResultsAnalyzer:
         # Load only the intersection of samples
         X, y_true = self.data_manager.load_features_and_target(**key_for)
 
-        y_pred, X = self.get_prediction(model_key, X, inverse_transform)
+        y_pred, X = self._get_prediction(model_key, X, inverse_transform)
 
         return y_pred, X, y_true
     #endregion
@@ -118,13 +115,13 @@ class ResultsAnalyzer:
         # Load the entire file
         X = self.data_manager.load_features(**key_for)
 
-        y_pred, X = self.get_prediction(model_key, X, inverse_transform)
+        y_pred, X = self._get_prediction(model_key, X, inverse_transform)
 
         return y_pred, X
     #endregion
 
-    #region: get_prediction
-    def get_prediction(self, model_key, X, inverse_transform=False):
+    #region: _get_prediction
+    def _get_prediction(self, model_key, X, inverse_transform=False):
         '''
         Get predictions for the given input.
 
