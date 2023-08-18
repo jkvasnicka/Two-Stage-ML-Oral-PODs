@@ -21,58 +21,23 @@ class SupervisedLearningWorkflow:
     'estimator' can be a Pipeline. Setting estimator can be delayed, e.g., 
     until self._repeated_kfolds().
     '''
-    def __init__(self, X, y, estimator=None):
-        self.X = X
-        self.y = y
-        self.estimator = estimator
+    def __init__(self, model_settings):
+        self.model_settings = model_settings
 #endregion
 
     #region: build_model_with_selection
-    def build_model_with_selection(
-            self, scoring, criterion_metric=None, n_features=10,
-            n_splits_cv=5, n_repeats_cv=50, random_state_cv=None,
-            n_splits_select=5, n_repeats_select=50, random_state_select=None, 
-            n_repeats_perm=5, random_state_perm=None, n_jobs=None, **kwargs):
+    def build_model_with_selection(self):
         '''Build a model, with feature selection, for out-of-sample 
         prediction.
 
         Evaluate its generalization error via a nested cross validation.
         '''
         ## Estimate the model's generalization error via "pseudo models."
-        performances, importances_replicates = (
-             self._repeated_kfold_with_nested_selection(
-                scoring,  
-                criterion_metric=criterion_metric,
-                n_features=n_features,
-                n_splits_cv=n_splits_cv, 
-                n_repeats_cv=n_repeats_cv, 
-                random_state_cv=random_state_cv,
-                n_splits_select=n_splits_select, 
-                n_repeats_select=n_repeats_select, 
-                random_state_select=random_state_select, 
-                n_repeats_perm=n_repeats_perm, 
-                random_state_perm=random_state_perm, 
-                n_jobs=n_jobs
-             )
-        )
+        performances, importances_replicates = self._repeated_kfold_with_nested_selection()
 
         ## Build the model for out-of-sample prediction.
         X, y = self.X, self.y  # all data
-        important_features, importances = (
-            self._nested_feature_selection(
-                X, 
-                y,
-                scoring, 
-                criterion_metric=criterion_metric,
-                n_features=n_features, 
-                n_splits_select=n_splits_select, 
-                n_repeats_select=n_repeats_select, 
-                random_state_select=random_state_select, 
-                n_repeats_perm=n_repeats_perm, 
-                random_state_perm=random_state_perm,
-                n_jobs=n_jobs
-                )
-        )
+        important_features, importances = self._nested_feature_selection(X, y)
         self.estimator.fit(X[important_features], y)
         
         return {
@@ -83,11 +48,7 @@ class SupervisedLearningWorkflow:
     #endregion
 
     #region: _repeated_kfold_with_nested_selection
-    def _repeated_kfold_with_nested_selection(
-            self, scoring, criterion_metric=None, n_features=10,
-            n_splits_cv=5, n_repeats_cv=50, random_state_cv=None,
-            n_splits_select=5, n_repeats_select=50, random_state_select=None, 
-            n_repeats_perm=5, random_state_perm=None, n_jobs=None):
+    def _repeated_kfold_with_nested_selection(self):
         '''
         '''
         # Start with all data.
@@ -98,28 +59,17 @@ class SupervisedLearningWorkflow:
 
         # Initialize the outer cross-validation loop for model evaluation.
         rkf_cv = RepeatedKFold(
-            n_splits=n_splits_cv, n_repeats=n_repeats_cv, 
-            random_state=random_state_cv)
+            n_splits=self.model_settings.n_splits_cv, 
+            n_repeats=self.model_settings.n_repeats_cv, 
+            random_state=self.model_settings.random_state_cv
+            )
 
         for train_ix, test_ix in rkf_cv.split(X):
             X_train, X_test = X.iloc[train_ix, :], X.iloc[test_ix, :]
             y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
 
-            important_features, importances = (
-                self._nested_feature_selection(
-                    X_train, 
-                    y_train, 
-                    scoring, 
-                    criterion_metric=criterion_metric, 
-                    n_features=n_features, 
-                    n_splits_select=n_splits_select, 
-                    n_repeats_select=n_repeats_select, 
-                    random_state_select=random_state_select, 
-                    n_repeats_perm=n_repeats_perm, 
-                    random_state_perm=random_state_perm,
-                    n_jobs=n_jobs
-                    )
-            )
+            important_features, importances = self._nested_feature_selection(X_train, y_train)
+
             importances_replicates.append(importances)
 
             self.estimator.fit(X_train[important_features], y_train)
@@ -135,34 +85,21 @@ class SupervisedLearningWorkflow:
     #endregion
 
     #region: _nested_feature_selection
-    def _nested_feature_selection(
-            self, X_train, y_train, scoring, criterion_metric=None, n_features=10, 
-            n_splits_select=5, n_repeats_select=50, random_state_select=None, 
-            n_repeats_perm=5, random_state_perm=None, n_jobs=None):
+    def _nested_feature_selection(self, X_train, y_train):
         '''
         '''
-        importances = self._repeated_kfold_permutation_importance(
-            X_train, 
-            y_train,
-            scoring, 
-            n_splits_select=n_splits_select, 
-            n_repeats_select=n_repeats_select, 
-            random_state_select=random_state_select, 
-            n_repeats_perm=n_repeats_perm, 
-            random_state_perm=random_state_perm,
-            n_jobs=n_jobs
-        )        
+        importances = self._repeated_kfold_permutation_importance(X_train, y_train)        
         important_features = SupervisedLearningWorkflow.select_features(
-            importances, criterion_metric, n_features)
+            importances, 
+            self.model_settings.criterion_metric, 
+            self.model_settings.n_features
+            )
 
         return important_features, importances
     #endregion
 
     #region: _repeated_kfold_permutation_importance
-    def _repeated_kfold_permutation_importance(
-            self, X_train, y_train, scoring, n_splits_select=5, n_repeats_select=50, 
-            random_state_select=None, n_repeats_perm=5, random_state_perm=None,
-            n_jobs=None):
+    def _repeated_kfold_permutation_importance(self, X_train, y_train):
         '''Compute permutation importances for feature evaluation. 
 
         Wrap the function, sklearn.inspection.permutation_importance(), within a 
@@ -184,27 +121,24 @@ class SupervisedLearningWorkflow:
         '''
         # Initialize the inner cross-validation loop for feature selection.
         rkf_inner = RepeatedKFold(
-            n_splits=n_splits_select, 
-            n_repeats=n_repeats_select, 
-            random_state=random_state_select
+            n_splits=self.model_settings.n_splits_select, 
+            n_repeats=self.model_settings.n_repeats_select, 
+            random_state=self.model_settings.random_state_select
             )
 
-        dicts_of_bunch_objs = Parallel(n_jobs=n_jobs)(
+        dicts_of_bunch_objs = Parallel(n_jobs=self.model_settings.n_jobs)(
             delayed(self._permutation_importance)(
                 X_train, 
                 y_train, 
                 train_ix, 
-                test_ix, 
-                scoring=scoring, 
-                n_repeats_perm=n_repeats_perm, 
-                random_state_perm=random_state_perm
+                test_ix
                 ) for train_ix, test_ix in rkf_inner.split(X_train)
             )
         
         # Initialize a container for the final results.
         importances_for_metric = {}
         # Unpack the raw importance scores from the Bunch objects.
-        for metric in scoring:
+        for metric in self.model_settings.feature_importance_scorings:
             importances = np.concatenate(
                 [d[metric].importances for d in dicts_of_bunch_objs], 
                 axis=1).T
@@ -217,9 +151,7 @@ class SupervisedLearningWorkflow:
     #endregion
 
     #region: _permutation_importance
-    def _permutation_importance(
-            self, X_train, y_train, train_ix, test_ix, scoring=None, 
-            n_repeats_perm=5, random_state_perm=None):
+    def _permutation_importance(self, X_train, y_train, train_ix, test_ix):
         '''Execute the permutation_importance algorithm for one fold.
 
         Enables parallelized cross validation via joblib.
@@ -235,28 +167,21 @@ class SupervisedLearningWorkflow:
             self.estimator, 
             X_test_inner, 
             y_test_inner, 
-            scoring=scoring, 
-            n_repeats=n_repeats_perm, 
+            scoring=self.model_settings.feature_importance_scorings, 
+            n_repeats=self.model_settings.n_repeats_perm, 
             n_jobs=1,  # to avoid "oversubscription" of CPU resources
-            random_state=random_state_perm
+            random_state=self.model_settings.random_state_perm
             )
     #endregion
 
     #region: build_model_without_selection
-    def build_model_without_selection(
-            self, n_splits_cv=5, n_repeats_cv=50, 
-            random_state_cv=None, n_jobs=None, **kwargs):
+    def build_model_without_selection(self):
         '''Build a model, without feature selection, for out-of-sample 
         prediction.
 
         Evaluate its generalization error via a cross validation.
         '''
-        performances = self._repeated_kfold_all_data(
-            n_splits_cv=n_splits_cv, 
-            n_repeats_cv=n_repeats_cv, 
-            random_state_cv=random_state_cv, 
-            n_jobs=n_jobs
-        )
+        performances = self._repeated_kfold_all_data()
 
         # Fit the model to all data.
         self.estimator.fit(self.X, self.y)
@@ -265,17 +190,18 @@ class SupervisedLearningWorkflow:
     #endregion
 
     #region: _repeated_kfold_all_data
-    def _repeated_kfold_all_data(
-            self, n_splits_cv=5, n_repeats_cv=50, 
-            random_state_cv=None, n_jobs=None):
+    def _repeated_kfold_all_data(self):
         '''Execute a repeated k-fold cross validation with all data. 
         '''
         X, y = self.X, self.y  # all data
 
         rkf = RepeatedKFold(
-            n_splits=n_splits_cv, n_repeats=n_repeats_cv, random_state=random_state_cv)
+            n_splits=self.model_settings.n_splits_cv, 
+            n_repeats=self.model_settings.n_repeats_cv, 
+            random_state=self.model_settings.random_state_cv
+            )
 
-        performances = Parallel(n_jobs=n_jobs)(
+        performances = Parallel(n_jobs=self.model_settings.n_jobs)(
             delayed(self._split_fit_predict_and_score)(
                 X, 
                 y, 
@@ -290,8 +216,7 @@ class SupervisedLearningWorkflow:
     #endregion
 
     #region: _split_fit_predict_and_score
-    def _split_fit_predict_and_score(
-                self, X, y, train_ix, test_ix):
+    def _split_fit_predict_and_score(self, X, y, train_ix, test_ix):
             '''Split the data, fit and evaluate the estimator for one fold.
 
             Enables parallelized cross validation via joblib.
@@ -303,17 +228,6 @@ class SupervisedLearningWorkflow:
 
             y_pred = self.estimator.predict(X_test)
             return self.metrics_manager.score(y_test, y_pred)
-    #endregion
-
-    # TODO: May be obsolete?
-    #region: X_fitted
-    @property
-    def X_fitted(self):
-        '''Return the features (X) seen during fit().
-
-        Works only when X has feature names that are all strings.
-        '''
-        return self.X[self.estimator.feature_names_in_]
     #endregion
 
     #region: select_features

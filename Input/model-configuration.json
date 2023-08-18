@@ -1,18 +1,26 @@
 {
 
-  "kwargs_build_model": {
-    "n_splits_cv": 2,
-    "n_repeats_cv": 1,
-    "random_state_cv": 1,
-    "n_splits_select": 2,
-    "n_repeats_select": 1,
-    "random_state_select": 2,
-    "n_repeats_perm": 2,
-    "random_state_perm": 3,
-    "n_jobs": -1,
-    "criterion_metric": "neg_root_mean_squared_error",
-    "n_features": 10
-  },
+  "n_splits_cv": 2,
+
+  "n_repeats_cv": 1,
+
+  "random_state_cv": 1,
+
+  "n_splits_select": 2,
+
+  "n_repeats_select": 1,
+
+  "random_state_select": 2,
+
+  "n_repeats_perm": 2,
+
+  "random_state_perm": 3,
+
+  "n_jobs": -1,
+
+  "criterion_metric": "neg_root_mean_squared_error",
+  
+  "n_features": 10,
 
   "model_key_names" : [
     "target_effect", 

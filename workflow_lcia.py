@@ -17,6 +17,9 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         '''
         self.config = config 
 
+        # For backwards compatibility
+        super().__init__(self.config.model)
+
         # TODO: model_evaluator = ModelEvaluator(metrics_manager)
         self.metrics_manager = MetricsManager(self.config.to_dict('metric'))
 
@@ -25,7 +28,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
             self.config.to_dict('preprocessor'),
             self.config.model.discrete_column_suffix
             )
-            
+
         # TODO: Where should this go?
         self.instruction_names = [
             'target_effect', 
@@ -85,11 +88,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         '''
         base = SupervisedLearningWorkflow
 
-        results_dict = base.build_model_with_selection(
-            self, 
-            self.config.model.feature_importance_scorings, 
-            **self.config.model.kwargs_build_model
-            )
+        results_dict = base.build_model_with_selection(self)
         for result_type, df in results_dict.items():
             setattr(self, result_type, df)
             results_manager.write_result(df, model_key, result_type)
@@ -103,9 +102,6 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         '''
         base = SupervisedLearningWorkflow
 
-        self.performances = base.build_model_without_selection(
-            self, 
-            **self.config.model.kwargs_build_model
-            )
+        self.performances = base.build_model_without_selection(self)
         results_manager.write_result(self.performances, model_key, 'performances')
     #endregion
