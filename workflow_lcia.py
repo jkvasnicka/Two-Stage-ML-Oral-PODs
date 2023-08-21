@@ -2,13 +2,16 @@
 '''
 
 from data_management import DataManager
-from metrics_management import MetricsManager
 from pipeline_factory import PipelineBuilder
-from workflow_base import SupervisedLearningWorkflow
+from feature_selection import FeatureSelector
+from model_factory import ModelBuilder
+from metrics_management import MetricsManager
+from model_evaluation import ModelEvaluator
 from results_management import ResultsManager
 
+# TODO: Rename to `WorkflowManager`
 #region: LciaQsarModelingWorkflow.__init__
-class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
+class LciaQsarModelingWorkflow:
     '''Take some data & instructions. Generate X & y. Learn an estimator's
     parameters and make predictions.
     '''
@@ -17,16 +20,21 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
         '''
         self.config = config 
 
-        # For backwards compatibility
-        super().__init__(self.config.model)
-
-        # TODO: model_evaluator = ModelEvaluator(metrics_manager)
-        self.metrics_manager = MetricsManager(self.config.to_dict('metric'))
-
         self.pipeline_builder = PipelineBuilder(
             self.config.to_dict('estimator'), 
             self.config.to_dict('preprocessor'),
             self.config.model.discrete_column_suffix
+            )
+
+        feature_selector = FeatureSelector(self.config.model)
+
+        self.model_builder = ModelBuilder(feature_selector)
+
+        metrics_manager = MetricsManager(self.config.to_dict('metric'))
+        self.model_evaluator = ModelEvaluator(
+            self.config.model, 
+            metrics_manager,
+            feature_selector
             )
 
         # TODO: Where should this go?
@@ -45,7 +53,7 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
 
         Save the results to disk.
         '''
-        # TODO: Move these to __init__?
+        # TODO: Move to __init__?
         data_manager = DataManager(self.config)
         results_manager = ResultsManager(output_dir=self.config.path.results_dir)
         results_manager.write_model_key_names(self.config.model.model_key_names)
@@ -62,46 +70,11 @@ class LciaQsarModelingWorkflow(SupervisedLearningWorkflow):
                 # Define a unique identifier for the model
                 model_key = (*instruction_key, est_name)
 
-                # Set the current estimator.
-                self.estimator = estimator
+                with_selection = key_for['model_build']  # boolean
+                build_results = self.model_builder.build(estimator, X, y, with_selection)
+                evaluation_results = self.model_evaluator.evaluate(build_results['estimator'], X, y, with_selection)
+                
+                all_results = {**build_results, **evaluation_results}
 
-                build_model = self._get_model_build_function(
-                    key_for['model_build'])
-                build_model(X, y, results_manager, model_key)
-
-                results_manager.write_estimator(estimator, model_key)
-    #endregion
-    
-    #region: _get_model_build_function
-    def _get_model_build_function(self, model_build_key):
-        '''
-        '''
-        function_name = '_build_model_' + model_build_key
-        return getattr(self, function_name)
-    #endregion
-    
-    #region: _build_model_with_selection
-    def _build_model_with_selection(self, X, y, results_manager, model_key):
-        '''Augment the corresponding method of the base class.
-
-        The results are saved to disk.
-        '''
-        base = SupervisedLearningWorkflow
-
-        results_dict = base.build_model_with_selection(self, X, y)
-        for result_type, df in results_dict.items():
-            setattr(self, result_type, df)
-            results_manager.write_result(df, model_key, result_type)
-    #endregion
-             
-    #region: _build_model_without_selection
-    def _build_model_without_selection(self, X, y, results_manager, model_key):
-        '''Augment the corresponding method of the base class.
-
-        The results are saved to disk.
-        '''
-        base = SupervisedLearningWorkflow
-
-        self.performances = base.build_model_without_selection(self, X, y)
-        results_manager.write_result(self.performances, model_key, 'performances')
+                results_manager.write_results(model_key, all_results)
     #endregion

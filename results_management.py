@@ -64,6 +64,25 @@ class ResultsManager:
         self.output_dir = output_dir
 #endregion
 
+    #region: write_results
+    def write_results(self, model_key, results):
+        '''
+        Write the results to the appropriate files.
+
+        Parameters
+        ----------
+        model_key : tuple of str
+            Model key identifying the result.
+        results : dict 
+            Contains the results to be written.
+        '''
+        for result_type, result_data in results.items():
+            if isinstance(result_data, pd.DataFrame):
+                self.write_result(result_data, model_key, result_type)
+            elif hasattr(result_data, 'fit'):
+                self.write_estimator(result_data, model_key)
+    #endregion
+
     #region: write_estimator
     def write_estimator(self, estimator, model_key):
         '''
