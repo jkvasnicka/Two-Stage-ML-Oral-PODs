@@ -78,8 +78,11 @@ class LciaQsarModelingWorkflow:
             for est_name, estimator in estimator_for_name.items():
                 # Define a unique identifier for the model
                 model_key = (*instruction_key, est_name)
-                
-                with_selection = key_for['model_build']  # boolean
+
+                if key_for['model_build'] == 'with_selection':
+                    with_selection = True 
+                else: 
+                    with_selection = False
 
                 build_results = self.model_builder.build_model(
                     estimator, 
