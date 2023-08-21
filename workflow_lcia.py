@@ -20,6 +20,8 @@ class LciaQsarModelingWorkflow:
         '''
         self.config = config 
 
+        self.data_manager = DataManager(self.config)
+
         self.pipeline_builder = PipelineBuilder(
             self.config.to_dict('estimator'), 
             self.config.to_dict('preprocessor'),
@@ -36,6 +38,9 @@ class LciaQsarModelingWorkflow:
             metrics_manager,
             feature_selector
             )
+        
+        self.results_manager = ResultsManager(
+            output_dir=self.config.path.results_dir)
 
         # TODO: Where should this go?
         self.instruction_names = [
@@ -53,28 +58,44 @@ class LciaQsarModelingWorkflow:
 
         Save the results to disk.
         '''
-        # TODO: Move to __init__?
-        data_manager = DataManager(self.config)
-        results_manager = ResultsManager(output_dir=self.config.path.results_dir)
-        results_manager.write_model_key_names(self.config.model.model_key_names)
+        self.results_manager.write_model_key_names(
+            self.config.model.model_key_names)
 
         for instruction_key in self.config.model.instruction_keys:
             key_for = dict(zip(self.instruction_names, instruction_key))
 
-            X, y = data_manager.load_features_and_target(**key_for)            
+            X, y = self.data_manager.load_features_and_target(**key_for)            
             
-            preprocessor_names = self.config.model.preprocessors_for_condition[key_for['data_condition']]
-            estimator_for_name = self.pipeline_builder.instantiate_estimators(preprocessor_names)
+            preprocessor_names = (
+                self.config.model.preprocessors_for_condition[
+                    key_for['data_condition']]
+            )
+            estimator_for_name = (
+                self.pipeline_builder.instantiate_estimators(
+                preprocessor_names)
+            )
             
             for est_name, estimator in estimator_for_name.items():
                 # Define a unique identifier for the model
                 model_key = (*instruction_key, est_name)
-
+                
                 with_selection = key_for['model_build']  # boolean
-                build_results = self.model_builder.build_model(estimator, X, y, with_selection)
-                evaluation_results = self.model_evaluator.evaluate(build_results['estimator'], X, y, with_selection)
+
+                build_results = self.model_builder.build_model(
+                    estimator, 
+                    X, 
+                    y, 
+                    with_selection
+                    )
+                
+                evaluation_results = self.model_evaluator.evaluate(
+                        build_results['estimator'], 
+                        X, 
+                        y,
+                        with_selection
+                        )
                 
                 all_results = {**build_results, **evaluation_results}
 
-                results_manager.write_results(model_key, all_results)
+                self.results_manager.write_results(model_key, all_results)
     #endregion
