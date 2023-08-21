@@ -9,7 +9,7 @@ Example
 -------
 feature_selector = FeatureSelector(model_settings)
 estimator, important_features, importances = (
-    feature_selector._nested_feature_selection(estimator, X_train, y_train)
+    feature_selector.nested_feature_selection(estimator, X_train, y_train)
     )
 '''
 
@@ -33,12 +33,14 @@ class FeatureSelector:
 
     Methods
     -------
-    _nested_feature_selection(estimator, X_train, y_train)
+    nested_feature_selection(estimator, X_train, y_train)
         Perform feature selection using nested cross-validation.
-    _repeated_kfold_permutation_importance(estimator, X_train, y_train)
+    permutation_importances(estimator, X_train, y_train)
         Compute permutation importances for feature evaluation using repeated 
         k-fold cross-validation.
-    _permutation_importance(estimator, X_train, y_train, train_ix, test_ix)
+    permutation_importance_wrapper(
+        estimator, X_train, y_train, train_ix, test_ix
+        )
         Execute the permutation_importance algorithm for one fold.
     select_features(importances, criterion_metric, n_features)
         Get important features based on a single criterion and metric.
@@ -55,8 +57,8 @@ class FeatureSelector:
         self.model_settings = model_settings
 #endregion
 
-    #region: _nested_feature_selection
-    def _nested_feature_selection(self, estimator, X_train, y_train):
+    #region: nested_feature_selection
+    def nested_feature_selection(self, estimator, X_train, y_train):
         '''
         Perform feature selection using nested cross-validation.
 
@@ -78,7 +80,7 @@ class FeatureSelector:
         importances : pandas.DataFrame
             Dataframe containing feature importances.
         '''
-        estimator, importances = self._repeated_kfold_permutation_importance(estimator, X_train, y_train)        
+        estimator, importances = self.permutation_importances(estimator, X_train, y_train)        
         important_features = FeatureSelector.select_features(
             importances, 
             self.model_settings.criterion_metric, 
@@ -88,8 +90,8 @@ class FeatureSelector:
         return estimator, important_features, importances
     #endregion
 
-    #region: _repeated_kfold_permutation_importance
-    def _repeated_kfold_permutation_importance(self, estimator, X_train, y_train):
+    #region: permutation_importances
+    def permutation_importances(self, estimator, X_train, y_train):
         '''
         Compute permutation importances for feature evaluation. 
         
@@ -121,7 +123,7 @@ class FeatureSelector:
             )
 
         dicts_of_bunch_objs = Parallel(n_jobs=self.model_settings.n_jobs)(
-            delayed(self._permutation_importance)(
+            delayed(self.permutation_importance_wrapper)(
                 estimator,
                 X_train, 
                 y_train, 
@@ -145,8 +147,9 @@ class FeatureSelector:
         return estimator, importances_for_metric
     #endregion
 
-    #region: _permutation_importance
-    def _permutation_importance(self, estimator, X_train, y_train, train_ix, test_ix):
+    #region: permutation_importance_wrapper
+    def permutation_importance_wrapper(
+            self, estimator, X_train, y_train, train_ix, test_ix):
         '''
         Execute the permutation_importance algorithm for one fold.
 

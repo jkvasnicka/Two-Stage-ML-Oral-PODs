@@ -71,7 +71,7 @@ class LciaQsarModelingWorkflow:
                 model_key = (*instruction_key, est_name)
 
                 with_selection = key_for['model_build']  # boolean
-                build_results = self.model_builder.build(estimator, X, y, with_selection)
+                build_results = self.model_builder.build_model(estimator, X, y, with_selection)
                 evaluation_results = self.model_evaluator.evaluate(build_results['estimator'], X, y, with_selection)
                 
                 all_results = {**build_results, **evaluation_results}

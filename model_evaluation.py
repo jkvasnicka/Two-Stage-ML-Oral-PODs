@@ -100,7 +100,9 @@ class ModelEvaluator:
             Evaluation results including performances and 
             importances_replicates.
         '''
-        estimator, performances, importances_replicates = self._repeated_kfold_with_nested_selection(estimator, X, y)
+        estimator, performances, importances_replicates = (
+            self._evaluate_with_repeated_kfold_and_selection(estimator, X, y)
+        )
 
         # TODO: Create a Results class?
         evaluation_results = {
@@ -110,8 +112,8 @@ class ModelEvaluator:
         return evaluation_results
     #endregion
 
-    #region: _repeated_kfold_with_nested_selection
-    def _repeated_kfold_with_nested_selection(self, estimator, X, y):
+    #region: _evaluate_with_repeated_kfold_and_selection
+    def _evaluate_with_repeated_kfold_and_selection(self, estimator, X, y):
         '''
         Execute a repeated k-fold cross-validation with nested feature selection.
 
@@ -147,7 +149,10 @@ class ModelEvaluator:
             X_train, X_test = X.iloc[train_ix, :], X.iloc[test_ix, :]
             y_train, y_test = y.iloc[train_ix], y.iloc[test_ix]
 
-            estimator, important_features, importances = self.feature_selector._nested_feature_selection(estimator, X_train, y_train)
+            estimator, important_features, importances = (
+                self.feature_selector.nested_feature_selection(
+                estimator, X_train, y_train)
+            )
 
             importances_replicates.append(importances)
 
@@ -182,7 +187,9 @@ class ModelEvaluator:
         dict
             Evaluation results including estimator and performances.
         '''
-        estimator, performances = self._repeated_kfold_all_data(estimator, X, y)
+        estimator, performances = (
+            self._evaluate_with_repeated_kfold(estimator, X, y)
+        )
 
         # Fit the model to all data.
         estimator.fit(X, y)
@@ -195,8 +202,8 @@ class ModelEvaluator:
         return evaluation_results
     #endregion
 
-    #region: _repeated_kfold_all_data
-    def _repeated_kfold_all_data(self, estimator, X, y):
+    #region: _evaluate_with_repeated_kfold
+    def _evaluate_with_repeated_kfold(self, estimator, X, y):
         '''
         Execute a repeated k-fold cross-validation with all data.
 
@@ -238,7 +245,8 @@ class ModelEvaluator:
     #endregion
 
     #region: _split_fit_predict_and_score
-    def _split_fit_predict_and_score(self, estimator, X, y, train_ix, test_ix):
+    def _split_fit_predict_and_score(
+            self, estimator, X, y, train_ix, test_ix):
         '''
         Split the data, fit and evaluate the estimator for one fold.
 

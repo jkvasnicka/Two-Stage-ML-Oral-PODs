@@ -36,8 +36,8 @@ class ModelBuilder:
         self.feature_selector = feature_selector
 #endregion
     
-    #region: build
-    def build(self, estimator, X, y, with_selection=False):
+    #region: build_model
+    def build_model(self, estimator, X, y, with_selection=False):
         '''
         Build a model with or without feature selection.
 
@@ -60,13 +60,13 @@ class ModelBuilder:
             results.
         '''
         if with_selection:
-            return self._build_model_with_selection(estimator, X, y)
+            return self._build_model_with_feature_selection(estimator, X, y)
         else:
-            return self._build_model_without_selection(estimator, X, y)
+            return self._build_model_without_feature_selection(estimator, X, y)
     #endregion
 
-    #region: _build_model_with_selection
-    def _build_model_with_selection(self, estimator, X, y):
+    #region: _build_model_with_feature_selection
+    def _build_model_with_feature_selection(self, estimator, X, y):
         '''
         Private method to build a model with feature selection.
 
@@ -85,7 +85,9 @@ class ModelBuilder:
             A dictionary containing the built estimator, important features, 
             and importances.
         '''
-        estimator, important_features, importances = self.feature_selector._nested_feature_selection(estimator, X, y)
+        estimator, important_features, importances = (
+            self.feature_selector.nested_feature_selection(estimator, X, y)
+        )
         estimator.fit(X[important_features], y)
 
         # TODO: Create a Results class?
@@ -97,8 +99,8 @@ class ModelBuilder:
         return build_results
     #endregion
     
-    #region: _build_model_without_selection
-    def _build_model_without_selection(self, estimator, X, y):
+    #region: _build_model_without_feature_selection
+    def _build_model_without_feature_selection(self, estimator, X, y):
         '''
         Private method to build a model without feature selection.
 
