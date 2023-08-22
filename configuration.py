@@ -64,16 +64,19 @@ class UnifiedConfiguration:
         'plot'
         }
 
-    def __init__(self, config_files_dict):
+    def __init__(self, config_mapping_path):
         '''
         Initialize the UnifiedConfiguration object.
 
         Parameters
         ----------
-        config_files_dict : dict
-            Dictionary mapping categories to configuration file paths.
-            Supported categories: 'path', 'model', 'plot'.
+        config_mapping_path : str
+            Path to the JSON file mapping categories to configuration file 
+            paths.
         '''
+        with open(config_mapping_path, 'r') as mapping_file:
+            config_files_dict = json.load(mapping_file)
+
         # Validate the input categories
         input_categories = set(config_files_dict)
         difference = input_categories - self.VALID_CATEGORIES

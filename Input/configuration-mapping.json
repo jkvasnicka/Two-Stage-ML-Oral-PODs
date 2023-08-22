@@ -1,0 +1,13 @@
+{
+
+    "path" : "Input/path-configuration.json",
+
+    "preprocessor" : "Input/preprocessor-configuration.json",
+
+    "estimator" : "Input/estimator-configuration.json",
+
+    "metric" : "Input/metric-configuration.json",
+
+    "model" : "Input/model-configuration.json"
+
+}
