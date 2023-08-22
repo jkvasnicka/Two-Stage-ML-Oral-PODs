@@ -1,4 +1,4 @@
-'''Provide support for managing workflows in the LCIA QSAR project.
+'''
 '''
 
 from data_management import DataManager
@@ -9,11 +9,9 @@ from metrics_management import MetricsManager
 from model_evaluation import ModelEvaluator
 from results_management import ResultsManager
 
-# TODO: Rename to `WorkflowManager`
-#region: LciaQsarModelingWorkflow.__init__
-class LciaQsarModelingWorkflow:
-    '''Take some data & instructions. Generate X & y. Learn an estimator's
-    parameters and make predictions.
+#region: WorkflowManager.__init__
+class WorkflowManager:
+    '''
     '''
     def __init__(self, config):
         '''
