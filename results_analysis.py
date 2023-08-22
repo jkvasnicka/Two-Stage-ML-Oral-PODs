@@ -259,6 +259,7 @@ class ResultsAnalyzer:
         return moe
     #endregion
 
+    # TODO: Write model parameters to results metadata?
     #region: get_important_features
     def get_important_features(self, model_key):
         '''
@@ -288,6 +289,7 @@ class ResultsAnalyzer:
         return feature_names
     #endregion
 
+    # TODO: Write model parameters to results metadata?
     #region: get_important_features_replicates
     def get_important_features_replicates(self, model_key):
         '''

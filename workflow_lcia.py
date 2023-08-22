@@ -54,9 +54,10 @@ class LciaQsarModelingWorkflow:
     
     #region: run
     def run(self):
-        '''Build and evaluate a model for each sequence of instructions.
+        '''Evaluate and then build a model for each set of instructions. 
 
-        Save the results to disk.
+        It's crucial that the model is evaluated using cross-validation BEFORE 
+        it's built on the full dataset.
         '''
         self.results_manager.write_model_key_names(
             self.config.model.model_key_names)
@@ -83,22 +84,22 @@ class LciaQsarModelingWorkflow:
                     with_selection = True 
                 else: 
                     with_selection = False
-
-                build_results = self.model_builder.build_model(
+                
+                evaluation_results = self.model_evaluator.cross_validate_model(
+                        estimator, 
+                        X, 
+                        y,
+                        with_selection
+                        )
+                
+                build_results = self.model_builder.train_final_model(
                     estimator, 
                     X, 
                     y, 
                     with_selection
                     )
                 
-                evaluation_results = self.model_evaluator.evaluate(
-                        build_results['estimator'], 
-                        X, 
-                        y,
-                        with_selection
-                        )
-                
-                all_results = {**build_results, **evaluation_results}
+                all_results = {**evaluation_results, **build_results}
 
                 self.results_manager.write_results(model_key, all_results)
     #endregion

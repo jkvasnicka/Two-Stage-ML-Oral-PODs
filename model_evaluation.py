@@ -52,8 +52,8 @@ class ModelEvaluator:
         self.feature_selector = feature_selector
 #endregion
 
-    #region: evaluate
-    def evaluate(self, estimator, X, y, with_selection=False):
+    #region: cross_validate_model
+    def cross_validate_model(self, estimator, X, y, with_selection=False):
         '''
         Evaluate the model with or without feature selection.
 
@@ -75,13 +75,13 @@ class ModelEvaluator:
             Evaluation results.
         '''
         if with_selection:
-            return self._evaluate_with_selection(estimator, X, y)
+            return self._cross_validate_with_selection(estimator, X, y)
         else:
-            return self._evaluate_without_selection(estimator, X, y)
+            return self._cross_validate_without_selection(estimator, X, y)
     #endregion
 
-    #region: _evaluate_with_selection
-    def _evaluate_with_selection(self, estimator, X, y):
+    #region: _cross_validate_with_selection
+    def _cross_validate_with_selection(self, estimator, X, y):
         '''
         Private method to evaluate the model with feature selection.
 
@@ -168,8 +168,8 @@ class ModelEvaluator:
         return estimator, performances, importances_replicates
     #endregion
 
-    #region: _evaluate_without_selection
-    def _evaluate_without_selection(self, estimator, X, y):
+    #region: _cross_validate_without_selection
+    def _cross_validate_without_selection(self, estimator, X, y):
         '''
         Private method to evaluate the model without feature selection.
 
@@ -185,7 +185,7 @@ class ModelEvaluator:
         Returns
         -------
         dict
-            Evaluation results including estimator and performances.
+            Evaluation results including performances.
         '''
         estimator, performances = (
             self._evaluate_with_repeated_kfold(estimator, X, y)
@@ -196,7 +196,6 @@ class ModelEvaluator:
 
         # TODO: Create a Results class?
         evaluation_results = {
-            'estimator' : estimator,
             'performances' : performances
         }
         return evaluation_results

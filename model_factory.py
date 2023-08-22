@@ -36,8 +36,8 @@ class ModelBuilder:
         self.feature_selector = feature_selector
 #endregion
     
-    #region: build_model
-    def build_model(self, estimator, X, y, with_selection=False):
+    #region: train_final_model
+    def train_final_model(self, estimator, X, y, with_selection=False):
         '''
         Build a model with or without feature selection.
 
@@ -60,13 +60,15 @@ class ModelBuilder:
             results.
         '''
         if with_selection:
-            return self._build_model_with_feature_selection(estimator, X, y)
+            return self._train_final_model_with_selection(
+                estimator, X, y)
         else:
-            return self._build_model_without_feature_selection(estimator, X, y)
+            return self._train_final_model_without_selection(
+                estimator, X, y)
     #endregion
 
-    #region: _build_model_with_feature_selection
-    def _build_model_with_feature_selection(self, estimator, X, y):
+    #region: _train_final_model_with_selection
+    def _train_final_model_with_selection(self, estimator, X, y):
         '''
         Private method to build a model with feature selection.
 
@@ -99,8 +101,8 @@ class ModelBuilder:
         return build_results
     #endregion
     
-    #region: _build_model_without_feature_selection
-    def _build_model_without_feature_selection(self, estimator, X, y):
+    #region: _train_final_model_without_selection
+    def _train_final_model_without_selection(self, estimator, X, y):
         '''
         Private method to build a model without feature selection.
 
