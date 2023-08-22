@@ -13,7 +13,7 @@ ResultsAnalyzer
 import pandas as pd 
 import numpy as np
 
-from workflow_base import SupervisedLearningWorkflow
+from feature_selection import FeatureSelector
 
 #region: ResultsAnalyzer.__init__
 class ResultsAnalyzer:
@@ -277,14 +277,13 @@ class ResultsAnalyzer:
         result_df = self.results_manager.read_result(model_key, 'importances')
 
         # Get the parameters to reproduce the feature selection
-        kwargs = self.config.model.kwargs_build_model
         args = (
-            kwargs['criterion_metric'],
-            kwargs['n_features']
+            self.config.model.criterion_metric,
+            self.config.model.n_features
         )
         
         feature_names = (
-            SupervisedLearningWorkflow.select_features(result_df, *args)
+            FeatureSelector.select_features(result_df, *args)
         )
         return feature_names
     #endregion
@@ -312,21 +311,20 @@ class ResultsAnalyzer:
             )
 
         # Get the parameters to reproduce the feature selection
-        kwargs = self.config.model.kwargs_build_model
         stride = (
-            kwargs['n_splits_select']
-            * kwargs['n_repeats_select'] 
-            * kwargs['n_repeats_perm']
+            self.config.model.n_splits_select
+            * self.config.model.n_repeats_select 
+            * self.config.model.n_repeats_perm
         )
         args = (
-            kwargs['criterion_metric'],
-            kwargs['n_features']
+            self.config.model.criterion_metric,
+            self.config.model.n_features
         )
 
         list_of_df = ResultsAnalyzer.split_replicates(result_df, stride)
 
         feature_names_for_replicate = {
-            i : SupervisedLearningWorkflow.select_features(result_df, *args) 
+            i : FeatureSelector.select_features(result_df, *args) 
             for i, result_df in enumerate(list_of_df)
             }
         return feature_names_for_replicate
