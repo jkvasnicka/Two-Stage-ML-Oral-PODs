@@ -43,7 +43,9 @@ class ResultsAnalyzer:
     split_replicates(dataframe, stride) 
         Split a replicates DataFrame into individual DataFrames.
     '''
-    def __init__(self, results_manager, data_manager, config):
+    def __init__(
+            self, results_manager, data_manager, feature_selection_settings,
+            seem3_exposure_file):
         '''
         Initialize the ResultsAnalyzer class.
 
@@ -51,11 +53,15 @@ class ResultsAnalyzer:
         ----------
         results_manager : A `ResultsManager` instance
         data_manager : A `DataManager` instance
-        config : UnifiedConfiguration object
+        feature_selection_settings : SimpleNamespace object
+            Configuration settings for feature selection.
+        seem3_exposure_file : str
+            Path to the exposure data file.
         '''
         self.results_manager = results_manager
         self.data_manager = data_manager
-        self.config = config
+        self.feature_selection_settings = feature_selection_settings
+        self._seem3_exposure_file = seem3_exposure_file
 #endregion
 
     #region: get_in_sample_prediction
@@ -202,7 +208,7 @@ class ResultsAnalyzer:
 
         exposure_df = (
             pd.read_csv(
-                self.config.path.seem3_exposure_file,
+                self._seem3_exposure_file,
                 encoding='latin-1',
                 index_col=index_col)
             [sorted_columns]
@@ -279,8 +285,8 @@ class ResultsAnalyzer:
 
         # Get the parameters to reproduce the feature selection
         args = (
-            self.config.model.criterion_metric,
-            self.config.model.n_features
+            self.feature_selection_settings.criterion_metric,
+            self.feature_selection_settings.n_features
         )
         
         feature_names = (
@@ -314,13 +320,13 @@ class ResultsAnalyzer:
 
         # Get the parameters to reproduce the feature selection
         stride = (
-            self.config.model.n_splits_select
-            * self.config.model.n_repeats_select 
-            * self.config.model.n_repeats_perm
+            self.feature_selection_settings.n_splits_select
+            * self.feature_selection_settings.n_repeats_select 
+            * self.feature_selection_settings.n_repeats_perm
         )
         args = (
-            self.config.model.criterion_metric,
-            self.config.model.n_features
+            self.feature_selection_settings.criterion_metric,
+            self.feature_selection_settings.n_features
         )
 
         list_of_df = ResultsAnalyzer.split_replicates(result_df, stride)

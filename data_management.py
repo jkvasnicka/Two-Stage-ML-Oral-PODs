@@ -13,28 +13,25 @@ class DataManager:
     Manages the loading and handling of features and target data 
     within the LCIA-QSAR modeling workflow.
 
-    Parameters
-    ----------
-    config : UnifiedConfiguration
-        An instance of the UnifiedConfiguration class that contains 
-        configuration settings.
-
     Attributes
     ----------
     config : UnifiedConfiguration
         Configuration settings for data management.
     '''
-    def __init__(self, config):
+    def __init__(self, data_settings, path_settings):
         '''
         Initialize the DataManager with configuration settings.
 
         Parameters
         ----------
-        config : UnifiedConfiguration
-            An instance of the UnifiedConfiguration class that contains 
-            configuration settings.
+        data_settings : SimpleNamespace
+            Data configuration settings. 
+        path_settings : SimpleNamespace
+            Path configuration settings.
         '''
-        self.config = config
+        # TODO: Should be private attributes? Check other classes too.
+        self.data_settings = data_settings
+        self.path_settings = path_settings
 #endregion
 
     #region: load_features_and_target
@@ -102,24 +99,24 @@ class DataManager:
             The loaded features (X) as a DataFrame.
         '''
         features_path = (
-            self.config.path.file_for_features_source[features_source]
+            self.path_settings.file_for_features_source[features_source]
         )
         X = pd.read_csv(features_path, index_col=0)
 
-        if self.config.model.use_experimental_for_ld50[ld50_type] is True:
+        if self.data_settings.use_experimental_for_ld50[ld50_type]:
             ld50s_experimental = (
                 pd.read_csv(
-                    self.config.path.ld50_experimental_file, 
+                    self.path_settings.ld50_experimental_file, 
                     index_col=0)
                     .squeeze()
                     )
             X = DataManager._swap_column(
                 X, 
-                self.config.model.ld50_pred_column_for_source[features_source], 
+                self.data_settings.ld50_pred_column_for_source[features_source], 
                 ld50s_experimental
                 )
             
-        if self.config.model.drop_missing_for_condition[data_condition]:
+        if self.data_settings.drop_missing_for_condition[data_condition]:
             # Use only samples with complete data.
             X = X.dropna(how='any')
         
@@ -144,7 +141,7 @@ class DataManager:
         pandas.Series
             The loaded target variable (y) as a Series.
         '''
-        ys = pd.read_csv(self.config.path.surrogate_pods_file, index_col=0)
+        ys = pd.read_csv(self.path_settings.surrogate_pods_file, index_col=0)
         return ys[target_effect].squeeze().dropna()
     #endregion
 

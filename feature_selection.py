@@ -27,9 +27,8 @@ class FeatureSelector:
 
     Attributes
     ----------
-    model_settings : SimpleNamespace
-        A configuration object containing settings related to the model, such 
-        as cross-validation splits, repeated folds, scoring metrics, etc.
+    feature_selection_settings : SimpleNamespace
+        Configuration settings for feature selection.
 
     Methods
     -------
@@ -45,16 +44,19 @@ class FeatureSelector:
     select_features(importances, criterion_metric, n_features)
         Get important features based on a single criterion and metric.
     '''
-    def __init__(self, model_settings):
+    def __init__(self, feature_selection_settings, n_jobs=None):
         '''
         Initialize the FeatureSelector class with model settings.
 
         Parameters
         ----------
-        model_settings : SimpleNamespace
-            A configuration object containing settings related to the model.
+        feature_selection_settings : SimpleNamespace
+            Configuration settings for feature selection.
+        n_jobs : int, optional
+            See joblib.Parallel for reference.
         '''
-        self.model_settings = model_settings
+        self.feature_selection_settings = feature_selection_settings
+        self._n_jobs = n_jobs
 #endregion
 
     #region: nested_feature_selection
@@ -80,11 +82,16 @@ class FeatureSelector:
         importances : pandas.DataFrame
             Dataframe containing feature importances.
         '''
-        estimator, importances = self.permutation_importances(estimator, X_train, y_train)        
+        estimator, importances = self.permutation_importances(
+            estimator, 
+            X_train, 
+            y_train
+            )        
+        
         important_features = FeatureSelector.select_features(
             importances, 
-            self.model_settings.criterion_metric, 
-            self.model_settings.n_features
+            self.feature_selection_settings.criterion_metric, 
+            self.feature_selection_settings.n_features
             )
 
         return estimator, important_features, importances
@@ -117,12 +124,12 @@ class FeatureSelector:
         '''
         # Initialize the inner cross-validation loop for feature selection.
         rkf_inner = RepeatedKFold(
-            n_splits=self.model_settings.n_splits_select, 
-            n_repeats=self.model_settings.n_repeats_select, 
-            random_state=self.model_settings.random_state_select
+            n_splits=self.feature_selection_settings.n_splits_select, 
+            n_repeats=self.feature_selection_settings.n_repeats_select, 
+            random_state=self.feature_selection_settings.random_state_select
             )
 
-        dicts_of_bunch_objs = Parallel(n_jobs=self.model_settings.n_jobs)(
+        dicts_of_bunch_objs = Parallel(n_jobs=self._n_jobs)(
             delayed(self.permutation_importance_wrapper)(
                 estimator,
                 X_train, 
@@ -135,7 +142,7 @@ class FeatureSelector:
         # Initialize a container for the final results.
         importances_for_metric = {}
         # Unpack the raw importance scores from the Bunch objects.
-        for metric in self.model_settings.feature_importance_scorings:
+        for metric in self.feature_selection_settings.scoring:
             importances = np.concatenate(
                 [d[metric].importances for d in dicts_of_bunch_objs], 
                 axis=1).T
@@ -182,10 +189,10 @@ class FeatureSelector:
             estimator, 
             X_test_inner, 
             y_test_inner, 
-            scoring=self.model_settings.feature_importance_scorings, 
-            n_repeats=self.model_settings.n_repeats_perm, 
+            scoring=self.feature_selection_settings.scoring, 
+            n_repeats=self.feature_selection_settings.n_repeats_perm, 
             n_jobs=1,  # to avoid "oversubscription" of CPU resources
-            random_state=self.model_settings.random_state_perm
+            random_state=self.feature_selection_settings.random_state_perm
             )
     #endregion
 

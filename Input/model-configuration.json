@@ -1,132 +1,45 @@
 {
 
-  "n_splits_cv": 2,
-
-  "n_repeats_cv": 1,
-
-  "random_state_cv": 1,
-
-  "n_splits_select": 2,
-
-  "n_repeats_select": 1,
-
-  "random_state_select": 2,
-
-  "n_repeats_perm": 2,
-
-  "random_state_perm": 3,
-
   "n_jobs": -1,
 
-  "criterion_metric": "neg_root_mean_squared_error",
-  
-  "n_features": 10,
+  "modeling_instructions": [
 
-  "model_key_names" : [
-    "target_effect", 
-    "features_source", 
-    "ld50_type", 
-    "data_condition",
-    "model_build",
-    "estimator"
-  ],   
+    {
+      "target_effect" : "general",
+      "features_source" : "opera",
+      "ld50_type" : "predicted",
+      "data_condition" : "missing",
+      "model_build" : "without_selection",
+      "estimators" : ["RandomForestRegressor", "Ridge"]
+    },
 
-  "instruction_keys": [
-    [
-      "general",
-      "opera",
-      "predicted",
-      "missing",
-      "without_selection"
-    ],
-    [
-      "repro_dev",
-      "opera",
-      "predicted",
-      "missing",
-      "without_selection"
-    ],
-    [
-      "general",
-      "opera",
-      "predicted",
-      "missing",
-      "with_selection"
-    ],
-    [
-      "repro_dev",
-      "opera",
-      "predicted",
-      "missing",
-      "with_selection"
-    ]
-  ],      
+    {
+      "target_effect" : "repro_dev",
+      "features_source" : "opera",
+      "ld50_type" : "predicted",
+      "data_condition" : "missing",
+      "model_build" : "without_selection",
+      "estimators" : ["RandomForestRegressor", "Ridge"]
+    },
 
-  "preprocessors_for_condition": {
-    "missing": [
-      "VarianceThreshold",
-      "MissingValuesSelector",
-      "PowerTransformer",
-      "SimpleImputer",
-      "MedianScaler"
-    ],
-    "complete": [
-      "PowerTransformer",
-      "MedianScaler"
-    ]
-  },
+    {
+      "target_effect" : "general",
+      "features_source" : "opera",
+      "ld50_type" : "predicted",
+      "data_condition" : "missing",
+      "model_build" : "with_selection",
+      "estimators" : ["RandomForestRegressor", "Ridge"]
+    },
 
-  "ld50_pred_column_for_source": {
-    "comptox": "ORAL_RAT_LD50_MOL/KG_TEST_PRED",
-    "opera": "CATMoS_LD50_pred"
-  },
+    {
+      "target_effect" : "repro_dev",
+      "features_source" : "opera",
+      "ld50_type" : "predicted",
+      "data_condition" : "missing",
+      "model_build" : "with_selection",
+      "estimators" : ["RandomForestRegressor", "Ridge"]
+    }
 
-  "use_experimental_for_ld50": {
-    "experimental": true,
-    "predicted": false
-  },
-
-  "drop_missing_for_condition": {
-    "complete": true,
-    "missing": false
-  },
-
-  "discrete_columns_for_source": {
-    "comptox": [],
-    "opera": [
-      "CERAPP_Ago_pred",
-      "CERAPP_Anta_pred",
-      "CERAPP_Bind_pred",
-      "CoMPARA_Ago_pred",
-      "CoMPARA_Anta_pred",
-      "CoMPARA_Bind_pred",
-      "nbAtoms",
-      "nbHeavyAtoms",
-      "nbC",
-      "nbO",
-      "nbN",
-      "nbAromAtom",
-      "nbRing",
-      "nbHeteroRing",
-      "nbRotBd",
-      "nbHBdAcc",
-      "ndHBdDon",
-      "nbLipinskiFailures",
-      "ReadyBiodeg_pred"
-    ]
-  },
-
-  "discrete_column_suffix": "_discrete",
-
-  "feature_importance_scorings": [
-    "explained_variance",
-    "max_error",
-    "neg_mean_absolute_error",
-    "neg_mean_squared_error",
-    "neg_root_mean_squared_error",
-    "neg_median_absolute_error",
-    "neg_mean_absolute_percentage_error",
-    "r2"
   ]
 
 }

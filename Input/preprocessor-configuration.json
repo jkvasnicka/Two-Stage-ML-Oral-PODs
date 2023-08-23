@@ -1,37 +1,55 @@
 {
 
-    "VarianceThreshold": {
-        "module": "sklearn.feature_selection",
-        "kwargs": {
-        "threshold": 0
-        }
-    },
+    "preprocessors_for_condition": {
+        "missing": [
+          "VarianceThreshold",
+          "MissingValuesSelector",
+          "PowerTransformer",
+          "SimpleImputer",
+          "MedianScaler"
+        ],
+        "complete": [
+          "PowerTransformer",
+          "MedianScaler"
+        ]
+      },
 
-    "MissingValuesSelector": {
-        "module": "transform",
-        "kwargs": {
-        "threshold": 0.3
-        }
-    },
-
-    "PowerTransformer": {
-        "module": "sklearn.preprocessing",
-        "kwargs": {
-        "standardize": false
+    "settings" : {
+        
+        "VarianceThreshold": {
+            "module": "sklearn.feature_selection",
+            "kwargs": {
+            "threshold": 0
+            }
         },
-        "do_column_select": true
-    },
 
-    "SimpleImputer": {
-        "module": "sklearn.impute",
-        "kwargs": {
-        "strategy": "median"
+        "MissingValuesSelector": {
+            "module": "transform",
+            "kwargs": {
+            "threshold": 0.3
+            }
+        },
+
+        "PowerTransformer": {
+            "module": "sklearn.preprocessing",
+            "kwargs": {
+            "standardize": false
+            },
+            "do_column_select": true
+        },
+
+        "SimpleImputer": {
+            "module": "sklearn.impute",
+            "kwargs": {
+            "strategy": "median"
+            }
+        },
+        
+        "MedianScaler": {
+            "module": "transform",
+            "do_column_select": true
         }
-    },
-    
-    "MedianScaler": {
-        "module": "transform",
-        "do_column_select": true
+
     }
 
 }

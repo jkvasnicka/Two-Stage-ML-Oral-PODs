@@ -31,11 +31,6 @@ class UnifiedConfiguration:
     configuration files for each category are loaded and made accessible as 
     attributes.
 
-    Parameters
-    ----------
-    config_files_dict : dict
-        Dictionary mapping categories to configuration file paths.
-
     Attributes
     ----------
     path : SimpleNamespace (optional)
@@ -44,6 +39,7 @@ class UnifiedConfiguration:
         Configuration settings related to models.
     plot : SimpleNamespace (optional)
         Configuration settings related to plotting.
+    etc.
 
     Example
     -------
@@ -58,9 +54,12 @@ class UnifiedConfiguration:
     VALID_CATEGORIES = {
         'path',
         'preprocessor',
+        'data',
+        'feature_selection',
         'estimator', 
         'metric', 
-        'model', 
+        'model',
+        'evaluation',
         'plot'
         }
 

@@ -24,7 +24,7 @@ class ModelEvaluator:
 
     Attributes
     ----------
-    model_settings : SimpleNamespace
+    evaluation_settings : SimpleNamespace
         The configuration settings for the model evaluation.
     metrics_manager : object
         The manager that handles different evaluation metrics.
@@ -33,23 +33,27 @@ class ModelEvaluator:
         is None).
     '''
     def __init__(
-            self, model_settings, metrics_manager, feature_selector=None):
+            self, evaluation_settings, metrics_manager, feature_selector=None, 
+            n_jobs=None):
         '''
         Initialize the ModelEvaluator.
 
         Parameters
         ----------
-        model_settings : SimpleNamespace
+        evaluation_settings : SimpleNamespace
             The configuration settings for the model evaluation.
         metrics_manager : MetricsManager
             The manager that handles different evaluation metrics.
         feature_selector : FeatureSelector, optional
             An instance of a FeatureSelector to handle feature selection 
             (default is None).
+        n_jobs : int, optional
+            See joblib.Parallel for reference.
         '''
-        self.model_settings = model_settings
+        self.evaluation_settings = evaluation_settings
         self.metrics_manager = metrics_manager
         self.feature_selector = feature_selector
+        self._n_jobs = n_jobs
 #endregion
 
     #region: cross_validate_model
@@ -140,9 +144,9 @@ class ModelEvaluator:
 
         # Initialize the outer cross-validation loop for model evaluation.
         rkf_cv = RepeatedKFold(
-            n_splits=self.model_settings.n_splits_cv, 
-            n_repeats=self.model_settings.n_repeats_cv, 
-            random_state=self.model_settings.random_state_cv
+            n_splits=self.evaluation_settings.n_splits_cv, 
+            n_repeats=self.evaluation_settings.n_repeats_cv, 
+            random_state=self.evaluation_settings.random_state_cv
             )
 
         for train_ix, test_ix in rkf_cv.split(X):
@@ -223,12 +227,12 @@ class ModelEvaluator:
             The performance results across different folds.
         '''
         rkf = RepeatedKFold(
-            n_splits=self.model_settings.n_splits_cv, 
-            n_repeats=self.model_settings.n_repeats_cv, 
-            random_state=self.model_settings.random_state_cv
+            n_splits=self.evaluation_settings.n_splits_cv, 
+            n_repeats=self.evaluation_settings.n_repeats_cv, 
+            random_state=self.evaluation_settings.random_state_cv
             )
 
-        performances = Parallel(n_jobs=self.model_settings.n_jobs)(
+        performances = Parallel(n_jobs=self._n_jobs)(
             delayed(self._split_fit_predict_and_score)(
                 estimator, 
                 X, 
