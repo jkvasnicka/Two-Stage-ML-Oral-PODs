@@ -52,16 +52,33 @@ class ResultsManager:
         Reads the result CSV file and returns a DataFrame.
     ... (other methods)
     '''
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, model_key_creator=None):
         '''
         Initialize the ResultsManager with the specified output directory.
+
+        This manager handles the storage and retrieval of model results and 
+        metadata. If a ModelKeyCreator is provided, it will be used to 
+        facilitate model key creation during the initial writing of results.
 
         Parameters
         ----------
         output_dir : str
             Path to the directory where results and estimators will be saved.
+        model_key_creator : ModelKeyCreator, optional
+            An instance of ModelKeyCreator to assist in creating model keys. 
+            Primarily used during the initial writing stage of results. 
+            If not provided, model key creation is assumed to have been 
+            handled externally.
         '''
         self.output_dir = output_dir
+        
+        if model_key_creator:
+
+            model_key_names = model_key_creator.create_model_key_names()
+            self.write_model_key_names(model_key_names)
+
+            mapping = model_key_creator.create_identifier_key_mapping()
+            self.write_identifier_key_mapping(mapping)
 #endregion
 
     #region: write_results
@@ -269,41 +286,52 @@ class ResultsManager:
         This method builds the path based on the given parameters and ensures
         that the corresponding directory exists.
         '''
-        directory_name = self._convert_model_key(model_key=model_key)
+        directory_name = self.model_key_to_identifier(model_key)
         directory = os.path.join(self.output_dir, directory_name)
         self._ensure_directory(directory)
         
         return os.path.join(directory, f'{result_type}.{extension}')
     #endregion
-
-    #region: _convert_model_key
-    def _convert_model_key(self, model_key=None, directory_name=None):
+    
+    #region: identifier_to_model_key
+    def identifier_to_model_key(self, identifier):
         '''
-        Convert between model key and directory name representations.
+        Retrieve the model key corresponding to a given identifier.
 
         Parameters
         ----------
-        model_key : tuple of str, optional
-            Model key to be converted into directory name.
-        directory_name : str, optional
-            Directory name to be converted into model key.
+        identifier : str
+            The simple identifier used to represent a model key.
 
         Returns
         -------
-        str or tuple of str
-            Converted directory name (if model_key is provided) or model key 
-            (if directory_name is provided).
-
-        Notes
-        -----
-        Either model_key or directory_name must be provided, but not both.
+        tuple
+            The model key corresponding to the provided identifier. 
+            If the identifier is not found, returns None.
         '''
-        if model_key:
-            # Build directory name
-            return '-'.join(model_key)
-        elif directory_name:
-            # Collapse directory name into model key
-            return tuple(directory_name.split('-'))
+        mapping = self.read_identifier_key_mapping()
+        return mapping.get(identifier)
+    #endregion
+
+    #region: model_key_to_identifier
+    def model_key_to_identifier(self, model_key):
+        '''
+        Retrieve the identifier corresponding to a given model key.
+
+        Parameters
+        ----------
+        model_key : tuple
+            The model key for which to find the corresponding identifier.
+
+        Returns
+        -------
+        str
+            The identifier representing the provided model key. 
+            Raises a KeyError if the model key is not found.
+        '''
+        mapping = self.read_identifier_key_mapping()
+        inverse_mapping = {v: k for k, v in mapping.items()}
+        return inverse_mapping[model_key]
     #endregion
 
     #region: _ensure_directory
@@ -392,6 +420,7 @@ class ResultsManager:
         return [multi_index.names.index(name) for name in level_names]
     #endregion
 
+    # TODO: Change to 'read_model_keys'
     #region: list_model_keys
     def list_model_keys(self, inclusion_string=None, exclusion_string=None):
         '''
@@ -422,7 +451,7 @@ class ResultsManager:
             entry_path = os.path.join(self.output_dir, entry)
 
             if os.path.isdir(entry_path):
-                model_key = self._convert_model_key(directory_name=entry)
+                model_key = self.identifier_to_model_key(entry)
                 model_keys.append(model_key)
 
         if inclusion_string:
@@ -466,8 +495,8 @@ class ResultsManager:
         return all_metadata['model_key_names']
     #endregion
 
-    #region: get_model_key_mapping
-    def get_model_key_mapping(self, model_key):
+    #region: get_name_key_mapping
+    def get_name_key_mapping(self, model_key):
         '''
         Map the elements of a model key to their corresponding names.
 
@@ -482,7 +511,52 @@ class ResultsManager:
             Dictionary mapping model key names to their corresponding elements 
             in the given model key.
         '''
-        return dict(zip(self.model_key_names, model_key))
+        model_key_names = self.read_model_key_names()
+        return dict(zip(model_key_names, model_key))
+    #endregion
+
+    #region: write_identifier_key_mapping
+    def write_identifier_key_mapping(self, model_key_for_id):
+        '''
+        Write the mapping between model identifiers and their corresponding 
+        model keys to the metadata file.
+
+        Parameters
+        ----------
+        model_key_for_id : dict
+            A dictionary with identifiers (str) as keys and model keys (list) 
+            as values.
+
+        Notes
+        -----
+        This method updates the metadata with the provided mapping and 
+        writes the updated metadata back to the file.
+        '''
+        all_metadata = self.read_all_metadata()
+        all_metadata['model_key_for_id'] = model_key_for_id
+        self.write_all_metadata(all_metadata)
+    #endregion
+
+    #region: read_identifier_key_mapping
+    def read_identifier_key_mapping(self):
+        '''
+        Retrieve the mapping between model identifiers and their corresponding 
+        model keys.
+
+        Returns
+        -------
+        dict
+            A dictionary where keys are identifiers (str) and values are model 
+            keys (tuple).
+
+        Notes
+        -----
+        The method reads the metadata file, extracts the mapping, 
+        and converts model keys from lists (as stored in JSON) to tuples.
+        '''
+        all_metadata = self.read_all_metadata()
+        mapping = all_metadata['model_key_for_id']
+        return {id : tuple(model_key) for id, model_key in mapping.items()}
     #endregion
 
     #region: write_all_metadata
