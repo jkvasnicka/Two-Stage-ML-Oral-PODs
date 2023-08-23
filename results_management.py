@@ -420,9 +420,8 @@ class ResultsManager:
         return [multi_index.names.index(name) for name in level_names]
     #endregion
 
-    # TODO: Change to 'read_model_keys'
-    #region: list_model_keys
-    def list_model_keys(self, inclusion_string=None, exclusion_string=None):
+    #region: read_model_keys
+    def read_model_keys(self, inclusion_string=None, exclusion_string=None):
         '''
         List all model keys present in the output directory. 
         
@@ -649,7 +648,7 @@ class ResultsManager:
         '''
         if model_keys is None:
             # Use all model keys.
-            model_keys = self.list_model_keys()
+            model_keys = self.read_model_keys()
 
         if isinstance(exclusion_key_names , str):
             exclusion_key_names  = [exclusion_key_names]

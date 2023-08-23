@@ -923,7 +923,7 @@ def _feature_importances_boxplots(
     -------
     None : None
     '''
-    model_keys = results_analyzer.list_model_keys(exclusion_string='without_selection')
+    model_keys = results_analyzer.read_model_keys(exclusion_string='without_selection')
     for model_key in model_keys:
         
         fig, axs = plt.subplots(

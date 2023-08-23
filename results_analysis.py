@@ -369,14 +369,14 @@ class ResultsAnalyzer:
         return list_of_df
     #endregion
 
-    #region: list_model_keys
-    def list_model_keys(
+    #region: read_model_keys
+    def read_model_keys(
             self, 
             inclusion_string=None, 
             exclusion_string=None
             ):
-        '''Refer to `ResultsManager.list_model_keys` for documentation'''
-        return self.results_manager.list_model_keys(
+        '''Refer to `ResultsManager.read_model_keys` for documentation'''
+        return self.results_manager.read_model_keys(
             inclusion_string, 
             exclusion_string
             )
