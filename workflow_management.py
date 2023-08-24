@@ -176,20 +176,20 @@ class WorkflowManager:
             Dictionary containing the evaluation results and model parameters.
         '''
         # Determine whether to perform feature selection
-        with_selection = instruction['model_build'] == 'with_selection'
+        select_features = instruction['select_features'] == 'true'
 
         evaluation_results = self.model_evaluator.cross_validate_model(
                 estimator, 
                 X, 
                 y,
-                with_selection
+                select_features
         )
         
         build_results = self.model_builder.train_final_model(
             estimator, 
             X, 
             y, 
-            with_selection
+            select_features
         )
         
         return {**evaluation_results, **build_results}

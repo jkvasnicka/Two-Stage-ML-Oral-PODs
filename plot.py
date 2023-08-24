@@ -430,7 +430,6 @@ def proportions_incomplete(X_subset, AD_flags_subset):
     return sorted_proportions
 #endregion
 
-# TODO: Decouple function_for_metric from workflow
 #region: in_and_out_sample_comparisons
 def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_metric, ylim=(0., 1.)):
     '''
@@ -444,13 +443,13 @@ def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_
     '''
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys_outer = results_analyzer.group_model_keys(
-        ['target_effect', 'model_build']
+        ['target_effect', 'select_features']
         )
 
     for grouping_key_outer, model_keys in grouped_keys_outer:
 
         grouped_keys_inner = results_analyzer.group_model_keys(
-            'model_build',
+            'select_features',
             model_keys=model_keys
             )
         
@@ -561,8 +560,8 @@ def _in_sample_performance_scatterplots(
             ## Set labels depending on the Axes.
             xlabel, ylabel = '', ''
             if i == len(grouped_keys_inner) - 1:
-                model_build = plot_settings.label_for_model_build[key_for['model_build']]
-                xlabel = f'Observed {plot_settings.prediction_label}\n{model_build}'
+                select_features = plot_settings.label_for_select_features[key_for['select_features']]
+                xlabel = f'Observed {plot_settings.prediction_label}\n{select_features}'
             if j == 0:
                 effect = plot_settings.label_for_effect[key_for['target_effect']]
                 ylabel = f'{effect}\nPredicted {plot_settings.prediction_label}'
@@ -622,11 +621,11 @@ def _in_sample_performance_boxplots(
         )
         performances_wide = performances_wide.loc[:, where_subset_metrics]
         # Rename the columns for visualization.
-        label_for_model_build = {
-            k : v.split(' ')[0] for k, v in plot_settings.label_for_model_build.items()}
+        label_for_select_features = {
+            k : v.split(' ')[0] for k, v in plot_settings.label_for_select_features.items()}
         label_for_column = {
             **plot_settings.label_for_metric, 
-            **label_for_model_build
+            **label_for_select_features
         }
         performances_wide = performances_wide.rename(label_for_column, axis=1)
 
@@ -651,7 +650,7 @@ def _in_sample_performance_boxplots(
 
             sns.boxplot(
                 data=metric_data_long,
-                y='model_build', 
+                y='select_features', 
                 x='value', 
                 ax=ax,
                 flierprops=_flierprops,
@@ -698,9 +697,8 @@ def out_of_sample_prediction_scatterplots(
             
         ## Get the predictions for all data.
 
-        key_without_selection = next(
-            k for k in model_keys if 'without_selection' in k)
-        key_with_selection = next(k for k in model_keys if 'with_selection' in k)
+        key_without_selection = next(k for k in model_keys if 'false' in k)
+        key_with_selection = next(k for k in model_keys if 'true' in k)
 
         y_pred_without, *_ = results_analyzer.predict_out_of_sample(key_without_selection)
         y_pred_with, *_ = results_analyzer.predict_out_of_sample(key_with_selection)
@@ -716,8 +714,8 @@ def out_of_sample_prediction_scatterplots(
             raise ValueError(f'Inconsistent target effects: {effects}')
         title = plot_settings.label_for_effect[effects[0]]
         
-        def create_label(model_build):
-            return f'{plot_settings.prediction_label} {plot_settings.label_for_model_build[model_build]}'
+        def create_label(select_features):
+            return f'{plot_settings.prediction_label} {plot_settings.label_for_select_features[select_features]}'
         
         # The labeled samples will be plotted in a separate color.
         _, y_true = results_analyzer.load_features_and_target(**key_for)
@@ -735,8 +733,8 @@ def out_of_sample_prediction_scatterplots(
             color=plot_settings.color_for_sample_type['out'], 
             highlight_color=plot_settings.color_for_sample_type['in'],
             title=title, 
-            xlabel=create_label('without_selection'), 
-            ylabel=create_label('with_selection') if i == 0 else ''
+            xlabel=create_label('false'), 
+            ylabel=create_label('true') if i == 0 else ''
         )
 
         # Update the limits for the one-one line.
@@ -777,7 +775,7 @@ def important_feature_counts(
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys = results_analyzer.group_model_keys(
         'target_effect', 
-        string_to_exclude='without_selection'
+        string_to_exclude='false'
     )
 
     for grouping_key, model_keys in grouped_keys:
@@ -923,7 +921,7 @@ def _feature_importances_boxplots(
     -------
     None : None
     '''
-    model_keys = results_analyzer.read_model_keys(exclusion_string='without_selection')
+    model_keys = results_analyzer.read_model_keys(exclusion_string='false')
     for model_key in model_keys:
         
         fig, axs = plt.subplots(

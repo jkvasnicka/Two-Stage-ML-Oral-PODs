@@ -57,7 +57,7 @@ class ModelEvaluator:
 #endregion
 
     #region: cross_validate_model
-    def cross_validate_model(self, estimator, X, y, with_selection=False):
+    def cross_validate_model(self, estimator, X, y, select_features=False):
         '''
         Evaluate the model with or without feature selection.
 
@@ -69,7 +69,7 @@ class ModelEvaluator:
             The features data.
         y : pandas.Series
             The target data.
-        with_selection : bool, optional
+        select_features : bool, optional
             Whether to include feature selection in the evaluation (default is 
             False).
 
@@ -78,7 +78,7 @@ class ModelEvaluator:
         dict
             Evaluation results.
         '''
-        if with_selection:
+        if select_features:
             return self._cross_validate_with_selection(estimator, X, y)
         else:
             return self._cross_validate_without_selection(estimator, X, y)

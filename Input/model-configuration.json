@@ -9,7 +9,7 @@
       "features_source" : "opera",
       "ld50_type" : "predicted",
       "data_condition" : "missing",
-      "model_build" : "without_selection",
+      "select_features" : "false",
       "estimators" : ["RandomForestRegressor", "Ridge"]
     },
 
@@ -18,7 +18,7 @@
       "features_source" : "opera",
       "ld50_type" : "predicted",
       "data_condition" : "missing",
-      "model_build" : "without_selection",
+      "select_features" : "false",
       "estimators" : ["RandomForestRegressor", "Ridge"]
     },
 
@@ -27,7 +27,7 @@
       "features_source" : "opera",
       "ld50_type" : "predicted",
       "data_condition" : "missing",
-      "model_build" : "with_selection",
+      "select_features" : "true",
       "estimators" : ["RandomForestRegressor", "Ridge"]
     },
 
@@ -36,7 +36,7 @@
       "features_source" : "opera",
       "ld50_type" : "predicted",
       "data_condition" : "missing",
-      "model_build" : "with_selection",
+      "select_features" : "true",
       "estimators" : ["RandomForestRegressor", "Ridge"]
     }
 

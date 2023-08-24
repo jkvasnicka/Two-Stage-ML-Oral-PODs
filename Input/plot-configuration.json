@@ -22,9 +22,9 @@
       "repro_dev" : "#d62728" 
     },
 
-    "label_for_model_build": {
-      "with_selection": "With Selection",
-      "without_selection": "Without Selection"
+    "label_for_select_features": {
+      "true": "With Selection",
+      "false": "Without Selection"
     },
 
     "label_for_exposure_column" : {

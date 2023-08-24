@@ -8,7 +8,7 @@ Example
 -------
 feature_selector = FeatureSelector(model_settings)
 model_builder = ModelBuilder(feature_selector)
-result = model_builder.build(estimator, X, y, with_selection=True)
+result = model_builder.build(estimator, X, y, select_features=True)
 '''
 
 #region: ModelBuilder.__init__
@@ -37,7 +37,7 @@ class ModelBuilder:
 #endregion
     
     #region: train_final_model
-    def train_final_model(self, estimator, X, y, with_selection=False):
+    def train_final_model(self, estimator, X, y, select_features=False):
         '''
         Build a model with or without feature selection.
 
@@ -49,7 +49,7 @@ class ModelBuilder:
             Feature matrix.
         y : array-like
             Target vector.
-        with_selection : bool, optional
+        select_features : bool, optional
             Whether to perform feature selection during model building, 
             default is False.
 
@@ -59,7 +59,7 @@ class ModelBuilder:
             A dictionary containing the built estimator and additional 
             results.
         '''
-        if with_selection:
+        if select_features:
             return self._train_final_model_with_selection(
                 estimator, X, y)
         else:
