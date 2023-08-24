@@ -14,8 +14,8 @@ import numpy as np
 import os
 import logging
 import re
+import json
 
-from input_output import json_to_dict
 from features import inverse_log10_transform
 
 #region: chemicals_to_exclude_from_qsar
@@ -527,4 +527,17 @@ def print_error_log_files(
                 print("\n----------\n")
         except Exception as e:
             print(f"Could not open and print the log file at {path} due to error: {str(e)}")
+#endregion
+
+#region: json_to_dict
+def json_to_dict(json_path):
+    '''Load a JSON file as a dictionary.
+
+    Parameters
+    ----------
+    json_path : str
+        Path to the JSON file.
+    '''
+    with open(json_path) as f:
+        return json.loads(f.read())
 #endregion
