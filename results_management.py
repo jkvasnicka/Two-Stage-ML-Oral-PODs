@@ -558,6 +558,39 @@ class ResultsManager:
         return {id : tuple(model_key) for id, model_key in mapping.items()}
     #endregion
 
+    #region: write_configuration
+    def write_configuration(self, configuration):
+        '''
+        Write all configuration settings to a JSON file.
+
+        The configuration is stored as a nested dictionary mapping each 
+        configuration category name to the corresponding settings.
+
+        Parameters
+        ----------
+        configuration : UnifiedConfiguration
+            Contains all configuration settings.
+        '''
+        all_metadata = self.read_all_metadata()
+        all_metadata['configuration'] = configuration.to_dict()
+        self.write_all_metadata(all_metadata)
+    #endregion
+
+    #region: read_configuration
+    def read_configuration(self):
+        '''
+        Retrieve the configuration metadata.
+
+        Returns
+        -------
+        dict
+            Configuration stored as a nested dictionary mapping each 
+            configuration category name to the corresponding settings.
+        '''
+        all_metadata = self.read_all_metadata()
+        return all_metadata['configuration']
+    #endregion
+
     #region: write_all_metadata
     def write_all_metadata(self, metadata):
         '''

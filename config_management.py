@@ -84,8 +84,6 @@ class UnifiedConfiguration:
                 f'Invalid categories {difference}.\n'
                 f'Expected: {self.VALID_CATEGORIES}')
 
-        self._config_for_category = {}  # initialize
-
         # Load each file into its category
         for category, file_path in config_files_dict.items():
             with open(file_path, 'r') as config_file:
@@ -94,7 +92,21 @@ class UnifiedConfiguration:
 #endregion
 
     #region: to_dict
-    def to_dict(self, category):
+    def to_dict(self):
+        '''
+        Convert the UnifiedConfiguration (self) into a nested dictionary.
+
+        Returns
+        -------
+        dict
+            A dictionary mapping each category name to the corresponding 
+            settings.
+        '''
+        return {cat : self.category_to_dict(cat) for cat in self.__dict__}
+    #endregion
+
+    #region: category_to_dict
+    def category_to_dict(self, category):
         '''
         Convert the configuration settings of the specified category to a 
         dictionary.
@@ -110,10 +122,6 @@ class UnifiedConfiguration:
         dict
             A dictionary representation of the configuration settings for the 
             specified category.
-
-        Example
-        -------
-            metrics_dict = config.to_dict('metrics')
         '''
         return getattr(self, category).__dict__
     #endregion

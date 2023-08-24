@@ -43,9 +43,7 @@ class ResultsAnalyzer:
     split_replicates(dataframe, stride) 
         Split a replicates DataFrame into individual DataFrames.
     '''
-    def __init__(
-            self, results_manager, data_manager, feature_selection_settings,
-            seem3_exposure_file):
+    def __init__(self, results_manager, data_manager, exposure_file):
         '''
         Initialize the ResultsAnalyzer class.
 
@@ -53,15 +51,12 @@ class ResultsAnalyzer:
         ----------
         results_manager : A `ResultsManager` instance
         data_manager : A `DataManager` instance
-        feature_selection_settings : SimpleNamespace object
-            Configuration settings for feature selection.
-        seem3_exposure_file : str
+        exposure_file : str
             Path to the exposure data file.
         '''
         self.results_manager = results_manager
         self.data_manager = data_manager
-        self.feature_selection_settings = feature_selection_settings
-        self._seem3_exposure_file = seem3_exposure_file
+        self._seem3_exposure_file = exposure_file
 #endregion
 
     #region: get_in_sample_prediction
@@ -265,7 +260,6 @@ class ResultsAnalyzer:
         return moe
     #endregion
 
-    # TODO: Write model parameters to results metadata?
     #region: get_important_features
     def get_important_features(self, model_key):
         '''
@@ -283,19 +277,20 @@ class ResultsAnalyzer:
         '''
         result_df = self.results_manager.read_result(model_key, 'importances')
 
-        # Get the parameters to reproduce the feature selection
+        ## Reproduce the feature selection using the stored settings
+
+        config = self.results_manager.read_configuration()
         args = (
-            self.feature_selection_settings.criterion_metric,
-            self.feature_selection_settings.n_features
+            config['feature_selection']['criterion_metric'],
+            config['feature_selection']['n_features']
         )
-        
         feature_names = (
             FeatureSelector.select_features(result_df, *args)
         )
+        
         return feature_names
     #endregion
 
-    # TODO: Write model parameters to results metadata?
     #region: get_important_features_replicates
     def get_important_features_replicates(self, model_key):
         '''
@@ -318,23 +313,26 @@ class ResultsAnalyzer:
             'importances_replicates'
             )
 
-        # Get the parameters to reproduce the feature selection
+        ## Reproduce the feature selection using the stored settings
+        
+        config = self.results_manager.read_configuration()
+
         stride = (
-            self.feature_selection_settings.n_splits_select
-            * self.feature_selection_settings.n_repeats_select 
-            * self.feature_selection_settings.n_repeats_perm
+            config['feature_selection']['n_splits_select']
+            * config['feature_selection']['n_repeats_select'] 
+            * config['feature_selection']['n_repeats_perm']
         )
         args = (
-            self.feature_selection_settings.criterion_metric,
-            self.feature_selection_settings.n_features
+            config['feature_selection']['criterion_metric'],
+            config['feature_selection']['n_features']
         )
 
         list_of_df = ResultsAnalyzer.split_replicates(result_df, stride)
-
         feature_names_for_replicate = {
             i : FeatureSelector.select_features(result_df, *args) 
             for i, result_df in enumerate(list_of_df)
             }
+        
         return feature_names_for_replicate
     #endregion
 

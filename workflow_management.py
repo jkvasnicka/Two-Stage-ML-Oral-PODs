@@ -74,7 +74,7 @@ class WorkflowManager:
             )
 
         self.pipeline_builder = PipelineBuilder(
-            config.to_dict('estimator'), 
+            config.category_to_dict('estimator'), 
             config.preprocessor.settings,
             config.data.discrete_column_suffix
             )
@@ -86,7 +86,7 @@ class WorkflowManager:
 
         self.model_builder = ModelBuilder(feature_selector)
 
-        metrics_manager = MetricsManager(config.to_dict('metric'))
+        metrics_manager = MetricsManager(config.category_to_dict('metric'))
         self.model_evaluator = ModelEvaluator(
             config.evaluation, 
             metrics_manager,
@@ -117,6 +117,9 @@ class WorkflowManager:
         -------
         None
         '''
+        # For reproducibility,
+        self.results_manager.write_configuration(self._config)
+
         for instruction in self._config.model.modeling_instructions:
 
             X, y = self.data_manager.load_features_and_target(**instruction)            
