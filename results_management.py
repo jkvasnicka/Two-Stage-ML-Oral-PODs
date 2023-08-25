@@ -440,7 +440,7 @@ class ResultsManager:
     #region: read_model_keys
     def read_model_keys(self, inclusion_string=None, exclusion_string=None):
         '''
-        List all model keys present in the output directory. 
+        List all model keys present in the metadata file.
         
         The keys are optionally filtered by inclusion or exclusion criteria.
 
@@ -461,14 +461,9 @@ class ResultsManager:
             List of model keys, where each model key is represented as a tuple of 
             strings.
         '''
-        model_keys = []
-
-        for entry in os.listdir(self.output_dir):
-            entry_path = os.path.join(self.output_dir, entry)
-
-            if os.path.isdir(entry_path):
-                model_key = self.identifier_to_model_key(entry)
-                model_keys.append(model_key)
+        model_keys = [
+            tuple(v) for v in self.read_identifier_key_mapping().values()
+            ]
 
         if inclusion_string:
             model_keys = [k for k in model_keys if inclusion_string in k]
