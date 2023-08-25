@@ -1,4 +1,6 @@
 {
+
+      "file_type" : "csv",
     
       "ld50_pred_column_for_source": {
         "comptox": "ORAL_RAT_LD50_MOL/KG_TEST_PRED",

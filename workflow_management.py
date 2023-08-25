@@ -99,7 +99,8 @@ class WorkflowManager:
             )
         self.results_manager = ResultsManager(
             config.path.results_dir,
-            self.model_key_creator
+            results_file_type=config.data.file_type,
+            model_key_creator=self.model_key_creator
         )
 #endregion
     

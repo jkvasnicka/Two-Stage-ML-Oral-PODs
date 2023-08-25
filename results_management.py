@@ -2,7 +2,7 @@
 The `results_management` module provides the `ResultsManager` class, 
 responsible for managing the writing, reading, and handling of results 
 and fitted estimators. It includes methods for saving and retrieving results 
-in CSV format, handling fitted estimator objects with Joblib, managing 
+in Parquet format, handling fitted estimator objects with Joblib, managing 
 metadata such as headers, and providing utility functions for listing and 
 accessing model keys.
 
@@ -25,8 +25,7 @@ class ResultsManager:
     The `ResultsManager` class provides methods to handle the storage and 
     retrieval of various types of results including model performances, 
     importances, fitted estimators, and metadata such as headers and model key 
-    names. It supports reading and writing CSV files for results and Joblib 
-    files for estimators.
+    names. It supports reading and writing files for results and estimators.
 
     Parameters
     ----------
@@ -43,16 +42,16 @@ class ResultsManager:
     Methods
     -------
     write_estimator(estimator, model_key)
-        Writes the fitted estimator to a Joblib file.
+        Write the fitted estimator to a Joblib file.
     read_estimator(model_key)
-        Reads the fitted estimator from a Joblib file.
+        Read the fitted estimator from a Joblib file.
     write_result(result_df, model_key, result_type)
-        Writes the result DataFrame to a CSV file.
+        Write the result DataFrame to the specified file.
     read_result(model_key, result_type)
-        Reads the result CSV file and returns a DataFrame.
+        Read the result file and returns a DataFrame.
     ... (other methods)
     '''
-    def __init__(self, output_dir, model_key_creator=None):
+    def __init__(self, output_dir, results_file_type='csv', model_key_creator=None):
         '''
         Initialize the ResultsManager with the specified output directory.
 
@@ -64,6 +63,8 @@ class ResultsManager:
         ----------
         output_dir : str
             Path to the directory where results and estimators will be saved.
+        results_file_type : str, optional
+            Must be 'csv' or 'parquet'. Default 'csv'.
         model_key_creator : ModelKeyCreator, optional
             An instance of ModelKeyCreator to assist in creating model keys. 
             Primarily used during the initial writing stage of results. 
@@ -71,6 +72,11 @@ class ResultsManager:
             handled externally.
         '''
         self.output_dir = output_dir
+
+        if results_file_type not in ('csv', 'parquet'):
+            raise ValueError(
+                "'results_file_type' must be either 'csv' or 'parquet'")
+        self._results_file_type = results_file_type
         
         if model_key_creator:
 
@@ -171,7 +177,7 @@ class ResultsManager:
     #region: write_result
     def write_result(self, result_df, model_key, result_type):
         '''
-        Write a result DataFrame to a CSV file.
+        Write a result DataFrame to the specified file type.
 
         Parameters
         ----------
@@ -184,20 +190,25 @@ class ResultsManager:
 
         Notes
         -----
-        The CSV file is saved in a subdirectory named after the model_key,
+        The result file is saved in a subdirectory named after the model_key,
         within the output directory.
         '''
         # Create directory structure
-        path = self._build_path(model_key, result_type, 'csv')
+        path = self._build_path(
+            model_key, result_type, self._results_file_type)
+
         # Write DataFrame to disk
-        result_df.to_csv(path)
-        self.write_level_names(result_df.columns.names, result_type)
+        if self._results_file_type == 'csv':
+            result_df.to_csv(path)
+            self.write_level_names(result_df.columns.names, result_type)
+        elif self._results_file_type == 'parquet':
+            result_df.to_parquet(path)
     #endregion
 
     #region: read_result
     def read_result(self, model_key, result_type):
         '''
-        Read the result CSV file and return a DataFrame.
+        Read the result file and return a DataFrame.
 
         Parameters
         ----------
@@ -213,14 +224,20 @@ class ResultsManager:
 
         Notes
         -----
-        The CSV file is read from a subdirectory named after the model_key,
+        The result file is read from a subdirectory named after the model_key,
         within the output directory.
         '''
-        path = self._build_path(model_key, result_type, 'csv')
-        level_names = self.read_level_names()[result_type]
-        header_indices = list(range(len(level_names)))
-        result_df = pd.read_csv(path, header=header_indices, index_col=0)
-        result_df.columns.names = level_names
+        path = self._build_path(
+            model_key, result_type, self._results_file_type)
+
+        if self._results_file_type == 'csv':
+            level_names = self.read_level_names()[result_type]
+            header_indices = list(range(len(level_names)))
+            result_df = pd.read_csv(path, header=header_indices, index_col=0)
+            result_df.columns.names = level_names
+        elif self._results_file_type == 'parquet':
+            result_df = pd.read_parquet(path)
+
         return result_df
     #endregion
 
@@ -263,7 +280,7 @@ class ResultsManager:
     #endregion
 
     #region: _build_path
-    def _build_path(self, model_key, result_type, extension):
+    def _build_path(self, model_key, result_type, file_type):
         '''
         Build the full path for the specified file.
 
@@ -273,8 +290,8 @@ class ResultsManager:
             Model key identifying the result.
         result_type : str
             Type of result (e.g., "performances", "importances").
-        extension : str
-            File extension (e.g., "csv", "joblib").
+        file_type : str
+            File extension (e.g., "csv", "parquet", "joblib").
 
         Returns
         -------
@@ -290,7 +307,7 @@ class ResultsManager:
         directory = os.path.join(self.output_dir, directory_name)
         self._ensure_directory(directory)
         
-        return os.path.join(directory, f'{result_type}.{extension}')
+        return os.path.join(directory, f'{result_type}.{file_type}')
     #endregion
     
     #region: identifier_to_model_key
