@@ -7,8 +7,29 @@
     }
 
   },
+
+  "GradientBoostingRegressor": {
+    "module": "sklearn.ensemble"
+  },
+
   "Ridge": {
     "module": "sklearn.linear_model"
+  },
+
+  "LinearRegression": {
+    "module": "sklearn.linear_model"
+  },
+
+  "XGBRegressor": {
+    "module": "xgboost"
+  },
+
+  "SVR": {
+    "module": "sklearn.svm"
+  },
+
+  "MLPRegressor": {
+    "module": "sklearn.neural_network"
   }
   
 }

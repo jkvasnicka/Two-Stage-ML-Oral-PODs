@@ -9,8 +9,8 @@
       "features_source" : "opera",
       "ld50_type" : "predicted",
       "data_condition" : "missing",
-      "select_features" : "false",
-      "estimators" : ["RandomForestRegressor", "Ridge"]
+      "select_features" : "true",
+      "estimators" : ["RandomForestRegressor"]
     },
 
     {
@@ -18,8 +18,8 @@
       "features_source" : "opera",
       "ld50_type" : "predicted",
       "data_condition" : "missing",
-      "select_features" : "false",
-      "estimators" : ["RandomForestRegressor", "Ridge"]
+      "select_features" : "true",
+      "estimators" : ["RandomForestRegressor"]
     },
 
     {
@@ -27,8 +27,15 @@
       "features_source" : "opera",
       "ld50_type" : "predicted",
       "data_condition" : "missing",
-      "select_features" : "true",
-      "estimators" : ["RandomForestRegressor", "Ridge"]
+      "select_features" : "false",
+      "estimators" : [
+        "GradientBoostingRegressor",
+        "Ridge",
+        "LinearRegression",
+        "XGBRegressor",
+        "SVR",
+        "MLPRegressor"
+      ]
     },
 
     {
@@ -36,8 +43,69 @@
       "features_source" : "opera",
       "ld50_type" : "predicted",
       "data_condition" : "missing",
-      "select_features" : "true",
-      "estimators" : ["RandomForestRegressor", "Ridge"]
+      "select_features" : "false",
+      "estimators" : [
+        "GradientBoostingRegressor",
+        "Ridge",
+        "LinearRegression",
+        "XGBRegressor",
+        "SVR",
+        "MLPRegressor"
+      ]
+    },
+
+    {
+      "target_effect" : "general",
+      "features_source" : "comptox",
+      "ld50_type" : "predicted",
+      "data_condition" : "missing",
+      "select_features" : "false",
+      "estimators" : ["RandomForestRegressor"]
+    },
+
+    {
+      "target_effect" : "repro_dev",
+      "features_source" : "comptox",
+      "ld50_type" : "predicted",
+      "data_condition" : "missing",
+      "select_features" : "false",
+      "estimators" : ["RandomForestRegressor"]
+    },
+
+    {
+      "target_effect" : "general",
+      "features_source" : "opera",
+      "ld50_type" : "experimental",
+      "data_condition" : "missing",
+      "select_features" : "false",
+      "estimators" : ["RandomForestRegressor"]
+    },
+
+    {
+      "target_effect" : "repro_dev",
+      "features_source" : "opera",
+      "ld50_type" : "experimental",
+      "data_condition" : "missing",
+      "select_features" : "false",
+      "estimators" : ["RandomForestRegressor"]
+    },
+
+    {
+      "target_effect" : "general",
+      "features_source" : "opera",
+      "ld50_type" : "predicted",
+      "data_condition" : "complete",
+      "select_features" : "false",
+      "estimators" : ["RandomForestRegressor"]
+    },
+
+    {
+      "target_effect" : "repro_dev",
+      "features_source" : "opera",
+      "ld50_type" : "predicted",
+      "data_condition" : "complete",
+      "select_features" : "false",
+      "estimators" : ["RandomForestRegressor"]
     }
 
   ]
