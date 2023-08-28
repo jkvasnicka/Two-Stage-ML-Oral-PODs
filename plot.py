@@ -435,6 +435,9 @@ def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_
     '''
     Generate in-sample performance comparisons and out-of-sample prediction 
     scatterplots.
+
+    This function only handles model groupings containing both effect types
+    with and without feature selection (i.e., four model keys).
     
     Parameters
     ----------
@@ -447,6 +450,10 @@ def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_
         )
 
     for grouping_key_outer, model_keys in grouped_keys_outer:
+
+        # Check if the grouping has 2 effect types + 2 feature selection types
+        if len(model_keys) != 4:
+            continue  # next iteration
 
         grouped_keys_inner = results_analyzer.group_model_keys(
             'select_features',
