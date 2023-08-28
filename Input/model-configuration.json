@@ -29,6 +29,7 @@
       "data_condition" : "missing",
       "select_features" : "false",
       "estimators" : [
+        "RandomForestRegressor",
         "GradientBoostingRegressor",
         "Ridge",
         "LinearRegression",
@@ -45,6 +46,7 @@
       "data_condition" : "missing",
       "select_features" : "false",
       "estimators" : [
+        "RandomForestRegressor",
         "GradientBoostingRegressor",
         "Ridge",
         "LinearRegression",
