@@ -698,7 +698,10 @@ def _in_sample_performance_boxplots(
 
         # TODO: Is all this necessary?
         ## Prepare the data
-        performances_wide = results_analyzer.combine_results(model_keys, 'performances')
+        performances_wide = results_analyzer.combine_results(
+            'performances', 
+            model_keys=model_keys
+            )
         # Filter the data.
         where_subset_metrics = (
             performances_wide.columns

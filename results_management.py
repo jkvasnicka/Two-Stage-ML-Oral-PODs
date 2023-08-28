@@ -242,19 +242,20 @@ class ResultsManager:
     #endregion
 
     #region: combine_results
-    def combine_results(self, model_keys, result_type):
+    def combine_results(self, result_type, model_keys=None):
         '''
         Combine results from multiple model keys into a single DataFrame with 
         MultiIndex columns.
 
         Parameters
         ----------
-        model_keys : list of tuple
-            List of model keys for which to retrieve the results.
         result_type : str
             The type of result to retrieve, e.g., 'performances', 
             'importances', etc. Must match the name used when saving the 
             results.
+        model_keys : list of tuple, optional
+            List of model keys for which to retrieve the results. If None, 
+            then all model keys will be used.
 
         Returns
         -------
@@ -263,6 +264,9 @@ class ResultsManager:
             MultiIndex contains the model keys, and the remaining levels are 
             taken from the original columns of the individual result DataFrames.
         '''
+        if not model_keys:
+            model_keys = self.read_model_keys()  # all of them
+
         combined_data = {
             key: self.read_result(key, result_type) 
             for key in model_keys

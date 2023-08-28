@@ -408,9 +408,12 @@ class ResultsAnalyzer:
 #endregion
 
     #region: combine_results   
-    def combine_results(self, model_keys, result_type):
+    def combine_results(self, result_type, model_keys=None):
         '''Refer to `ResultsManager.combine_results` for documentation'''
-        return self.results_manager.combine_results(model_keys, result_type)
+        return self.results_manager.combine_results(
+            result_type, 
+            model_keys=model_keys
+            )
     #endregion
 
     #region: load_features_and_target    
