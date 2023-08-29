@@ -63,7 +63,7 @@ class UnifiedConfiguration:
         'plot'
         }
 
-    def __init__(self, config_mapping_path):
+    def __init__(self, config_mapping_path, encoding='utf-8'):
         '''
         Initialize the UnifiedConfiguration object.
 
@@ -72,8 +72,10 @@ class UnifiedConfiguration:
         config_mapping_path : str
             Path to the JSON file mapping categories to configuration file 
             paths.
+        encoding : str, optional
+            Default is 'utf-8'.
         '''
-        with open(config_mapping_path, 'r') as mapping_file:
+        with open(config_mapping_path, 'r', encoding=encoding) as mapping_file:
             config_files_dict = json.load(mapping_file)
 
         # Validate the input categories
@@ -86,7 +88,7 @@ class UnifiedConfiguration:
 
         # Load each file into its category
         for category, file_path in config_files_dict.items():
-            with open(file_path, 'r') as config_file:
+            with open(file_path, 'r', encoding=encoding) as config_file:
                 config_dict = json.load(config_file)
                 setattr(self, category, SimpleNamespace(**config_dict))
 #endregion
