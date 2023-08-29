@@ -47,8 +47,8 @@
   },
 
     "color_for_sample_type" : {
-      "out" : "#959595", 
-      "in" : "#004488"
+      "out" : "#A9A9A9", 
+      "in" : "#000000"
   },
 
   "model_for_label" : {
