@@ -7,9 +7,9 @@
     },
 
     "label_for_scoring": {
-      "neg_root_mean_squared_error": "- RMSE",
-      "neg_median_absolute_error": "- MAE",
-      "r2": "$R^2$"
+      "neg_root_mean_squared_error": "Δ -RMSE",
+      "neg_median_absolute_error": "Δ -MAE",
+      "r2": "Δ $R^2$"
     },
 
     "label_for_effect": {
@@ -49,7 +49,20 @@
     "color_for_sample_type" : {
       "out" : "#959595", 
       "in" : "#004488"
-  }
+  },
+
+  "model_for_label" : {
+    "RandomForestRegressor": ["opera", "predicted", "missing", "RandomForestRegressor"],
+    "GradientBoostingRegressor": ["opera", "predicted", "missing", "GradientBoostingRegressor"],
+    "Ridge": ["opera", "predicted", "missing", "Ridge"],
+    "LinearRegression": ["opera", "predicted", "missing", "LinearRegression"],
+    "XGBRegressor": ["opera", "predicted", "missing", "XGBRegressor"],
+    "SVR": ["opera", "predicted", "missing", "SVR"],
+    "MLPRegressor": ["opera", "predicted", "missing", "MLPRegressor"],
+    "CompTox Features": ["comptox", "predicted", "missing", "RandomForestRegressor"],
+    "Experimental LD50s": ["opera", "experimental", "missing", "RandomForestRegressor"],
+    "Complete Data": ["opera", "predicted", "complete", "RandomForestRegressor"]
+}
 
 }
   

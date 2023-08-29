@@ -1016,6 +1016,7 @@ def vertical_boxplots_subplot(
         sorting_level,
         evaluation_label_mapper,
         evaluation_level,
+        ascending=False,
         xlim=(),
         ylabel=None, 
         start=0,
@@ -1039,7 +1040,7 @@ def vertical_boxplots_subplot(
     medians_first_metric = (
         df_wide.xs(first_metric_key, axis=1, level=evaluation_level)
         .median(axis=0)
-        .sort_values(ascending=False)
+        .sort_values(ascending=ascending)
     )
     sorted_keys_first_metric = list(medians_first_metric.index)
 
@@ -1110,6 +1111,95 @@ def _sns_boxplot_wrapper(
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
+#endregion
+
+#region: sensitivity_analysis_boxplots
+def sensitivity_analysis_boxplots(
+        results_manager, 
+        plot_settings, 
+        xlim=(0., 1.),
+        figsize=(7, 5)
+        ):
+    '''
+    '''
+    ## Get the data
+    performances = results_manager.combine_results('performances')
+    without_selection = results_manager.read_model_keys(
+        inclusion_string='false'
+        )
+    performances = results_manager.combine_results(
+        'performances', 
+        model_keys=without_selection
+    )
+    performances = performances.droplevel('select_features', axis=1)
+
+    # Convert JSON format to model key
+    label_for_model = {
+        tuple(model) : label 
+        for label, model in plot_settings.model_for_label.items()
+    }
+
+    effects = performances.columns.unique(level='target_effect')
+
+    n_evaluation_labels = len(plot_settings.label_for_metric)
+    n_effects = len(effects)
+
+    fig, axs = plt.subplots(
+        ncols=n_evaluation_labels*n_effects,
+        sharey=True,
+        figsize=figsize
+    )
+
+    # Initialize the start column index
+    start = 0  
+
+    for effect in effects:
+        
+        df_wide = performances.xs(effect, axis=1, level='target_effect')
+        
+        ## Reformat the data 
+        
+        df_wide_new = pd.DataFrame(index=df_wide.index)
+
+        for col in df_wide.columns:
+            # Rename the column based on the mapping
+            new_col_name = label_for_model.get(col[:-1], None)
+            if new_col_name:
+                metric = col[-1]
+                df_wide_new[(new_col_name, metric)] = df_wide[col]
+
+        names = ['model_name', df_wide.columns.names[-1]]
+        df_wide_new.columns = pd.MultiIndex.from_tuples(
+            df_wide_new.columns, names=names
+            )
+        
+        df_wide = df_wide_new
+
+        vertical_boxplots_subplot(
+            axs,
+            df_wide,
+            'model_name',
+            plot_settings.label_for_metric,
+            'metric',
+            ascending=True,
+            xlim=xlim,
+            ylabel='Models', 
+            start=start,
+            palette='vlag',
+        )
+        
+        title = plot_settings.label_for_effect[effect]
+        axs[start].set_title(title, loc='left', fontsize=10)
+        
+        # Update the start column index
+        start += n_evaluation_labels
+
+    save_figure(
+        fig, 
+        sensitivity_analysis_boxplots, 
+        'performances-without-selection',
+        bbox_inches='tight'
+        )
 #endregion
 
 #region: benchmarking_scatterplots
@@ -1975,13 +2065,13 @@ def _get_box_tick_labels(name, series):
 #endregion
 
 #region: save_figure
-def save_figure(fig, function, fig_label, extension='.png'):
+def save_figure(fig, function, fig_label, extension='.png', bbox_inches=None):
     '''
     '''
     output_dir = function_directory(function)
     fig_path = figure_path(output_dir, fig_label, extension=extension)
     print(f'Saving figure --> "{fig_path}"')
-    fig.savefig(fig_path)
+    fig.savefig(fig_path, bbox_inches=bbox_inches)
 #endregion
 
 #region: figure_path
