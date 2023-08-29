@@ -1033,37 +1033,55 @@ def vertical_boxplots_subplot(
     Returns
     -------
     None : None
-    '''    
-    for i, (k, xlabel) in enumerate(
-        evaluation_label_mapper.items(), start=start):
+    '''
+    # Compute the sorting order based on the median of the first metric
+    first_metric_key = list(evaluation_label_mapper.keys())[0]
+    medians_first_metric = (
+        df_wide.xs(first_metric_key, axis=1, level=evaluation_level)
+        .median(axis=0)
+        .sort_values(ascending=False)
+    )
+    sorted_keys_first_metric = list(medians_first_metric.index)
 
-        # Compute median and sort by it
+    for i, (k, xlabel) in enumerate(
+            evaluation_label_mapper.items(), start=start):
+        
         df_long = df_wide.xs(k, axis=1, level=evaluation_level).melt()
-    
-        sorted_vertical_boxplot(
+        
+        # Use the sorting order from the first metric
+        df_long[sorting_level] = pd.Categorical(
+            df_long[sorting_level], 
+            categories=sorted_keys_first_metric, 
+            ordered=True
+            )
+        df_long = df_long.sort_values(by=sorting_level)
+        
+        _sns_boxplot_wrapper(
             axs[i], 
-            df_long,
-            sorting_level,
+            df_long, 
             xlabel=xlabel, 
-            palette=palette 
-        )
+            palette=palette
+            )
 
         if xlim:
             axs[i].set_xlim(xlim)
+        # # Ensure only the first Axes has y-tick labels
+        # if i > 0:
+        #     axs[i].set_yticklabels([])
 
     if ylabel:
         # Set ylabel, first column only.
         for i, ax in enumerate(axs.flatten()):
             ax.tick_params(axis='y', size=10)
             if i == 0:
-                ax.set_ylabel(ylabel, size=12)    
+                ax.set_ylabel(ylabel, size=12) 
+   
 #endregion
 
-#region: sorted_vertical_boxplot
-def sorted_vertical_boxplot(
+#region: _sns_boxplot_wrapper
+def _sns_boxplot_wrapper(
         ax, 
         df_long, 
-        sorting_level,
         xlabel='',
         ylabel='', 
         title='',
@@ -1071,20 +1089,6 @@ def sorted_vertical_boxplot(
         ):
     '''Wrapper around seaborn.boxplot() with customization.
     '''
-    medians = (
-        df_long.groupby(sorting_level)['value']
-        .median()
-        .sort_values(ascending=False)
-    )
-    sorted_keys = medians.index.tolist()
-
-    # Sort DataFrame by median
-    df_long[sorting_level] = pd.Categorical(
-        df_long[sorting_level], 
-        categories=sorted_keys, ordered=True
-        )
-    df_long.sort_values(by=sorting_level, inplace=True)
-
     y, x = list(df_long.columns)
     
     sns.boxplot(    
