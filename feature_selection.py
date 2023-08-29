@@ -149,7 +149,7 @@ class FeatureSelector:
             importances_for_metric[metric] = pd.DataFrame(
                 importances, columns=list(X_train))
         importances_for_metric = pd.concat(importances_for_metric, axis=1)
-        importances_for_metric.columns.names = ['metric', 'feature']
+        importances_for_metric.columns.names = ['scoring', 'feature']
 
         return estimator, importances_for_metric
     #endregion

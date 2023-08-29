@@ -996,7 +996,7 @@ def _feature_importances_subplot(
             df_wide,
             'feature',
             plot_settings.label_for_scoring, 
-            'metric',   # FIXME: Change to 'scoring'
+            'scoring',
             ylabel=plot_settings.feature_names_label
         )
 
