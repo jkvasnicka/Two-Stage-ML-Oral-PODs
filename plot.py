@@ -510,7 +510,7 @@ def proportions_incomplete(X_subset, AD_flags_subset):
 #endregion
 
 #region: in_and_out_sample_comparisons
-def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_metric, ylim=(0., 1.)):
+def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_metric, xlim=(0., 1.)):
     '''
     Generate in-sample performance comparisons and out-of-sample prediction 
     scatterplots.
@@ -520,8 +520,8 @@ def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_
     
     Parameters
     ----------
-    ylim : tuple, optional
-        Tuple specifying the y-axis limits. Default is (0., 1.).
+    xlim : tuple, optional
+        Tuple specifying the x-axis limits. Default is (0., 1.).
     '''
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys_outer = results_analyzer.group_model_keys(
@@ -546,7 +546,7 @@ def in_and_out_sample_comparisons(results_analyzer, plot_settings, function_for_
             grouping_key_outer,
             function_for_metric,
             plot_settings,
-            ylim=ylim
+            xlim=xlim
         )
 
         out_of_sample_prediction_scatterplots(
@@ -567,7 +567,7 @@ def in_sample_performance_comparisons(
         grouping_key_outer,
         function_for_metric,
         plot_settings,
-        ylim=(0., 1.)
+        xlim=(0., 1.)
     ):
     '''
     Generate in-sample performance comparisons plots using scatterplots and 
@@ -595,7 +595,7 @@ def in_sample_performance_comparisons(
         results_analyzer, 
         grouped_keys_inner, 
         plot_settings,
-        ylim=ylim
+        xlim=xlim
         )
 
     # adjust the 'right' value for gs1 and 'left' value for gs2
@@ -683,7 +683,7 @@ def _in_sample_performance_boxplots(
         results_analyzer, 
         grouped_keys_inner, 
         plot_settings,
-        ylim=(0., 1.)
+        xlim=(0., 1.)
         ):
     '''
     Create boxplots for in-sample performances across different models and 
@@ -696,7 +696,6 @@ def _in_sample_performance_boxplots(
     index = 0
     for i, (_, model_keys) in enumerate(grouped_keys_inner):
 
-        # TODO: Is all this necessary?
         ## Prepare the data
         performances_wide = results_analyzer.combine_results(
             'performances', 
@@ -726,6 +725,10 @@ def _in_sample_performance_boxplots(
             for model_key in model_keys
         ]
         
+        reverse_metric = plot_settings.label_for_metric.get(
+            'r2_score', 'r2_score'
+        )
+
         for j, metric in enumerate(metrics):
 
             ax = fig.add_subplot(gs2[index])                
@@ -747,8 +750,11 @@ def _in_sample_performance_boxplots(
                 linewidth=1.
             )
 
-            # Set the x-axis limits.
-            ax.set_xlim(ylim)
+            _set_axis_limit(
+                ax, 
+                metric,
+                reverse_metric=reverse_metric
+            )
 
             # Set labels. 
             ax.set_xlabel(metric, size='small') 
@@ -759,6 +765,29 @@ def _in_sample_performance_boxplots(
 
             # Increase the counter
             index += 1
+#endregion
+
+#region: _set_axis_limit
+def _set_axis_limit(
+        ax, 
+        metric, 
+        limit_values=(0., 1.), 
+        reverse_metric='r2_score', 
+        orientation='x'
+        ):
+    '''
+    Set the axis limits of a given axis. If the metric matches the reverse_metric,
+    the axis limits are reversed.
+    '''
+    if metric == reverse_metric:
+        limits = limit_values[::-1] 
+    else:
+        limits = limit_values
+
+    if orientation == 'x':
+        ax.set_xlim(limits)
+    elif orientation == 'y':
+        ax.set_ylim(limits)
 #endregion
 
 #region: out_of_sample_prediction_scatterplots
@@ -1044,7 +1073,11 @@ def vertical_boxplots_subplot(
     )
     sorted_keys_first_metric = list(medians_first_metric.index)
 
-    for i, (k, xlabel) in enumerate(
+    reverse_metric = evaluation_label_mapper.get(
+        'r2_score', 'r2_score'
+    )
+    
+    for i, (k, metric) in enumerate(
             evaluation_label_mapper.items(), start=start):
         
         df_long = df_wide.xs(k, axis=1, level=evaluation_level).melt()
@@ -1060,15 +1093,16 @@ def vertical_boxplots_subplot(
         _sns_boxplot_wrapper(
             axs[i], 
             df_long, 
-            xlabel=xlabel, 
+            xlabel=metric, 
             palette=palette
             )
 
         if xlim:
-            axs[i].set_xlim(xlim)
-        # # Ensure only the first Axes has y-tick labels
-        # if i > 0:
-        #     axs[i].set_yticklabels([])
+            _set_axis_limit(
+                axs[i], 
+                metric,
+                reverse_metric=reverse_metric
+        )
 
     if ylabel:
         # Set ylabel, first column only.
