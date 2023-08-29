@@ -945,57 +945,81 @@ def important_feature_counts(
             )
 #endregion
 
-# TODO: Collapse into a single function?
 #region: importances_boxplots
-def importances_boxplots(
+def importances_boxplots(results_analyzer, plot_settings):
+    '''
+    '''
+    _feature_importances_subplot(
         results_analyzer, 
-        plot_settings,
-        xlabel='Δ Score',
-        figsize=(8, 10)
-        ):
-    '''
-    '''
-    _feature_importances_boxplots(
-        results_analyzer,
         'importances',
-        importances_boxplots,
-        plot_settings.label_for_scoring,
-        xlabel=xlabel,
-        ylabel=plot_settings.feature_names_label,
-        figsize=figsize
-        )
+        plot_settings,
+        importances_boxplots
+    )
 #endregion
 
-# TODO: Ditto
 #region: importances_replicates_boxplots
-def importances_replicates_boxplots(
-        results_analyzer, 
-        plot_settings,
-        xlabel='Δ Score',
-        figsize=(8, 10)
-        ):
+def importances_replicates_boxplots(results_analyzer, plot_settings):
     '''
     '''
-    _feature_importances_boxplots(
+    _feature_importances_subplot(
         results_analyzer, 
         'importances_replicates',
-        importances_replicates_boxplots,
-        plot_settings.label_for_scoring,
-        xlabel=xlabel,
-        ylabel=plot_settings.feature_names_label,
-        figsize=figsize
-        )
+        plot_settings,
+        importances_replicates_boxplots
+    )
 #endregion
 
-#region: _feature_importances_boxplots
-def _feature_importances_boxplots(
-        results_analyzer,
+#region: _feature_importances_subplot
+def _feature_importances_subplot(
+        results_analyzer, 
         result_type,
-        function, 
-        label_for_scoring,
-        xlabel,
-        ylabel='', 
-        figsize=None,
+        plot_settings,
+        function,
+        figsize=(8, 10)
+        ):
+    '''
+    '''
+    model_keys = results_analyzer.read_model_keys(exclusion_string='false')
+
+    for model_key in model_keys:
+
+        df_wide = results_analyzer.read_result(model_key, result_type)
+
+        fig, axs = plt.subplots(
+            ncols=len(plot_settings.label_for_scoring),
+            sharey=True,
+            figsize=figsize
+        )
+
+        vertical_boxplots_subplot(
+            axs,
+            df_wide,
+            'feature',
+            plot_settings.label_for_scoring, 
+            'metric',   # FIXME: Change to 'scoring'
+            ylabel=plot_settings.feature_names_label
+        )
+
+        fig.tight_layout()
+
+        save_figure(
+            fig, 
+            function, 
+            model_key
+            )
+#endregion
+
+#region: vertical_boxplots_subplot
+def vertical_boxplots_subplot(
+        axs,
+        df_wide,
+        sorting_level,
+        evaluation_label_mapper,
+        evaluation_level,
+        xlim=(),
+        ylabel=None, 
+        start=0,
+        palette='icefire',
         ):
     '''
     Plot boxplots for feature importances for all models in workflow.
@@ -1009,70 +1033,37 @@ def _feature_importances_boxplots(
     Returns
     -------
     None : None
-    '''
-    model_keys = results_analyzer.read_model_keys(exclusion_string='false')
-    for model_key in model_keys:
-        
-        fig, axs = plt.subplots(
-            ncols=len(label_for_scoring),
-            sharey=True,
-            figsize=figsize
+    '''    
+    for i, (k, xlabel) in enumerate(
+        evaluation_label_mapper.items(), start=start):
+
+        # Compute median and sort by it
+        df_long = df_wide.xs(k, axis=1, level=evaluation_level).melt()
+    
+        sorted_vertical_boxplot(
+            axs[i], 
+            df_long,
+            sorting_level,
+            xlabel=xlabel, 
+            palette=palette 
         )
 
-        df_wide = results_analyzer.read_result(model_key, result_type)
+        if xlim:
+            axs[i].set_xlim(xlim)
 
-        for i, (scoring, title) in enumerate(label_for_scoring.items()):
-
-          # Compute median and sort by it
-            df_long = df_wide[scoring].melt()
-            medians = (
-                df_long.groupby('feature')['value']
-                .median()
-                .sort_values(ascending=False)
-            )
-            sorted_features = medians.index.tolist()
-
-            # Sort DataFrame by median
-            df_long['feature'] = pd.Categorical(
-                df_long['feature'], 
-                categories=sorted_features, ordered=True
-                )
-            df_long.sort_values(by='feature', inplace=True)
-        
-            y, x = list(df_long.columns)
-        
-            sns_boxplot_wrapper(
-                axs[i], 
-                df_long,
-                x, 
-                y,
-                xlabel=xlabel, 
-                title=title,
-                palette='icefire' 
-            )
-
-        if ylabel:
-            # Set ylabel, first column only.
-            for i, ax in enumerate(axs.flatten()):
-                ax.tick_params(axis='y', size=10)
-                if i == 0:
-                    ax.set_ylabel(ylabel, size=12)
-        
-        fig.tight_layout()
-
-        save_figure(
-            fig, 
-            function, 
-            model_key
-            )
+    if ylabel:
+        # Set ylabel, first column only.
+        for i, ax in enumerate(axs.flatten()):
+            ax.tick_params(axis='y', size=10)
+            if i == 0:
+                ax.set_ylabel(ylabel, size=12)    
 #endregion
 
-#region: sns_boxplot_wrapper
-def sns_boxplot_wrapper(
+#region: sorted_vertical_boxplot
+def sorted_vertical_boxplot(
         ax, 
         df_long, 
-        x, 
-        y, 
+        sorting_level,
         xlabel='',
         ylabel='', 
         title='',
@@ -1080,6 +1071,22 @@ def sns_boxplot_wrapper(
         ):
     '''Wrapper around seaborn.boxplot() with customization.
     '''
+    medians = (
+        df_long.groupby(sorting_level)['value']
+        .median()
+        .sort_values(ascending=False)
+    )
+    sorted_keys = medians.index.tolist()
+
+    # Sort DataFrame by median
+    df_long[sorting_level] = pd.Categorical(
+        df_long[sorting_level], 
+        categories=sorted_keys, ordered=True
+        )
+    df_long.sort_values(by=sorting_level, inplace=True)
+
+    y, x = list(df_long.columns)
+    
     sns.boxplot(    
         x=x, 
         y=y, 
