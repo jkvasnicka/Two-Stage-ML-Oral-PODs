@@ -136,6 +136,14 @@ def pairwise_scatters_and_kde_subplots(
     X = X.rename({old_name : new_name}, axis=1)
     X[new_name] = np.log10(X[new_name])
 
+    buffer_fraction = 0.05  # 5% buffer
+    limits_for_feature = {}
+    for feature in X.columns:
+        min_val = X[feature].min()
+        max_val = X[feature].max()
+        buffer = (max_val - min_val) * buffer_fraction
+        limits_for_feature[feature] = (min_val - buffer, max_val + buffer)
+
     y = pd.read_csv(targets_file, index_col=0).squeeze()
     chemical_union = list(y.index)  # across all effect types
     categories = X.index.isin(chemical_union)
@@ -146,7 +154,8 @@ def pairwise_scatters_and_kde_subplots(
         X, 
         categories, 
         color_for_category, 
-        figsize=figsize
+        figsize=figsize,
+        limits_for_feature=limits_for_feature
         )
 
     handles = [
@@ -174,7 +183,8 @@ def plot_pairwise_scatters_and_kde(
         X, 
         categories, 
         color_for_category, 
-        figsize=None
+        figsize=None,
+        limits_for_feature=None
         ):
     '''
     Create a grid of scatter and KDE plots.
@@ -202,7 +212,8 @@ def plot_pairwise_scatters_and_kde(
                     X, 
                     categories, 
                     feature_row, 
-                    color_for_category
+                    color_for_category,
+                    limits_for_feature
                     )
             elif row > col:
                 plot_scatter(
@@ -211,7 +222,8 @@ def plot_pairwise_scatters_and_kde(
                     categories, 
                     feature_col, 
                     feature_row, 
-                    color_for_category
+                    color_for_category,
+                    limits_for_feature
                     )
             else:
                 ax.set_visible(False)
@@ -234,7 +246,8 @@ def plot_kde(
         X, 
         categories, 
         feature, 
-        color_for_category
+        color_for_category,
+        limits_for_feature
         ):
     '''
     Plot KDE on diagonal.
@@ -255,6 +268,7 @@ def plot_kde(
     for cat in list(color_for_category):
         subset = X[categories == cat]
         sns.kdeplot(subset[feature], ax=ax, color=color_for_category[cat])
+    ax.set_xlim(limits_for_feature[feature])  # Set consistent x limits
     ax.set_xlabel('')  
     ax.set_ylabel('')
 #endregion
@@ -266,7 +280,8 @@ def plot_scatter(
         categories, 
         feature_x, 
         feature_y, 
-        color_for_category
+        color_for_category,
+        limits_for_feature
         ):
     '''
     Plot scatter plot in the lower triangle.
@@ -294,6 +309,8 @@ def plot_scatter(
             c=color_for_category[cat], 
             label=cat
             )
+    ax.set_xlim(limits_for_feature[feature_x])  # Set consistent x limits
+    ax.set_ylim(limits_for_feature[feature_y])  # Set consistent y limits
 #endregion
 
 #region: proportions_incomplete_subplots
