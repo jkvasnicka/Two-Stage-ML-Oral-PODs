@@ -2,13 +2,13 @@
     
     "label_for_metric": {
       "root_mean_squared_error": "RMSE",
-      "median_absolute_error": "MAE",
+      "median_absolute_error": "MedAE",
       "r2_score": "$R^2$"
     },
 
     "label_for_scoring": {
       "neg_root_mean_squared_error": "Δ -RMSE",
-      "neg_median_absolute_error": "Δ -MAE",
+      "neg_median_absolute_error": "Δ -MedAE",
       "r2": "Δ $R^2$"
     },
 
