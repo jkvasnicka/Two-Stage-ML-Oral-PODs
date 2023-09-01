@@ -99,19 +99,14 @@ def feature_distributions(
 #endregion
 
 #region: pairwise_scatters_and_kde_subplots
-def pairwise_scatters_and_kde_subplots(
-        features_file, 
-        targets_file, 
-        plot_settings,
-        figsize=(10, 10)
-    ):
+def pairwise_scatters_and_kde_subplots(features_file, targets_file, plot_settings, figsize=(10, 10)):
     '''
     Create a grid of scatter and KDE plots for combinations of features.
 
     Parameters
     ----------
     '''
-    # TODO: Move to plot_settings?
+    # TODO: Move to plot setting?
     features_subset = [  
         'CATMoS_LD50_pred',
         'P_pred',
@@ -134,11 +129,9 @@ def pairwise_scatters_and_kde_subplots(
     X = pd.read_csv(features_file, index_col=0)
     X = X[features_subset]
 
-    # Log10-transform while preserving column order
-    old_name = 'P_pred'
-    new_name = '$log_{10}$' + old_name
-    X = X.rename({old_name : new_name}, axis=1)
-    X[new_name] = np.log10(X[new_name])
+    # Log10-transform desired features
+    X = _log10_transform_feature(X, 'P_pred')
+    X = _log10_transform_feature(X, 'CATMoS_LD50_pred')
 
     buffer_fraction = 0.05  # 5% buffer
     limits_for_feature = {}
@@ -181,6 +174,29 @@ def pairwise_scatters_and_kde_subplots(
         pairwise_scatters_and_kde_subplots, 
         'all-opera-features-and-target-union'
         )
+#endregion
+
+#region: _log10_transform_feature
+def _log10_transform_feature(X, feature_name):
+    '''
+    Log10-transforms the given feature in the dataframe X.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        The dataframe containing the feature to be transformed.
+    feature_name : str
+        The name of the feature to be transformed.
+
+    Returns
+    -------
+    X : pd.DataFrame
+        The dataframe with the transformed feature.
+    '''
+    new_name = '$log_{10}$' + feature_name
+    X = X.rename({feature_name: new_name}, axis=1)
+    X[new_name] = np.log10(X[new_name])
+    return X
 #endregion
 
 #region: plot_pairwise_scatters_and_kde
