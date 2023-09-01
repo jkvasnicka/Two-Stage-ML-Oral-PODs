@@ -13,8 +13,8 @@
     },
 
     "label_for_effect": {
-      "general": "General Toxicity",
-      "repro_dev": "Reproductive/Developmental Toxicity"
+      "general": "General Noncancer",
+      "repro_dev": "Reproductive/Developmental"
     },
 
     "color_for_effect" : {
