@@ -126,6 +126,10 @@ def pairwise_scatters_and_kde_subplots(
         False : plot_settings.color_for_sample_type['out'], 
         True : plot_settings.color_for_sample_type['in']
     }
+    marker_size_for_category = {
+        False : plot_settings.marker_size_for_sample_type['out'],
+        True : plot_settings.marker_size_for_sample_type['in']
+    }
 
     X = pd.read_csv(features_file, index_col=0)
     X = X[features_subset]
@@ -154,6 +158,7 @@ def pairwise_scatters_and_kde_subplots(
         X, 
         categories, 
         color_for_category, 
+        marker_size_for_category,
         figsize=figsize,
         limits_for_feature=limits_for_feature
         )
@@ -183,6 +188,7 @@ def plot_pairwise_scatters_and_kde(
         X, 
         categories, 
         color_for_category, 
+        marker_size_for_category,
         figsize=None,
         limits_for_feature=None
         ):
@@ -223,6 +229,7 @@ def plot_pairwise_scatters_and_kde(
                     feature_col, 
                     feature_row, 
                     color_for_category,
+                    marker_size_for_category,
                     limits_for_feature
                     )
             else:
@@ -281,6 +288,7 @@ def plot_scatter(
         feature_x, 
         feature_y, 
         color_for_category,
+        marker_size_for_category,
         limits_for_feature
         ):
     '''
@@ -307,6 +315,7 @@ def plot_scatter(
             subset[feature_x], 
             subset[feature_y], 
             c=color_for_category[cat], 
+            s=marker_size_for_category[cat],
             label=cat
             )
     ax.set_xlim(limits_for_feature[feature_x])  # Set consistent x limits
@@ -863,6 +872,8 @@ def out_of_sample_prediction_scatterplots(
             function_for_metric, 
             plot_settings.label_for_metric,
             highlight_indices=labeled_samples,
+            main_size=plot_settings.marker_size_for_sample_type['out'],
+            highlight_size=plot_settings.marker_size_for_sample_type['in'],
             main_label=plot_settings.label_for_sample_type['out'],
             highlight_label=plot_settings.label_for_sample_type['in'],
             color=plot_settings.color_for_sample_type['out'], 
@@ -1361,6 +1372,8 @@ def generate_scatterplot(
         with_sample_size=True,
         color='black', 
         alpha=0.7,
+        highlight_size=None,
+        main_size=None,
         highlight_color='#004488',  # blue
         highlight_indices=None, 
         main_label='Main',
@@ -1411,6 +1424,7 @@ def generate_scatterplot(
             y_true_rest, 
             y_pred_rest, 
             alpha=alpha, 
+            s=main_size,
             color=color,
             label=main_label
             )
@@ -1418,6 +1432,7 @@ def generate_scatterplot(
             y_true_highlight, 
             y_pred_highlight, 
             alpha=alpha, 
+            s=highlight_size,
             color=highlight_color,
             label=highlight_label,
             )

@@ -51,6 +51,11 @@
       "in" : "#000000"
   },
 
+  "marker_size_for_sample_type" : {
+      "out" : 1, 
+      "in" : 20
+  },
+
   "model_for_label" : {
     "RandomForestRegressor": ["opera", "predicted", "missing", "RandomForestRegressor"],
     "GradientBoostingRegressor": ["opera", "predicted", "missing", "GradientBoostingRegressor"],
