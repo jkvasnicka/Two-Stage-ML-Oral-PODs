@@ -1881,30 +1881,42 @@ def predictions_by_missing_feature(results_analyzer, plot_settings):
     -------
     None
     '''
-    # Set seaborn style locally within the function
     with sns.axes_style('whitegrid'):
 
-        all_samples_color = '#00008b'  # dark blue
-        remaining_color = '#ffff99'  # pale yellow
+        all_samples_color = '#00008b'
+        remaining_color = '#ffff99'
 
         model_key_names = results_analyzer.read_model_key_names()
-
-        # Use the helper function to get the combination key group
         grouped_keys = results_analyzer.group_model_keys('target_effect')
         
-        # Iterate over grouping_key_group
         for grouping_key, model_keys in grouped_keys:
-            n_effects = len(model_keys)
+            whisker_data = []
 
+            # First loop to determine whisker data
+            for model_key in model_keys:
+                y_pred_out, _, *_ = results_analyzer.predict_out_of_sample(model_key)
+                y_pred_in, _, *_ = results_analyzer.get_in_sample_prediction(model_key)
+
+                whisker_data.extend(
+                    [_calculate_whisker_data(y_pred_out), 
+                     _calculate_whisker_data(y_pred_in)]
+                     )
+
+            global_min = min(data[0] for data in whisker_data)
+            global_max = max(data[1] for data in whisker_data)
+            
+            buffer = (global_max - global_min) * 0.05
+            x_limits = (global_min - buffer, global_max + buffer)
+
+            n_effects = len(model_keys)
             fig, axs = plt.subplots(
                 nrows=n_effects, 
-                ncols=2,
+                ncols=2, 
                 figsize=(8, 4 * n_effects)
                 )
 
             for i, model_key in enumerate(model_keys):
                 key_for = dict(zip(model_key_names, model_key))
-
                 y_pred_out, X_out, *_ = results_analyzer.predict_out_of_sample(model_key)
                 y_pred_in, X_in, *_ = results_analyzer.get_in_sample_prediction(model_key)
 
@@ -1913,10 +1925,9 @@ def predictions_by_missing_feature(results_analyzer, plot_settings):
                     y_pred_out, 
                     X_out, 
                     all_samples_color, 
-                    remaining_color,
+                    remaining_color, 
                     plot_settings.prediction_label
-                    )
-                # Use the sames sort order of boxes, based on the left Axes.
+                )
                 sort_order = list(dfs_out.keys())
                 dfs_in = _boxplot_by_missing_feature(
                     axs[i, 1], 
@@ -1924,26 +1935,43 @@ def predictions_by_missing_feature(results_analyzer, plot_settings):
                     X_in, 
                     all_samples_color, 
                     remaining_color, 
-                    plot_settings.prediction_label,
+                    plot_settings.prediction_label, 
                     sort_order
-                    )
+                )
 
                 _set_ytick_labels(axs[i, 0], dfs_out, True)
                 _set_ytick_labels(axs[i, 1], dfs_in, False)
                 
                 effect = plot_settings.label_for_effect[key_for['target_effect']]
-                axs[i, 0].set_title(
-                    f'{effect}\nAll Chemicals', size='medium', loc='left')
-                axs[i, 1].set_title(
-                    f'{effect}\nTraining Set', size='medium', loc='left')
+                if i == 0:
+                    axs[i, 0].set_title(f'{effect}\nAll Chemicals', size='medium', loc='left')
+                else:
+                    axs[i, 0].set_title('All Chemicals', size='medium', loc='left')
+                axs[i, 1].set_title('Training Set', size='medium', loc='left')
+                
+                axs[i, 0].set_xlim(x_limits)
+                axs[i, 1].set_xlim(x_limits)
 
             fig.tight_layout()
+            save_figure(fig, predictions_by_missing_feature, grouping_key)
+#endregion
 
-            save_figure(
-                fig, 
-                predictions_by_missing_feature, 
-                grouping_key
-                )
+#region: _calculate_whisker_data
+def _calculate_whisker_data(predictions):
+    '''
+    Calculate whisker data based on the interquartile range (IQR).
+    
+    Parameters:
+    - predictions: Series or array-like containing the predictions.
+    
+    Returns:
+    - (whisker_min, whisker_max): Tuple containing the whisker endpoints.
+    '''
+    Q1, Q3 = np.percentile(predictions, [25, 75])
+    IQR = Q3 - Q1
+    whisker_min = Q1 - 1.5 * IQR
+    whisker_max = Q3 + 1.5 * IQR
+    return whisker_min, whisker_max
 #endregion
 
 #region: _boxplot_by_missing_feature
@@ -2037,7 +2065,7 @@ def _create_boxplot(
         widths=0.6,
         patch_artist=True,
         medianprops={'color': 'black'},
-        flierprops=_flierprops
+        showfliers=False
     )
 
     for patch in boxplot['boxes']:
@@ -2077,29 +2105,16 @@ def _set_ytick_labels(ax, df_for_name, do_label_features):
         If True, feature labels are set for the y-axis ticks. If False, 
         feature labels are not set.
     '''
-    feature_labels = []
-    sample_size_labels = []
-    for name, series in df_for_name.items():
-        feature_label, sample_size_label = _get_box_tick_labels(name, series)
-        if do_label_features:
-            feature_labels.append(feature_label)
-        else:
-            feature_labels.append(None)
-        sample_size_labels.append(sample_size_label)
-
-    ax.set_yticklabels(feature_labels, fontsize=8)
+    labels = [
+        _get_box_tick_label(name, series, do_label_features) 
+        for name, series in df_for_name.items()
+        ]
+    ax.set_yticklabels(labels, fontsize=8)
     ax.set_ylabel(None)
-    
-    # Add secondary y-axis for the sample size labels
-    axs2 = ax.twinx()
-    axs2.set_yticks(ax.get_yticks())
-    axs2.set_ylim(ax.get_ylim())
-    axs2.set_yticklabels(sample_size_labels, fontsize=8)
-    axs2.yaxis.set_label_position("right")
 #endregion
 
-#region: _get_box_tick_labels
-def _get_box_tick_labels(name, series):
+#region: _get_box_tick_label
+def _get_box_tick_label(name, series, do_label_features=True):
     '''
     Return the box label components.
 
@@ -2127,7 +2142,11 @@ def _get_box_tick_labels(name, series):
 
     sample_size_label = _comma_separated(len(series))
 
-    return feature_label, sample_size_label 
+    if do_label_features:
+        label = f'{feature_label} ({sample_size_label})'
+    else:
+        label = f'({sample_size_label})'
+    return label 
 #endregion
 
 #region: save_figure
