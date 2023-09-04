@@ -815,7 +815,8 @@ def _set_axis_limit(
         metric, 
         limit_values=(0., 1.), 
         reverse_metric='r2_score', 
-        orientation='x'
+        orientation='x',
+        num_ticks=3
         ):
     '''
     Set the axis limits of a given axis. If the metric matches the reverse_metric,
@@ -828,8 +829,10 @@ def _set_axis_limit(
 
     if orientation == 'x':
         ax.set_xlim(limits)
+        ax.set_xticks(np.linspace(limits[0], limits[1], num_ticks))
     elif orientation == 'y':
         ax.set_ylim(limits)
+        ax.set_yticks(np.linspace(limits[0], limits[1], num_ticks))
 #endregion
 
 #region: out_of_sample_prediction_scatterplots
@@ -1239,8 +1242,8 @@ def sensitivity_analysis_boxplots(
         
         df_wide_new = pd.DataFrame(index=df_wide.index)
 
+        ## Rename the columns based on the mapping
         for col in df_wide.columns:
-            # Rename the column based on the mapping
             new_col_name = label_for_model.get(col[:-1], None)
             if new_col_name:
                 metric = col[-1]
@@ -1265,12 +1268,18 @@ def sensitivity_analysis_boxplots(
             start=start,
             palette='vlag',
         )
-        
+                  
         title = plot_settings.label_for_effect[effect]
         axs[start].set_title(title, loc='left', fontsize=10)
         
         # Update the start column index
         start += n_evaluation_labels
+
+    for ax in axs:
+        ax.set_xticklabels(
+            [_format_tick_label(label.get_text()) 
+             for label in ax.get_xticklabels()]
+             )  # avoids overlapping ticklabels
 
     save_figure(
         fig, 
@@ -1278,6 +1287,29 @@ def sensitivity_analysis_boxplots(
         'performances-without-selection',
         bbox_inches='tight'
         )
+#endregion
+
+#region: _format_tick_label
+def _format_tick_label(label_text):
+    '''
+    Format a tick label to have one significant digit of precision.
+
+    Parameters
+    ----------
+    label_text : str
+        The label text to be formatted.
+
+    Returns
+    -------
+    str
+        The formatted label text with one significant digit. If the input 
+        cannot be converted to a float (e.g., an empty string), it returns 
+        the input unchanged.
+    '''
+    try:
+        return "{:.1g}".format(float(label_text))
+    except ValueError:
+        return label_text
 #endregion
 
 #region: benchmarking_scatterplots
