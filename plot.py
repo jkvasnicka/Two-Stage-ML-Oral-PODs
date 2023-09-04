@@ -795,6 +795,7 @@ def _in_sample_performance_boxplots(
             _set_axis_limit(
                 ax, 
                 metric,
+                limit_values=xlim,
                 reverse_metric=reverse_metric
             )
 
@@ -1073,6 +1074,7 @@ def _feature_importances_subplot(
             'feature',
             plot_settings.label_for_scoring, 
             'scoring',
+            xlim=(),
             ylabel=plot_settings.feature_names_label
         )
 
@@ -1148,6 +1150,7 @@ def vertical_boxplots_subplot(
             _set_axis_limit(
                 axs[i], 
                 metric,
+                limit_values=xlim,
                 reverse_metric=reverse_metric
         )
 
