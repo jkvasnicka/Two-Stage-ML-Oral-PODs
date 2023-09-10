@@ -1061,6 +1061,9 @@ def _feature_importances_subplot(
     for model_key in model_keys:
 
         df_wide = results_analyzer.read_result(model_key, result_type)
+        
+        # FIXME: Pass the subset directly into the helper function?
+        xlim = _compute_global_x_limits([df_wide[list(plot_settings.label_for_scoring)]])
 
         fig, axs = plt.subplots(
             ncols=len(plot_settings.label_for_scoring),
@@ -1074,9 +1077,13 @@ def _feature_importances_subplot(
             'feature',
             plot_settings.label_for_scoring, 
             'scoring',
-            xlim=(),
+            xlim=xlim,
             ylabel=plot_settings.feature_names_label
         )
+
+        # Set tick marks dynamically
+        for ax in axs:
+            ax.xaxis.set_major_locator(MaxNLocator(5))
 
         fig.tight_layout()
 
@@ -1183,7 +1190,7 @@ def _sns_boxplot_wrapper(
         linewidth=0.8,
         dodge=False,
         ax=ax,
-        flierprops=_flierprops, 
+        showfliers=False, 
         **kwargs
     )
 
@@ -1941,23 +1948,13 @@ def predictions_by_missing_feature(results_analyzer, plot_settings):
         grouped_keys = results_analyzer.group_model_keys('target_effect')
         
         for grouping_key, model_keys in grouped_keys:
-            whisker_data = []
 
-            # First loop to determine whisker data
+            ## Define the global x-limits based on the interquartile ranges
+            series_list = []
             for model_key in model_keys:
-                y_pred_out, _, *_ = results_analyzer.predict_out_of_sample(model_key)
-                y_pred_in, _, *_ = results_analyzer.get_in_sample_prediction(model_key)
-
-                whisker_data.extend(
-                    [_calculate_whisker_data(y_pred_out), 
-                     _calculate_whisker_data(y_pred_in)]
-                     )
-
-            global_min = min(data[0] for data in whisker_data)
-            global_max = max(data[1] for data in whisker_data)
-            
-            buffer = (global_max - global_min) * 0.05
-            x_limits = (global_min - buffer, global_max + buffer)
+                series_list.append(results_analyzer.predict_out_of_sample(model_key)[0])
+                series_list.append(results_analyzer.get_in_sample_prediction(model_key)[0])
+            x_limits = _compute_global_x_limits(series_list)
 
             n_effects = len(model_keys)
             fig, axs = plt.subplots(
@@ -2005,6 +2002,36 @@ def predictions_by_missing_feature(results_analyzer, plot_settings):
 
             fig.tight_layout()
             save_figure(fig, predictions_by_missing_feature, grouping_key)
+#endregion
+
+#region: _compute_global_x_limits
+def _compute_global_x_limits(data_containers):
+    '''
+    Compute global x limits based on IQR for a list of pandas Series or DataFrames.
+    
+    Parameters:
+    - data_containers: List containing pandas Series or DataFrames with the data.
+    
+    Returns:
+    - xlim: Tuple containing the x limits.
+    '''
+    whisker_data = []
+
+    # Loop through data_containers to determine whisker data
+    for data in data_containers:
+        if isinstance(data, pd.Series):
+            whisker_data.append(_calculate_whisker_data(data))
+        elif isinstance(data, pd.DataFrame):
+            for column in data.columns:
+                whisker_data.append(_calculate_whisker_data(data[column]))
+
+    global_min = min(data[0] for data in whisker_data)
+    global_max = max(data[1] for data in whisker_data)
+
+    buffer = (global_max - global_min) * 0.05
+    xlim = (global_min - buffer, global_max + buffer)
+
+    return xlim
 #endregion
 
 #region: _calculate_whisker_data
