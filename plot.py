@@ -1067,7 +1067,6 @@ def _feature_importances_subplot(
 
         fig, axs = plt.subplots(
             ncols=len(plot_settings.label_for_scoring),
-            sharey=True,
             figsize=figsize
         )
 
@@ -1160,6 +1159,13 @@ def vertical_boxplots_subplot(
                 limit_values=xlim,
                 reverse_metric=reverse_metric
         )
+        
+        # Remove yticklabels for all axes except the first one
+        axs[i].tick_params(axis='y', size=10)
+        if i == 0:
+            axs[i].set_ylabel(ylabel, size=12)
+        else:
+            axs[i].set_yticklabels([])  
 
     if ylabel:
         # Set ylabel, first column only.
@@ -1207,6 +1213,7 @@ def _sns_boxplot_wrapper(
 #region: sensitivity_analysis_boxplots
 def sensitivity_analysis_boxplots(
         results_manager, 
+        data_manager,
         plot_settings, 
         xlim=(0., 1.),
         figsize=(7, 5)
@@ -1222,7 +1229,6 @@ def sensitivity_analysis_boxplots(
         'performances', 
         model_keys=without_selection
     )
-    performances = performances.droplevel('select_features', axis=1)
 
     # Convert JSON format to model key
     label_for_model = {
@@ -1236,15 +1242,13 @@ def sensitivity_analysis_boxplots(
     n_effects = len(effects)
 
     fig, axs = plt.subplots(
-        ncols=n_evaluation_labels*n_effects,
-        sharey=True,
+        nrows=n_effects,
+        ncols=n_evaluation_labels,
         figsize=figsize
     )
 
-    # Initialize the start column index
-    start = 0  
-
-    for effect in effects:
+    model_key_names = results_manager.read_model_key_names()
+    for j, effect in enumerate(effects):
         
         df_wide = performances.xs(effect, axis=1, level='target_effect')
         
@@ -1253,11 +1257,28 @@ def sensitivity_analysis_boxplots(
         df_wide_new = pd.DataFrame(index=df_wide.index)
 
         ## Rename the columns based on the mapping
+
+        n_samples_for = {}  # initialize
+
         for col in df_wide.columns:
-            new_col_name = label_for_model.get(col[:-1], None)
-            if new_col_name:
+
+            model_key = (effect, *col[:-1])
+
+            if model_key not in n_samples_for:
+                # Compute the sample size from the labeled data
+                _, y_true = data_manager.load_features_and_target(
+                    **dict(zip(model_key_names, model_key))
+                    )
+                n_samples_for[model_key] = _comma_separated(len(y_true))
+
+            model_label = label_for_model.get(col[:-1], None)
+            n_samples = n_samples_for[model_key]
+            new_label = f'{model_label} ({n_samples})'
+
+            if new_label:
+                # Rename the column
                 metric = col[-1]
-                df_wide_new[(new_col_name, metric)] = df_wide[col]
+                df_wide_new[(new_label, metric)] = df_wide[col]
 
         names = ['model_name', df_wide.columns.names[-1]]
         df_wide_new.columns = pd.MultiIndex.from_tuples(
@@ -1267,7 +1288,7 @@ def sensitivity_analysis_boxplots(
         df_wide = df_wide_new
 
         vertical_boxplots_subplot(
-            axs,
+            axs[j, :],
             df_wide,
             'model_name',
             plot_settings.label_for_metric,
@@ -1275,21 +1296,20 @@ def sensitivity_analysis_boxplots(
             ascending=True,
             xlim=xlim,
             ylabel='Models', 
-            start=start,
             palette='vlag',
         )
                   
+        # Set a title only in the left-most Axes
         title = plot_settings.label_for_effect[effect]
-        axs[start].set_title(title, loc='left', fontsize=10)
-        
-        # Update the start column index
-        start += n_evaluation_labels
+        axs[j, 0].set_title(title, loc='left', fontsize=10)
 
-    for ax in axs:
+    for ax in axs.flatten():
         ax.set_xticklabels(
             [_format_tick_label(label.get_text()) 
              for label in ax.get_xticklabels()]
              )  # avoids overlapping ticklabels
+        
+    fig.tight_layout()
 
     save_figure(
         fig, 

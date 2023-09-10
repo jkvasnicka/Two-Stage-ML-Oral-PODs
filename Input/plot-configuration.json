@@ -57,17 +57,17 @@
   },
 
   "model_for_label" : {
-    "RandomForestRegressor": ["opera", "predicted", "missing", "RandomForestRegressor"],
-    "GradientBoostingRegressor": ["opera", "predicted", "missing", "GradientBoostingRegressor"],
-    "Ridge": ["opera", "predicted", "missing", "Ridge"],
-    "LinearRegression": ["opera", "predicted", "missing", "LinearRegression"],
-    "XGBRegressor": ["opera", "predicted", "missing", "XGBRegressor"],
-    "SVR": ["opera", "predicted", "missing", "SVR"],
-    "MLPRegressor": ["opera", "predicted", "missing", "MLPRegressor"],
-    "CompTox Features": ["comptox", "predicted", "missing", "RandomForestRegressor"],
-    "Experimental LD50s": ["opera", "experimental", "missing", "RandomForestRegressor"],
-    "Complete Data": ["opera", "predicted", "complete", "RandomForestRegressor"]
-}
+    "RandomForestRegressor": ["opera", "predicted", "missing", "false", "RandomForestRegressor"],
+    "GradientBoostingRegressor": ["opera", "predicted", "missing", "false", "GradientBoostingRegressor"],
+    "Ridge": ["opera", "predicted", "missing", "false", "Ridge"],
+    "LinearRegression": ["opera", "predicted", "missing", "false", "LinearRegression"],
+    "XGBRegressor": ["opera", "predicted", "missing", "false", "XGBRegressor"],
+    "SVR": ["opera", "predicted", "missing", "false", "SVR"],
+    "MLPRegressor": ["opera", "predicted", "missing", "false", "MLPRegressor"],
+    "CompTox Features": ["comptox", "predicted", "missing", "false", "RandomForestRegressor"],
+    "Experimental LD50s": ["opera", "experimental", "missing", "false", "RandomForestRegressor"],
+    "Complete Data": ["opera", "predicted", "complete", "false", "RandomForestRegressor"]
+  }
 
 }
   
