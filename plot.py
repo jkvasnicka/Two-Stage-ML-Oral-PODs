@@ -1345,8 +1345,6 @@ def _format_tick_label(label_text):
 #region: benchmarking_scatterplots
 def benchmarking_scatterplots(
         results_analyzer,
-        y_regulatory_df,
-        y_toxcast,
         function_for_metric,
         plot_settings,
         figsize=(6, 9)
@@ -1358,10 +1356,6 @@ def benchmarking_scatterplots(
 
     Parameters
     ----------
-    y_regulatory_df : pd.DataFrame
-        The DataFrame containing the comparison data.
-    y_toxcast : pd.DataFrame
-        The ToxCast data for evaluation.
     figsize : tuple, optional
         Figure size. If None, a default size is used.
 
@@ -1372,6 +1366,9 @@ def benchmarking_scatterplots(
     axs : list
         List of axes corresponding to the figures.
     '''
+    y_regulatory_df = results_analyzer.load_regulatory_pods()
+    y_toxcast = results_analyzer.load_oral_equivalent_doses()
+
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys = results_analyzer.group_model_keys('target_effect')
 

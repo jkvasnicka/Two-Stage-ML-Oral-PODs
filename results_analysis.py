@@ -435,3 +435,17 @@ class ResultsAnalyzer:
         '''Refer to `DataManager.load_target` for documentation'''
         return self.data_manager.load_target(*args, **kwargs)
     #endregion
+
+    #region: load_regulatory_pods
+    def load_regulatory_pods(self):
+        '''Refer to `DataManager.load_regulatory_pods` for documentation'''
+        return self.data_manager.load_regulatory_pods()
+    #endregion
+
+    #region: load_oral_equivalent_doses
+    def load_oral_equivalent_doses(self):
+        '''
+        Refer to `DataManager.load_oral_equivalent_doses` for documentation
+        '''
+        return self.data_manager.load_oral_equivalent_doses()
+    #endregion

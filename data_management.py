@@ -200,3 +200,38 @@ class DataManager:
             common_objects.append(new_obj)
         return common_objects
     #endregion
+
+    #region: load_regulatory_pods
+    def load_regulatory_pods(self):
+        '''
+        Load the regulatory points of departure (log10-units). 
+
+        Returns
+        -------
+        pandas.DataFrame
+            One column for each target effect, and chemicals along the index.
+        '''
+        pods_for_effect = pd.read_csv(
+            self.path_settings.regulatory_pods_file, 
+            index_col=0
+            )
+        return pods_for_effect
+    #endregion
+
+    #region: load_oral_equivalent_doses
+    def load_oral_equivalent_doses(self):
+        '''
+        Load the oral equivalent doses from ToxCast/httk median (log10-units).
+
+        Returns
+        -------
+        pandas.Series
+        '''
+        dose_series = (
+            pd.read_csv(
+                self.path_settings.toxcast_oeds_file, 
+                index_col=0)
+                ['tox_httk_50']
+                )
+        return dose_series    
+    #endregion
