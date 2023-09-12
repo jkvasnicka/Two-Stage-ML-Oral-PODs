@@ -6,9 +6,11 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.gridspec as gridspec
 from matplotlib.ticker import MaxNLocator
+import matplotlib.lines as mlines
 import seaborn as sns
 import pandas as pd
 import numpy as np
+import itertools 
 
 # TODO: Move to configuration file.
 _flierprops = dict(
@@ -1638,8 +1640,7 @@ def margins_of_exposure_cumulative(
             
             for j, percentile in enumerate(exposure_df.columns):
 
-                sorted_moe = moes[percentile].sort_values()
-                cumulative_counts = np.arange(1, len(sorted_moe) + 1)
+                sorted_moe, cumulative_counts = generate_cdf_data(moes[percentile])
                 lb, ub = results_analyzer.prediction_interval(sorted_moe, rmse)
 
                 plot_with_prediction_interval(
@@ -1693,6 +1694,40 @@ def margins_of_exposure_cumulative(
             margins_of_exposure_cumulative,
             grouping_key
         )
+#endregion
+
+#region: generate_cdf_data
+def generate_cdf_data(data_series, normalize=False):
+    '''
+    Generate sorted values and their cumulative counts (or frequencies) for 
+    CDF plotting.
+
+    Parameters
+    ----------
+    data_series : pd.Series
+        The data series to generate CDF data from.
+    normalize : bool, optional
+        If True, return cumulative frequencies (proportions) instead of 
+        counts.
+
+    Returns
+    -------
+    sorted_values : pd.Series
+        Sorted values from the input data series.
+    cumulative_data : np.ndarray
+        Cumulative counts or frequencies for the sorted values.
+    '''
+    data_series = data_series.dropna()
+    
+    sorted_values = data_series.sort_values()
+    cumulative_counts = np.arange(1, len(sorted_values) + 1)
+    
+    if normalize:
+        cumulative_data = cumulative_counts / len(sorted_values)
+    else:
+        cumulative_data = cumulative_counts
+        
+    return sorted_values, cumulative_data
 #endregion
 
 #region: plot_with_prediction_interval
@@ -1942,6 +1977,89 @@ def get_data_limits(ax, axis_type='x', data_type='line'):
     data_max = np.max(data)
 
     return data_min, data_max
+#endregion
+
+#region: cumulative_pod_distributions
+def cumulative_pod_distributions(results_analyzer, plot_settings):
+    '''
+    Plot cumulative distributions of Points of Departure (POD) for different 
+    data sources.
+    '''
+    colors = sns.color_palette('colorblind')
+    # Get the pre-defined linestyles from Matplotlib
+    linestyles = list(mlines.lineStyles.keys())
+    # Filter out the non-string types
+    linestyles = [style for style in linestyles if isinstance(style, str)]
+
+    y_regulatory_df = results_analyzer.load_regulatory_pods()
+
+    model_key_names = results_analyzer.read_model_key_names()
+    grouped_keys = results_analyzer.group_model_keys('target_effect')
+
+    for grouping_key, model_keys in grouped_keys:
+
+        fig, axs = plt.subplots(
+            1,
+            len(model_keys),
+            figsize=(len(model_keys) * 5, 5),
+        )
+
+        for i, model_key in enumerate(model_keys):
+                    
+            key_for = dict(zip(model_key_names, model_key))
+            effect = key_for['target_effect']
+            
+            results = results_analyzer.get_in_sample_prediction(model_key)
+            
+            y_for_label = {
+                'Regulatory' : y_regulatory_df[effect],
+                'ToxValDB' : results[0],  # y_true
+                'QSAR' : results[-1]  # y_pred
+            }
+            
+            line_cycle = itertools.cycle(linestyles)
+
+            for j, (label, data_series) in enumerate(y_for_label.items()):
+                
+                sorted_values, cumulative_proportions = generate_cdf_data(
+                    data_series,
+                    normalize=True
+                )
+
+                axs[i].plot(
+                    sorted_values, 
+                    cumulative_proportions,
+                    color=colors[j],
+                    linestyle=next(line_cycle),
+                    label=label
+                )
+                
+            ## Set labels, etc. 
+            axs[i].set_title(plot_settings.label_for_effect[effect])
+            axs[i].set_xlabel("$log_{10}POD$")
+            axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
+            if i == 0: 
+                axs[i].set_ylabel('Proportion of Chemicals')
+
+        fig.tight_layout()
+        fig.subplots_adjust(bottom=0.2)  
+
+        legend_ax = axs[-1]
+        handles, labels = legend_ax.get_legend_handles_labels()
+        fig.legend(
+            handles, 
+            labels, 
+            loc='lower center', 
+            fontsize='small',
+            ncol=len(labels), 
+            bbox_to_anchor=(0.5, -0.01)
+        )
+
+        save_figure(
+            fig,
+            cumulative_pod_distributions,
+            grouping_key
+        )
 #endregion
 
 #region: predictions_by_missing_feature
