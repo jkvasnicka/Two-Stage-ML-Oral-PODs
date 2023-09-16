@@ -1982,69 +1982,89 @@ def get_data_limits(ax, axis_type='x', data_type='line'):
 #region: cumulative_pod_distributions
 def cumulative_pod_distributions(results_analyzer, plot_settings):
     '''
-    Plot cumulative distributions of Points of Departure (POD) for different 
-    data sources.
     '''
     colors = sns.color_palette('colorblind')
-    # Get the pre-defined linestyles from Matplotlib
-    linestyles = list(mlines.lineStyles.keys())
-    # Filter out the non-string types
-    linestyles = [style for style in linestyles if isinstance(style, str)]
-
+    linestyles = [
+        style for style in mlines.lineStyles.keys() 
+        if isinstance(style, str)
+        ]
+    
     y_regulatory_df = results_analyzer.load_regulatory_pods()
-
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys = results_analyzer.group_model_keys('target_effect')
 
     for grouping_key, model_keys in grouped_keys:
 
         fig, axs = plt.subplots(
-            1,
-            len(model_keys),
-            figsize=(len(model_keys) * 5, 5),
-        )
+            2, 
+            len(model_keys), 
+            figsize=(len(model_keys)*4, 8)
+            )
+        
+        global_xlim = [float('inf'), float('-inf')]  # initialize
 
         for i, model_key in enumerate(model_keys):
-                    
             key_for = dict(zip(model_key_names, model_key))
             effect = key_for['target_effect']
-            
             results = results_analyzer.get_in_sample_prediction(model_key)
             
             y_for_label = {
                 'Regulatory' : y_regulatory_df[effect],
-                'ToxValDB' : results[0],  # y_true
-                'QSAR' : results[-1]  # y_pred
+                'ToxValDB' : results[0],
+                'QSAR' : results[-1]
             }
+
+            # Compute intersection of samples
+            common_samples = (
+                y_for_label['Regulatory'].index
+                .intersection(y_for_label['ToxValDB'].index)
+                .intersection(y_for_label['QSAR'].index)
+            )
             
             line_cycle = itertools.cycle(linestyles)
 
+            # Plot CDFs for intersection of samples in the first row
             for j, (label, data_series) in enumerate(y_for_label.items()):
-                
-                sorted_values, cumulative_proportions = generate_cdf_data(
-                    data_series,
-                    normalize=True
-                )
 
-                axs[i].plot(
-                    sorted_values, 
-                    cumulative_proportions,
-                    color=colors[j],
-                    linestyle=next(line_cycle),
-                    label=label
+                _plot_cdf(
+                    axs[0, i], 
+                    data_series.loc[common_samples], 
+                    colors[j], 
+                    next(line_cycle), 
+                    label, 
+                    global_xlim
                 )
                 
-            ## Set labels, etc. 
-            axs[i].set_title(plot_settings.label_for_effect[effect])
-            axs[i].set_xlabel("$log_{10}POD$")
-            axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
+            # Reset linestyle cycle for the next row
+            line_cycle = itertools.cycle(linestyles)
+            
+            # Plot CDFs as in original in the second row
+            for j, (label, data_series) in enumerate(y_for_label.items()):
+
+                _plot_cdf(
+                    axs[1, i], 
+                    data_series, 
+                    colors[j], 
+                    next(line_cycle), 
+                    label, 
+                    global_xlim
+                    )
+
+            # Set labels and other properties
+            axs[0, i].set_title(plot_settings.label_for_effect[effect])
+            for ax_row in axs[:, i]:
+                ax_row.set_xlabel("$log_{10}POD$")
+                ax_row.grid(True, which='both', linestyle='--', linewidth=0.5)
+                ax_row.set_xlim(global_xlim)
+
             if i == 0: 
-                axs[i].set_ylabel('Proportion of Chemicals')
+                axs[0, i].set_ylabel('Proportion of Chemicals (Intersection)')
+                axs[1, i].set_ylabel('Proportion of Chemicals')
 
         fig.tight_layout()
-        fig.subplots_adjust(bottom=0.2)  
+        fig.subplots_adjust(bottom=0.1)  
 
-        legend_ax = axs[-1]
+        legend_ax = axs[-1][-1]
         handles, labels = legend_ax.get_legend_handles_labels()
         fig.legend(
             handles, 
@@ -2056,10 +2076,31 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
         )
 
         save_figure(
-            fig,
-            cumulative_pod_distributions,
+            fig, 
+            cumulative_pod_distributions, 
             grouping_key
-        )
+            )
+#endregion
+
+#region: _plot_cdf
+def _plot_cdf(ax, data_series, color, linestyle, label, global_xlim):
+    '''
+    Helper function to plot CDF and update global x limits.
+    '''
+    sorted_values, cumulative_proportions = (
+        generate_cdf_data(data_series, normalize=True))
+    
+    ax.plot(
+        sorted_values, 
+        cumulative_proportions,
+        color=color,
+        linestyle=linestyle,
+        label=label
+    )
+    
+    # Update global x limits
+    global_xlim[0] = min(global_xlim[0], sorted_values.min())
+    global_xlim[1] = max(global_xlim[1], sorted_values.max())
 #endregion
 
 #region: predictions_by_missing_feature
