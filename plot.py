@@ -1984,35 +1984,18 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
     '''
     '''
     colors = sns.color_palette('colorblind')
-    linestyles = [
-        style for style in mlines.lineStyles.keys() 
-        if isinstance(style, str)
-        ]
-    
-    y_regulatory_df = results_analyzer.load_regulatory_pods()
-    model_key_names = results_analyzer.read_model_key_names()
+    linestyles = [style for style in mlines.lineStyles.keys() if isinstance(style, str)]
     grouped_keys = results_analyzer.group_model_keys('target_effect')
 
     for grouping_key, model_keys in grouped_keys:
-
-        fig, axs = plt.subplots(
-            2, 
-            len(model_keys), 
-            figsize=(len(model_keys)*4, 8)
-            )
-        
+        fig, axs = plt.subplots(2, len(model_keys), figsize=(len(model_keys)*4, 8))
         global_xlim = [float('inf'), float('-inf')]  # initialize
 
         for i, model_key in enumerate(model_keys):
-            key_for = dict(zip(model_key_names, model_key))
-            effect = key_for['target_effect']
-            results = results_analyzer.get_in_sample_prediction(model_key)
-            
-            y_for_label = {
-                'Regulatory' : y_regulatory_df[effect],
-                'ToxValDB' : results[0],
-                'QSAR' : results[-1]
-            }
+            y_for_label = results_analyzer.get_pod_comparison_data(model_key)
+            effect = model_key[results_analyzer.read_model_key_names().index('target_effect')]
+
+            line_cycle = itertools.cycle(linestyles)
 
             # Compute intersection of samples
             common_samples = (
@@ -2021,11 +2004,8 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
                 .intersection(y_for_label['QSAR'].index)
             )
             
-            line_cycle = itertools.cycle(linestyles)
-
             # Plot CDFs for intersection of samples in the first row
             for j, (label, data_series) in enumerate(y_for_label.items()):
-
                 _plot_cdf(
                     axs[0, i], 
                     data_series.loc[common_samples], 
@@ -2034,13 +2014,12 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
                     label, 
                     global_xlim
                 )
-                
+
             # Reset linestyle cycle for the next row
             line_cycle = itertools.cycle(linestyles)
-            
+
             # Plot CDFs as in original in the second row
             for j, (label, data_series) in enumerate(y_for_label.items()):
-
                 _plot_cdf(
                     axs[1, i], 
                     data_series, 
@@ -2048,7 +2027,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
                     next(line_cycle), 
                     label, 
                     global_xlim
-                    )
+                )
 
             # Set labels and other properties
             axs[0, i].set_title(plot_settings.label_for_effect[effect])
@@ -2062,7 +2041,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
                 axs[1, i].set_ylabel('Proportion of Chemicals')
 
         fig.tight_layout()
-        fig.subplots_adjust(bottom=0.1)  
+        fig.subplots_adjust(bottom=0.1)
 
         legend_ax = axs[-1][-1]
         handles, labels = legend_ax.get_legend_handles_labels()
@@ -2079,7 +2058,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
             fig, 
             cumulative_pod_distributions, 
             grouping_key
-            )
+        )
 #endregion
 
 #region: _plot_cdf

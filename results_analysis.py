@@ -336,6 +336,42 @@ class ResultsAnalyzer:
         return feature_names_for_replicate
     #endregion
 
+    #region: get_pod_comparison_data
+    def get_pod_comparison_data(self, model_key):
+        '''
+        Retrieve Point of Departure (POD) comparison data.
+        
+        Parameters
+        ----------
+        model_key : tuple
+            The model key for which to retrieve the POD data.
+            
+        Returns
+        -------
+        dict
+            A dictionary containing POD data for the given model key. The 
+            dictionary has keys 'Regulatory', 'ToxValDB', and 'QSAR', each 
+            mapping to a corresponding data series.
+
+        See Also
+        --------
+        plot.cumulative_pod_distributions()
+        '''        
+        y_regulatory_df = self.load_regulatory_pods()
+        model_key_names = self.read_model_key_names()
+        key_for = dict(zip(model_key_names, model_key))
+        effect = key_for['target_effect']
+        results = self.get_in_sample_prediction(model_key)
+        
+        y_for_label = {
+            'Regulatory': y_regulatory_df[effect].dropna(),
+            'ToxValDB': results[0],
+            'QSAR': results[-1]
+        }
+        
+        return y_for_label
+    #endregion
+
     #region: split_replicates
     @staticmethod
     def split_replicates(dataframe, stride):
