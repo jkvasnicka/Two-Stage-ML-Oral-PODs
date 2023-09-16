@@ -166,7 +166,12 @@ class DataManager:
             The DataFrame with the swapped column.
         '''
         X = X.drop(column_old, axis=1)
-        return pd.concat([X, column_new], axis=1)
+        return X.merge(
+            column_new, 
+            left_index=True, 
+            right_index=True, 
+            how='left'
+            )
     #endregion
 
     #region: with_common_index
