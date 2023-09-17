@@ -174,7 +174,8 @@ def pairwise_scatters_and_kde_subplots(features_file, targets_file, plot_setting
     save_figure(
         fig, 
         pairwise_scatters_and_kde_subplots, 
-        'all-opera-features-and-target-union'
+        'all-opera-features-and-target-union',
+        bbox_inches='tight'
         )
 #endregion
 
