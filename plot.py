@@ -1608,12 +1608,8 @@ def margins_of_exposure_cumulative(
     -------
     None
     '''
-    exposure_df = results_analyzer.load_exposure_data()
-
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys = results_analyzer.group_model_keys('target_effect')
-
-    colors = sns.color_palette("Set2", len(exposure_df.columns))
 
     # Define the limits of the vertical spans in log10 units of MOE.
     # log10(0) is undefined and will be handled dynamically
@@ -1621,7 +1617,7 @@ def margins_of_exposure_cumulative(
         'Potential Concern': (0., 2.),  # 1, 100
         'Definite Concern' : (-np.inf, 0.)  # 0, 1
     }
-    moe_colors = sns.color_palette("Paired", len(moe_categories)+1)
+    moe_colors = sns.color_palette('Paired', len(moe_categories)+1)
 
     for grouping_key, model_keys in grouped_keys:
 
@@ -1633,23 +1629,18 @@ def margins_of_exposure_cumulative(
 
         for i, model_key in enumerate(model_keys):
 
-            y_pred, *_ = results_analyzer.predict_out_of_sample(model_key)
-            moes = results_analyzer.margins_of_exposure(y_pred, exposure_df)
+            results_for_percentile = results_analyzer.moe_and_prediction_intervals(model_key)
+            percentile_colors = sns.color_palette('Set2', len(results_for_percentile))
 
-            rmse = results_analyzer.read_result(model_key, 'performances')['root_mean_squared_error'].quantile()
-            
-            for j, percentile in enumerate(exposure_df.columns):
-
-                sorted_moe, cumulative_counts = generate_cdf_data(moes[percentile])
-                lb, ub = results_analyzer.prediction_interval(sorted_moe, rmse)
+            for j, (percentile, results) in enumerate(results_for_percentile.items()):
 
                 plot_with_prediction_interval(
                     axs[i], 
-                    sorted_moe, 
-                    cumulative_counts, 
-                    lb, 
-                    ub, 
-                    colors[j], 
+                    results['moe'], 
+                    results['cum_count'], 
+                    results['lb'], 
+                    results['ub'], 
+                    percentile_colors[j], 
                     label=plot_settings.label_for_exposure_column[percentile]
                     )
 
@@ -1694,40 +1685,6 @@ def margins_of_exposure_cumulative(
             margins_of_exposure_cumulative,
             grouping_key
         )
-#endregion
-
-#region: generate_cdf_data
-def generate_cdf_data(data_series, normalize=False):
-    '''
-    Generate sorted values and their cumulative counts (or frequencies) for 
-    CDF plotting.
-
-    Parameters
-    ----------
-    data_series : pd.Series
-        The data series to generate CDF data from.
-    normalize : bool, optional
-        If True, return cumulative frequencies (proportions) instead of 
-        counts.
-
-    Returns
-    -------
-    sorted_values : pd.Series
-        Sorted values from the input data series.
-    cumulative_data : np.ndarray
-        Cumulative counts or frequencies for the sorted values.
-    '''
-    data_series = data_series.dropna()
-    
-    sorted_values = data_series.sort_values()
-    cumulative_counts = np.arange(1, len(sorted_values) + 1)
-    
-    if normalize:
-        cumulative_data = cumulative_counts / len(sorted_values)
-    else:
-        cumulative_data = cumulative_counts
-        
-    return sorted_values, cumulative_data
 #endregion
 
 #region: plot_with_prediction_interval
@@ -2007,8 +1964,9 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
             # Plot CDFs for intersection of samples in the first row
             for j, (label, data_series) in enumerate(y_for_label.items()):
                 _plot_cdf(
-                    axs[0, i], 
+                    axs[0, i],
                     data_series.loc[common_samples], 
+                    results_analyzer, 
                     colors[j], 
                     next(line_cycle), 
                     label, 
@@ -2023,6 +1981,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
                 _plot_cdf(
                     axs[1, i], 
                     data_series, 
+                    results_analyzer,
                     colors[j], 
                     next(line_cycle), 
                     label, 
@@ -2062,12 +2021,20 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
 #endregion
 
 #region: _plot_cdf
-def _plot_cdf(ax, data_series, color, linestyle, label, global_xlim):
+def _plot_cdf(
+        ax, 
+        data_series, 
+        results_analyzer, 
+        color, 
+        linestyle, 
+        label, 
+        global_xlim
+        ):
     '''
     Helper function to plot CDF and update global x limits.
     '''
     sorted_values, cumulative_proportions = (
-        generate_cdf_data(data_series, normalize=True))
+        results_analyzer.generate_cdf_data(data_series, normalize=True))
     
     ax.plot(
         sorted_values, 

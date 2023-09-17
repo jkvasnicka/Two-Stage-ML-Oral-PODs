@@ -176,6 +176,94 @@ class ResultsAnalyzer:
         return lower_bound, upper_bound
     #endregion
 
+    #region: moe_and_prediction_intervals
+    def moe_and_prediction_intervals(self, model_key):
+        '''
+        Compute Margins of Exposure (MOEs) with uncertainty estimates.
+
+        Two primary sources of uncertainty are addressed:
+            1. Predicted PODs (hazard uncertainty) represented by a 90% 
+               prediction interval.
+            2. Exposure estimates, reflected by examining MOEs at different 
+               exposure percentiles.
+        
+        Parameters
+        ----------
+        model_key : tuple
+            Key identifying the model to be analyzed.
+        
+        Returns
+        -------
+        dict of pandas.DataFrame
+            A dictionary where keys are exposure percentiles. 
+            Each corresponding value is a DataFrame containing:
+            - `moe`: Sorted Margins of Exposure.
+            - `cum_count`: Cumulative counts for the sorted MOEs.
+            - `lb`: Lower bound of the 90% prediction interval.
+            - `ub`: Upper bound of the 90% prediction interval.
+        '''
+        y_pred, *_ = self.predict_out_of_sample(model_key)
+        
+        exposure_df = self.load_exposure_data()
+        moes = self.margins_of_exposure(y_pred, exposure_df)
+        
+        rmse = self.read_result(model_key, 'performances')['root_mean_squared_error'].quantile()
+        
+        results_for_percentile = {}
+        
+        for percentile in exposure_df.columns:
+            
+            sorted_moe, cumulative_counts = self.generate_cdf_data(moes[percentile])
+            
+            lb, ub = self.prediction_interval(sorted_moe, rmse)
+            
+            results_for_percentile[percentile] = pd.DataFrame(
+                {
+                    'moe': sorted_moe,
+                    'cum_count': cumulative_counts,
+                    'lb': lb,
+                    'ub': ub
+                    }
+            )
+            
+        return results_for_percentile
+    #endregion
+
+    #region: generate_cdf_data
+    @staticmethod
+    def generate_cdf_data(data_series, normalize=False):
+        '''
+        Generate sorted values and their cumulative counts (or frequencies) for 
+        CDF plotting.
+
+        Parameters
+        ----------
+        data_series : pd.Series
+            The data series to generate CDF data from.
+        normalize : bool, optional
+            If True, return cumulative frequencies (proportions) instead of 
+            counts.
+
+        Returns
+        -------
+        sorted_values : pd.Series
+            Sorted values from the input data series.
+        cumulative_data : np.ndarray
+            Cumulative counts or frequencies for the sorted values.
+        '''
+        data_series = data_series.dropna()
+        
+        sorted_values = data_series.sort_values()
+        cumulative_counts = np.arange(1, len(sorted_values) + 1)
+        
+        if normalize:
+            cumulative_data = cumulative_counts / len(sorted_values)
+        else:
+            cumulative_data = cumulative_counts
+            
+        return sorted_values, cumulative_data
+    #endregion
+
     #region: load_exposure_data
     def load_exposure_data(self, index_col='DTXSID', log10_transform=True):
         '''
