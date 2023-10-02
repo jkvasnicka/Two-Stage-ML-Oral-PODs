@@ -2113,12 +2113,13 @@ def predictions_by_missing_feature(results_analyzer, plot_settings):
                 _set_ytick_labels(axs[i, 0], dfs_out, True)
                 _set_ytick_labels(axs[i, 1], dfs_in, False)
                 
+                ## Set the Axes titles
                 effect = plot_settings.label_for_effect[key_for['target_effect']]
-                if i == 0:
-                    axs[i, 0].set_title(f'{effect}\nAll Chemicals', size='medium', loc='left')
-                else:
-                    axs[i, 0].set_title('All Chemicals', size='medium', loc='left')
-                axs[i, 1].set_title('Training Set', size='medium', loc='left')
+                left_title = f'{effect}\nAll Chemicals'
+                right_title = 'Training Set'
+
+                axs[i, 0].set_title(left_title, size='medium', loc='left')
+                axs[i, 1].set_title(right_title, size='medium', loc='left')
                 
                 axs[i, 0].set_xlim(x_limits)
                 axs[i, 1].set_xlim(x_limits)
