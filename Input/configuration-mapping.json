@@ -4,6 +4,8 @@
 
     "preprocessor" : "Input/preprocessor-configuration.json",
 
+    "raw_data" : "Input/raw-data-configuration.json",
+    
     "data" : "Input/data-configuration.json",
 
     "feature_selection" : "Input/feature-selection-configuration.json",

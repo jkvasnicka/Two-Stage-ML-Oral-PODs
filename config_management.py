@@ -54,6 +54,7 @@ class UnifiedConfiguration:
     VALID_CATEGORIES = {
         'path',
         'preprocessor',
+        'raw_data',
         'data',
         'feature_selection',
         'estimator', 
