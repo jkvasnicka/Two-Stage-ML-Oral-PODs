@@ -5,11 +5,7 @@ import pandas as pd
 import numpy as np
 import re 
 
-# TODO: Maybe change this module's name to load.py?
-
-# TODO: Finish docstrings.
-
-import pattern
+from . import pattern
 
 #region: surrogate_toxicity_values_from_excel
 def surrogate_toxicity_values_from_excel(

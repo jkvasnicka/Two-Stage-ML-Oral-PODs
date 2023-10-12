@@ -6,11 +6,9 @@ from https://comptox.epa.gov/dashboard/
 '''
 import pandas as pd 
 import numpy as np 
-import re 
 import warnings
 
-import features
-import pattern
+from .utilities import inverse_log10_transform
 
 #region: opera_test_predictions_from_csv
 def opera_test_predictions_from_csv(
@@ -73,7 +71,7 @@ def opera_test_predictions_from_csv(
 
     if log10_pat is not None:
         # Transform features into their original scales. Assume base-10.
-        predictions = features.inverse_log10_transform(predictions, log10_pat)
+        predictions = inverse_log10_transform(predictions, log10_pat)
 
     if write_path is not None:
         predictions.to_csv(write_path)
@@ -174,7 +172,7 @@ def chemical_properties_from_excel(
 
     if log10_pat is not None:
         # Transform features into their original scales. Assume base-10.
-        agg_props = features.inverse_log10_transform(agg_props, log10_pat)
+        agg_props = inverse_log10_transform(agg_props, log10_pat)
 
     if write_path is not None:
         agg_props.to_csv(write_path)
@@ -206,30 +204,6 @@ def ensure_plausible_ranges(dis_props, min_for_column):
         dis_props.loc[where_fails_criteria, 'VALUE'] = np.nan
         
     return dis_props
-#endregion
-
-# NOTE: May not be used.
-#region: toxprint_fingerprints_from_csv
-def toxprint_fingerprints_from_csv(
-        toxprints_file, index_col, chemicals_to_exclude=None,
-        columns_to_exclude=None, write_path=None):
-    '''Parse the raw export of ToxPrint fingerprints.
-    '''
-    toxprints = pd.read_csv(
-        toxprints_file, 
-        index_col=index_col)
-    
-    if columns_to_exclude is not None:
-        toxprints = toxprints.drop(
-            columns_to_exclude, axis=1, errors='ignore')
-    if chemicals_to_exclude is not None:
-        toxprints = toxprints.drop(
-            chemicals_to_exclude, errors='ignore')
-        
-    if write_path is not None:
-        toxprints.to_csv(write_path)
-
-    return toxprints
 #endregion
 
 #region: chemicals_to_exclude_from_qsar
@@ -266,34 +240,3 @@ def chemicals_to_exclude_from_qsar(qsar_ready_smiles):
     where_missing = qsar_ready_smiles.isna()
     return list(qsar_ready_smiles.loc[where_missing].index)
     #endregion
-
-#NOTE: May not be used.
-#region: chemicals_with_metal
-nonmetals = set(
-    ['H', 'C', 'N', 'P', 'O', 'S', 'Se', 'F', 'Cl', 'Br', 
-     'I', 'He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn']) 
-
-def chemicals_with_metal(formula_for_chem):
-    '''Return a list of chemicals (str) containing any metal elements.
-
-    Parameters
-    ----------
-    formula_for_chem : pandas.Series
-        Index = chemical identifiers, values = molecular formula strings.
-    '''
-    # Regular expression cannot handle any missing values. Drop them.
-    where_missing_formula = formula_for_chem.isna()
-    formula_for_chem = formula_for_chem.loc[~where_missing_formula]
-
-    # Define regular expression to extract all elements from a formula.
-    element_pattern = re.compile(pattern.element())
-
-    # Initialize container.
-    chemicals_with_metal = []
-    for chem, formula in formula_for_chem.items():
-        elements = set(element_pattern.findall(formula))
-        any_metals = elements.difference(nonmetals)
-        if any_metals:
-            chemicals_with_metal.append(chem)
-    return chemicals_with_metal
-#endregion

@@ -25,10 +25,10 @@ Example
 import pandas as pd
 import re
 
-import parse
-import pattern
-import opera 
-import comptox
+from . import pattern
+from . import parse
+from . import opera 
+from . import comptox
 
 #region: RawDataProcessor.__init__
 class RawDataProcessor:

@@ -16,7 +16,7 @@ import logging
 import re
 import json
 
-from features import inverse_log10_transform
+from .utilities import inverse_log10_transform
 
 #region: chemicals_to_exclude_from_qsar
 def chemicals_to_exclude_from_qsar(
