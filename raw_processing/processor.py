@@ -26,9 +26,9 @@ import pandas as pd
 import re
 
 from . import pattern
-from . import parse
 from . import opera 
 from . import comptox
+from . import other_sources
 
 #region: RawDataProcessor.__init__
 class RawDataProcessor:
@@ -165,7 +165,7 @@ class RawDataProcessor:
         pandas.DataFrame
             A DataFrame containing processed surrogate toxicity values.
         '''
-        surrogate_pods = parse.surrogate_toxicity_values_from_excel(
+        surrogate_pods = other_sources.surrogate_toxicity_values_from_excel(
             self._path_settings.raw_surrogate_pods_file, 
             self._raw_data_settings.sheet_name,
             self._raw_data_settings.tox_metric, 
@@ -289,7 +289,7 @@ class RawDataProcessor:
         '''
         chem_identifiers = self.load_comptox_identifiers()
 
-        return parse.experimental_ld50s_from_excel(
+        return other_sources.experimental_ld50s_from_excel(
             self._path_settings.raw_ld50_experimental_file, 
             chem_identifiers, 
             self._index_col, 
@@ -324,7 +324,7 @@ class RawDataProcessor:
             .to_dict()
         )
 
-        return parse.regulatory_toxicity_values_from_csv(
+        return other_sources.regulatory_toxicity_values_from_csv(
             self._path_settings.raw_regulatory_pods_file, 
             self._raw_data_settings.reg_file_ilocs_for_effect, 
             chem_id_for_casrn=chem_id_for_casrn, 
@@ -368,7 +368,7 @@ class RawDataProcessor:
         pandas.DataFrame
             A DataFrame containing processed oral equivalent doses.
         '''
-        return parse.toxcast_expocast_from_csv(
+        return other_sources.toxcast_expocast_from_csv(
             self._path_settings.raw_toxcast_oeds_file, 
             self._index_col, 
             data_columns=self._raw_data_settings.oed_columns,
