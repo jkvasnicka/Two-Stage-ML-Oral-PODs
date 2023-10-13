@@ -17,8 +17,8 @@ Example
     processor = RawDataProcessor(
         raw_data_settings, data_settings, path_settings
         )
-    processor.targets_from_raw()
-    processor.comptox_features_from_raw()
+    processor._surrogate_pods_from_raw()
+    processor._comptox_features_from_raw()
     ... (and other processing methods)
 '''
 
@@ -58,7 +58,24 @@ class RawDataProcessor:
         self._path_settings = path_settings 
         # NOTE: Only DTXSID identifier has been tested
         self._index_col = 'DTXSID'
+
+        # Map data types to their respective processing function
+        self._dispatcher = {
+            'opera_features' : self._opera_features_from_raw,
+            'comptox_features' : self._comptox_features_from_raw,
+            'surrogate_pods' : self._surrogate_pods_from_raw,
+            'regulatory_pods' : self._regulatory_pods_from_raw,
+            'experimental_ld50s' : self._experimental_ld50s_from_raw,
+            'oeds' : self._oral_equivalent_doses_from_raw
+        }
 #endregion
+
+    #region: process_from_raw
+    def process_from_raw(self, data_type):
+        '''
+        '''
+        return self._dispatcher[data_type]()
+    #endregion
 
     #region: get_labeled_identifiers
     def get_labeled_identifiers(self, do_write=True):
@@ -150,8 +167,8 @@ class RawDataProcessor:
         return identifiers
     #endregion
 
-    #region: targets_from_raw
-    def targets_from_raw(self):
+    #region: _surrogate_pods_from_raw
+    def _surrogate_pods_from_raw(self):
         '''
         Extract and process surrogate toxicity values from raw data.
 
@@ -179,8 +196,8 @@ class RawDataProcessor:
     #endregion
 
     # FIXME: For backwards compatibility, training data separate
-    #region: opera_features_from_raw
-    def opera_features_from_raw(self):
+    #region: _opera_features_from_raw
+    def _opera_features_from_raw(self):
         '''
         Extract and process OPERA features from raw data batches.
 
@@ -244,8 +261,8 @@ class RawDataProcessor:
         return AD_flags, opera_features
     #endregion
 
-    #region: comptox_features_from_raw
-    def comptox_features_from_raw(self):
+    #region: _comptox_features_from_raw
+    def _comptox_features_from_raw(self):
         '''
         Extract and process CompTox features from raw data.
 
@@ -273,8 +290,8 @@ class RawDataProcessor:
         )
     #endregion
 
-    #region: experimental_ld50s_from_raw
-    def experimental_ld50s_from_raw(self):
+    #region: _experimental_ld50s_from_raw
+    def _experimental_ld50s_from_raw(self):
         '''
         Extract and process experimental LD50 values from raw data.
 
@@ -298,8 +315,8 @@ class RawDataProcessor:
         )
     #endregion
 
-    #region: regulatory_pods_from_raw
-    def regulatory_pods_from_raw(self):
+    #region: _regulatory_pods_from_raw
+    def _regulatory_pods_from_raw(self):
         '''
         Extract and process regulatory Points of Departure from raw data.
 
@@ -354,8 +371,8 @@ class RawDataProcessor:
         )
     #endregion
 
-    #region: oral_equivalent_doses_from_raw
-    def oral_equivalent_doses_from_raw(self):
+    #region: _oral_equivalent_doses_from_raw
+    def _oral_equivalent_doses_from_raw(self):
         '''
         Extract and process oral equivalent doses from raw ToxCast data.
 
