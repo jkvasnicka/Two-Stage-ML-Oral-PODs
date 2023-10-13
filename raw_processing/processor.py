@@ -61,15 +61,12 @@ class RawDataProcessor:
 #endregion
 
     #region: get_labeled_identifiers
-    def get_labeled_identifiers(self, sheet_name='ORAL', do_write=True):
+    def get_labeled_identifiers(self, do_write=True):
         '''
         Extract chemical identifiers with labels for modeling.
 
         Parameters
         ----------
-        sheet_name : str, optional
-            Name of the sheet in the Excel file from which identifiers 
-            are to be extracted. Default is 'ORAL'.
         do_write : bool, optional
             Whether to write the extracted identifiers to a TXT file. Default 
             is True.
@@ -84,7 +81,7 @@ class RawDataProcessor:
 
         # Define key-word arguments for pandas.read_excel().
         kwargs = {
-            'sheet_name': sheet_name,
+            'sheet_name': self._raw_data_settings.sheet_name,
             'header': [0, 1]
             }
 
