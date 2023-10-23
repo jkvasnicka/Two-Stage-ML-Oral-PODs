@@ -1,2 +1,0 @@
-Source: CompTox Chemistry Dashboard U.S. EPA
-Date: February 24, 2023

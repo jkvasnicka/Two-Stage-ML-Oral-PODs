@@ -1,0 +1,48 @@
+{
+    "comptox_identifiers_file" : "Input/Raw/CompTox/CCD-identifiers.csv",
+    
+    "chemical_id_dev_file" : "Input/Raw/OPERA/Input/Development/chemical-identifiers.txt",
+
+    "chemical_structures_dev_file" :  "Input/Raw/OPERA/Input/Development/chemical-identifiers.smi",
+
+    "chemical_id_app_file" : "Input/Raw/OPERA/Input/Application/chemical-identifiers.txt",
+    
+    "raw_comptox_features_file" : "Input/Raw/CompTox/CCD-OPERA-TEST-predictions.csv",
+    
+    "raw_opera_features_dir" : "Input/Raw/OPERA/Output/Development",
+
+    "file_for_features_source" : {
+
+        "comptox" : "Input/Features/CompTox-predictions.csv", 
+
+        "opera" : "Input/Features/OPERA-2.9-predictions.csv"
+        
+    },
+    
+    "opera_mapper_file" : "Input/Raw/OPERA/Output/feature-columns-mapper.json",
+
+    "opera_AD_file" : "Input/Features/OPERA-2.9-AD-flags.csv",
+    
+    "raw_ld50_experimental_file" : "Input/Raw/Nicolo/DF_LD50_curated_DB.xlsx",
+    
+    "ld50_experimental_file" : "Input/Features/experimental-LD50s.csv",
+        
+    "raw_surrogate_pods_file" : "Input/Raw/Nicolo/TOX_data_Nicolo_final_v01b.xlsx",
+    
+    "surrogate_pods_file" : "Input/Targets/surrogate-points-of-departure-log10.csv",
+        
+    "raw_regulatory_pods_file" : "Input/Raw/Nicolo/Numeric-data-for-Figures-EHP11524-S5.csv",
+    
+    "regulatory_pods_file" : "Input/Targets/regulatory-points-of-departure-log10.csv",
+    
+    "raw_toxcast_oeds_file" : "Input/Raw/En-Hsuan/OED-and-expocast-total-pop-output-file.csv",
+    
+    "toxcast_oeds_file" : "Input/ToxCast/oral-equivalent-doses-log10.csv",
+
+    "seem3_exposure_file" : "Input/Raw/SEEM3/Exposure_download_v1_Data.csv",
+
+    "opera_application_batches_dir" : "Input/Raw/OPERA/Input/Application/OPERA2.9_batches",
+
+    "results_dir" : "Results"
+    
+}

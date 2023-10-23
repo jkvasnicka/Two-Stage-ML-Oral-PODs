@@ -1,0 +1,35 @@
+{
+
+  "RandomForestRegressor": {
+    "module": "sklearn.ensemble",
+    "kwargs": {
+      "max_features": 0.3333333333333333
+    }
+
+  },
+
+  "GradientBoostingRegressor": {
+    "module": "sklearn.ensemble"
+  },
+
+  "Ridge": {
+    "module": "sklearn.linear_model"
+  },
+
+  "LinearRegression": {
+    "module": "sklearn.linear_model"
+  },
+
+  "XGBRegressor": {
+    "module": "xgboost"
+  },
+
+  "SVR": {
+    "module": "sklearn.svm"
+  },
+
+  "MLPRegressor": {
+    "module": "sklearn.neural_network"
+  }
+  
+}

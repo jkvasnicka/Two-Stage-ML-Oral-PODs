@@ -4,9 +4,12 @@ __pycache__/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+Results
+
+Scratch
+
 # Large files
-lcia_qsar/Temporary
-lcia_qsar/Input/Raw/OPERA/Input/Application/OPERA2.9_batches
-lcia_qsar/Input/Raw/SEEM3/Exposure_download_v1_Data.csv
-lcia_qsar/Input/Features/OPERA-2.9-predictions.csv
-lcia_qsar/Input/Features/OPERA-2.9-AD-flags.csv
+Input/Raw/OPERA/Input/Application/OPERA2.9_batches
+Input/Raw/SEEM3/Exposure_download_v1_Data.csv
+Input/Features/OPERA-2.9-predictions.csv
+Input/Features/OPERA-2.9-AD-flags.csv
