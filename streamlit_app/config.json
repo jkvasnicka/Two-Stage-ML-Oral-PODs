@@ -1,0 +1,24 @@
+{
+    "exposure_file_name" : "exposure-data.parquet",
+
+    "pod_file_name" : "points-of-departure-log10.parquet",
+
+    "features_file_name" : "features.parquet",
+
+    "moe_file_name" : "margins-of-exposure.parquet",
+
+    "chem_ids_file_name" : "qsar-ready-smiles.parquet",
+
+    "label_for_exposure_column" : {
+        "95th percentile (mg/kg/day)" : "Median Exposure 95%ile",
+        "50th percentile (mg/kg/day)" : "Median Exposure 50%ile",
+        "5th percentile (mg/kg/day)" : "Median Exposure 5%ile"
+      },
+
+      "label_for_effect": {
+        "general": "General Noncancer",
+        "repro_dev": "Reproductive/Developmental"
+      },
+
+      "right_truncation" : 10
+}
