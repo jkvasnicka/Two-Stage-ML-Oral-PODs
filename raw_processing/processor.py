@@ -134,10 +134,11 @@ class RawDataProcessor:
         return identifiers
     #endregion
 
-    #region: get_all_identifiers
-    def get_all_identifiers(self, do_write=True):
+    #region: get_seem3_identifiers
+    def get_seem3_identifiers(self, do_write=True):
         '''
-        Extract all chemical identifiers for modeling.
+        Extract all identifiers for chemicals within the applicability domain 
+        of SEEM3.
 
         Parameters
         ----------
