@@ -29,6 +29,7 @@ from . import pattern
 from . import opera 
 from . import comptox
 from . import other_sources
+from . import rdkit_utilities
 
 #region: RawDataProcessor.__init__
 class RawDataProcessor:
@@ -61,6 +62,7 @@ class RawDataProcessor:
 
         # Map data types to their respective processing function
         self._dispatcher = {
+            'dsstox_sdf_data' : self._dsstox_sdf_data_from_raw,
             'opera_features' : self._opera_features_from_raw,
             'comptox_features' : self._comptox_features_from_raw,
             'surrogate_pods' : self._surrogate_pods_from_raw,
@@ -165,6 +167,38 @@ class RawDataProcessor:
             )
 
         return identifiers
+    #endregion
+
+    #region: _dsstox_sdf_data_from_raw
+    def _dsstox_sdf_data_from_raw(self):
+        '''
+        Extract and process raw DSSTox SDF V2000 files.
+
+        This method reads SDF files containing chemical identifiers and other
+        data from the DSSTox database. The data are distributed across 
+        multiple SDF files where each file contains several thousand unique 
+        chemicals. The resulting DataFrame is written to a Parquet file.
+
+        Returns
+        -------
+        pandas.DataFrame
+            SDF data for all batches of chemicals.
+
+        References
+        ----------
+        https://www.epa.gov/comptox-tools/comptox-chemicals-dashboard-release-notes#latest%20version
+        '''
+        sdf_data = rdkit_utilities.sdf_to_dataframe(
+            self._path_settings.dsstox_sdf_dir
+            )
+
+        # Rename the DTXSID column for consistency
+        name_mapper = {
+            self._raw_data_settings.dsstox_sdf_dtxsid_column : self._index_col
+        }
+        sdf_data = sdf_data.rename(name_mapper, axis=1)
+
+        return sdf_data
     #endregion
 
     #region: _surrogate_pods_from_raw

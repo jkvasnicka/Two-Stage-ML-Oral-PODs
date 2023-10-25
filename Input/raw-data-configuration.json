@@ -44,6 +44,8 @@
     "oed_columns" : [
         "tox_httk.50",
         "tox_httk.95"
-    ]
+    ],
 
+    "dsstox_sdf_dtxsid_column" : "DSSTox_Substance_id"
+    
 }
