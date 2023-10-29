@@ -24,6 +24,7 @@ Example
 
 import pandas as pd
 import re
+import os.path
 
 from . import pattern
 from . import opera 
@@ -173,7 +174,7 @@ class RawDataProcessor:
     #region: _dsstox_sdf_data_from_raw
     def _dsstox_sdf_data_from_raw(self):
         '''
-        Extract and process raw DSSTox SDF V2000 files.
+        Extract and process all SDF V2000 files in the DSSTox database.
 
         This method reads SDF files containing chemical identifiers and other
         data from the DSSTox database. The data are distributed across 
@@ -193,11 +194,13 @@ class RawDataProcessor:
             self._path_settings.dsstox_sdf_dir
             )
 
-        # Rename the DTXSID column for consistency
-        name_mapper = {
-            self._raw_data_settings.dsstox_sdf_dtxsid_column : self._index_col
-        }
-        sdf_data = sdf_data.rename(name_mapper, axis=1)
+        # Write the DTXSIDs to a text file for OPERA 2.9
+        dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
+        text_file = os.path.join(
+            self._path_settings.dsstox_sdf_dir, 
+            f'{dtxsid_column}.txt'
+            )
+        sdf_data[dtxsid_column].to_csv(text_file, header=False, index=False)
 
         return sdf_data
     #endregion
