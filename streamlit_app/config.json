@@ -1,5 +1,7 @@
 {
-    "exposure_file_name" : "exposure-data.parquet",
+  "data_dir" : "Data",
+    
+  "exposure_file_name" : "exposure-data.parquet",
 
     "pod_file_name" : "points-of-departure-log10.parquet",
 
@@ -15,9 +17,9 @@
         "5th percentile (mg/kg/day)" : "Median Exposure 5%ile"
       },
 
-      "label_for_effect": {
-        "general": "General Noncancer",
-        "repro_dev": "Reproductive/Developmental"
+      "effect_for_label": {
+        "General Noncancer" : "general",
+        "Reproductive/Developmental" : "repro_dev"
       },
 
       "right_truncation" : 10

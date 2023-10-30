@@ -8,8 +8,24 @@ properly packaged.
 '''
 
 import matplotlib.pyplot as plt
-import seaborn as sns
+# import seaborn as sns
 import numpy as np 
+from rdkit import Chem 
+from rdkit.Chem import Draw
+
+#region: render_as_image
+def render_as_image(smiles):
+    '''
+    '''
+    # Convert the SMILES to a molecule object
+    mol = Chem.MolFromSmiles(smiles)
+
+    if not mol:
+        raise ValueError(f'Invalid SMILES string: {smiles}')
+
+    # Draw the molecule as an image
+    return Draw.MolToImage(mol)
+#endregion
 
 #region: margins_of_exposure_cumulative
 def margins_of_exposure_cumulative(
