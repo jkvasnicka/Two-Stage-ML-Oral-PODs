@@ -45,5 +45,5 @@ if chemical_id:
             st.write(data_manager.features)
 
 if predict_button:
-    st.header('POD Estimates [mg/(kg-d)]')
+    st.header('POD Estimates log10[mg/(kg-d)]')
     st.write(data_manager.point_of_departure)
