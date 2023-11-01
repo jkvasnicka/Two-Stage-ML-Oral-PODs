@@ -36,37 +36,29 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
             )
             effect = model_key[effect_index]
 
-            line_cycle = itertools.cycle(linestyles)
-
             # Compute intersection of samples
             common_samples = get_common_samples(y_for_label)
             
             # Plot CDFs for intersection of samples in the first row
-            for j, (label, data_series) in enumerate(y_for_label.items()):
-                _plot_cdf(
-                    axs[0, i],
-                    data_series.loc[common_samples], 
-                    results_analyzer, 
-                    colors[j], 
-                    next(line_cycle), 
-                    label, 
-                    global_xlim
-                )
-
-            # Reset linestyle cycle for the next row
-            line_cycle = itertools.cycle(linestyles)
+            plot_intersection_cdfs(
+                axs[0, i], 
+                y_for_label, 
+                results_analyzer, 
+                colors, 
+                linestyles, 
+                common_samples, 
+                global_xlim
+            )
 
             # Plot CDFs as in original in the second row
-            for j, (label, data_series) in enumerate(y_for_label.items()):
-                _plot_cdf(
-                    axs[1, i], 
-                    data_series, 
-                    results_analyzer,
-                    colors[j], 
-                    next(line_cycle), 
-                    label, 
-                    global_xlim
-                )
+            plot_original_cdfs(
+                axs[1, i], 
+                y_for_label, 
+                results_analyzer, 
+                colors, 
+                linestyles, 
+                global_xlim
+            )
 
             # Set labels and other properties
             axs[0, i].set_title(plot_settings.label_for_effect[effect])
@@ -100,8 +92,8 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
         )
 #endregion
 
-#region: _plot_cdf
-def _plot_cdf(
+#region: plot_cdf
+def plot_cdf(
         ax, 
         data_series, 
         results_analyzer, 
@@ -127,6 +119,57 @@ def _plot_cdf(
     # Update global x limits
     global_xlim[0] = min(global_xlim[0], sorted_values.min())
     global_xlim[1] = max(global_xlim[1], sorted_values.max())
+#endregion
+
+#region: plot_intersection_cdfs
+def plot_intersection_cdfs(
+        ax, 
+        y_for_label, 
+        results_analyzer, 
+        colors, 
+        linestyles, 
+        common_samples, 
+        global_xlim
+        ):
+    '''
+    '''
+    line_cycle = itertools.cycle(linestyles)
+
+    for j, (label, data_series) in enumerate(y_for_label.items()):
+        plot_cdf(
+            ax,
+            data_series.loc[common_samples], 
+            results_analyzer, 
+            colors[j], 
+            next(line_cycle), 
+            label, 
+            global_xlim
+        )
+#endregion
+
+#region: plot_original_cdfs
+def plot_original_cdfs(
+        ax, 
+        y_for_label, 
+        results_analyzer, 
+        colors, 
+        linestyles, 
+        global_xlim
+        ):
+    '''
+    '''
+    line_cycle = itertools.cycle(linestyles)
+
+    for j, (label, data_series) in enumerate(y_for_label.items()):
+        plot_cdf(
+            ax, 
+            data_series, 
+            results_analyzer,
+            colors[j], 
+            next(line_cycle), 
+            label, 
+            global_xlim
+        )
 #endregion
 
 #region: get_plot_styles
