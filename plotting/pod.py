@@ -94,10 +94,12 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
                 plot_settings.label_for_effect
             )
 
-        fig.tight_layout()
-        fig.subplots_adjust(bottom=0.1)
-
-        set_legend(fig, axs[-1][-1])
+        set_legend(
+            fig, 
+            axs[-1][-1], 
+            bottom=0.1,
+            bbox_to_anchor=(0.5, -0.01)
+            )
 
         utilities.save_figure(
             fig, 
@@ -148,6 +150,13 @@ def single_model_cdfs(
         title=title,
         ylabel='Proportion of Chemicals'
     )
+
+    set_legend(
+        fig, 
+        ax, 
+        bottom=0.17,
+        bbox_to_anchor=(0.5, -0.01)
+        )
 
     return fig, ax
 #endregion
@@ -461,9 +470,12 @@ def get_plot_styles():
 #endregion
 
 #region: set_legend
-def set_legend(fig, ax):
+def set_legend(fig, ax, bottom=None, bbox_to_anchor=None):
     '''
     Set a centralized legend for the entire subplot.
+
+    This function also adjusts the figure layout to ensure that the legend 
+    does not overlap with the plot.
 
     Parameters
     ----------
@@ -472,11 +484,22 @@ def set_legend(fig, ax):
     ax : Axes
         The matplotlib axes object from which the legend handles and labels 
         are to be extracted.
+    bottom : float, optional
+        The bottom padding of the subplot layout to accommodate the legend. If 
+        None, the default padding is used.
+    bbox_to_anchor : tuple, optional
+        The bbox_to_anchor argument for the legend. If None, the legend is placed
+        at the default position.
 
     Returns
     -------
     None
     '''
+    # Adjust layout to accomodate the legend
+    fig.tight_layout()
+    if bottom:
+        fig.subplots_adjust(bottom=bottom)
+    
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(
         handles, 
@@ -484,6 +507,6 @@ def set_legend(fig, ax):
         loc='lower center', 
         fontsize='small',
         ncol=len(labels), 
-        bbox_to_anchor=(0.5, -0.01)
+        bbox_to_anchor=bbox_to_anchor
     )
 #endregion
