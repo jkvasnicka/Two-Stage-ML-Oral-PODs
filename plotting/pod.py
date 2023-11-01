@@ -13,7 +13,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
     '''
     '''
     colors, linestyles = get_plot_styles()
-    
+
     grouped_keys = results_analyzer.group_model_keys('target_effect')
 
     for grouping_key, model_keys in grouped_keys:
@@ -39,11 +39,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
             line_cycle = itertools.cycle(linestyles)
 
             # Compute intersection of samples
-            common_samples = (
-                y_for_label['Regulatory'].index
-                .intersection(y_for_label['ToxValDB'].index)
-                .intersection(y_for_label['QSAR'].index)
-            )
+            common_samples = get_common_samples(y_for_label)
             
             # Plot CDFs for intersection of samples in the first row
             for j, (label, data_series) in enumerate(y_for_label.items()):
@@ -143,4 +139,16 @@ def get_plot_styles():
         if isinstance(style, str)
         ]
     return colors, linestyles
+#endregion
+
+#region: get_common_samples
+def get_common_samples(y_for_label):
+    '''
+    '''
+    common_samples = (
+        y_for_label['Regulatory'].index
+        .intersection(y_for_label['ToxValDB'].index)
+        .intersection(y_for_label['QSAR'].index)
+    )
+    return common_samples
 #endregion
