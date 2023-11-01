@@ -66,16 +66,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
         fig.tight_layout()
         fig.subplots_adjust(bottom=0.1)
 
-        legend_ax = axs[-1][-1]
-        handles, labels = legend_ax.get_legend_handles_labels()
-        fig.legend(
-            handles, 
-            labels, 
-            loc='lower center', 
-            fontsize='small',
-            ncol=len(labels), 
-            bbox_to_anchor=(0.5, -0.01)
-        )
+        set_legend(fig, axs[-1][-1])
 
         utilities.save_figure(
             fig, 
@@ -249,4 +240,19 @@ def get_common_samples(y_for_label):
         .intersection(y_for_label['QSAR'].index)
     )
     return common_samples
+#endregion
+
+#region: set_legend
+def set_legend(fig, ax):
+    '''
+    '''
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(
+        handles, 
+        labels, 
+        loc='lower center', 
+        fontsize='small',
+        ncol=len(labels), 
+        bbox_to_anchor=(0.5, -0.01)
+    )
 #endregion
