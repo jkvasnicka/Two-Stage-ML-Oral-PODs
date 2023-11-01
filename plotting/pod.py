@@ -75,6 +75,35 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
         )
 #endregion
 
+#region: single_model_cdfs
+def single_model_cdfs(
+        y_for_label, 
+        results_analyzer, 
+        title=None
+        ):
+    '''
+    '''
+    fig, ax = plt.subplots()
+
+    colors, linestyles = get_plot_styles()
+
+    plot_original_cdfs(
+        ax, 
+        y_for_label, 
+        results_analyzer, 
+        colors, 
+        linestyles
+    )
+
+    set_ax_properties(
+        ax, 
+        title=title,
+        ylabel='Proportion of Chemicals'
+    )
+
+    return fig, ax
+#endregion
+
 #region: plot_intersection_cdfs
 def plot_intersection_cdfs(
         ax, 
