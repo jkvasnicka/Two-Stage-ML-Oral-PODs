@@ -83,7 +83,7 @@ def plot_intersection_cdfs(
         colors, 
         linestyles, 
         common_samples, 
-        global_xlim
+        global_xlim=None
         ):
     '''
     '''
@@ -108,7 +108,7 @@ def plot_original_cdfs(
         results_analyzer, 
         colors, 
         linestyles, 
-        global_xlim
+        global_xlim=None
         ):
     '''
     '''
