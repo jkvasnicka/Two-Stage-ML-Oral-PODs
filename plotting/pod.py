@@ -1,4 +1,14 @@
 '''
+Plotting module for Point of Departure (POD) data.
+
+This module contains functions for plotting cumulative distribution functions
+(CDFs) of POD data across various models and datasets.
+
+Notes
+-----
+This module is part of a larger plotting sub-package focused on the 
+visualization of results from the main package. It relies on external classes 
+such as ResultsAnalyzer and PlotSetting for data processing and configuration.
 '''
 
 import matplotlib.pyplot as plt 
@@ -11,6 +21,27 @@ from . import utilities
 #region: cumulative_pod_distributions
 def cumulative_pod_distributions(results_analyzer, plot_settings):
     '''
+    Generate a subplot with multiple Axes, each representing the cumulative
+    distribution functions (CDFs) for different models and samples.
+
+    The first row shows the CDFs for the intersection of samples across 
+    models. The second row shows the CDFs as in the original data. Each
+    column corresponds to an effect category.
+
+    Parameters
+    ----------
+    results_analyzer : ResultsAnalyzer
+        An instance of the ResultsAnalyzer class, which provides methods for
+        data analysis and manipulation.
+    plot_settings : PlotSettings
+        An instance of the PlotSettings class, which contains various settings
+        and configurations for the plot.
+
+    Returns
+    -------
+    None
+        The function creates and saves the subplots based on the provided
+        results_analyzer and plot_settings.
     '''
     colors, linestyles = get_plot_styles()
 
@@ -82,6 +113,23 @@ def single_model_cdfs(
         title=None
         ):
     '''
+    Plot the cumulative distribution functions (CDFs) for a single model.
+
+    Parameters
+    ----------
+    y_for_label : dict
+        A dictionary containing different data series for which the CDFs need
+        to be plotted.
+    results_analyzer : ResultsAnalyzer
+        An instance of the ResultsAnalyzer class, which provides methods for
+        data analysis and manipulation.
+    title : str, optional
+        The title to be set for the plot. If None, no title is set.
+
+    Returns
+    -------
+    2-tuple:
+        matplotlib.pyplot Figure and Axes
     '''
     fig, ax = plt.subplots()
 
@@ -115,6 +163,32 @@ def plot_intersection_cdfs(
         global_xlim=None
         ):
     '''
+    Plot the cumulative distribution functions (CDFs) for the intersection of 
+    samples across models.
+
+    Parameters
+    ----------
+    ax : Axes
+        The matplotlib axes object where the CDFs are to be plotted.
+    y_for_label : dict
+        A dictionary containing different data series for which the CDFs need
+        to be plotted.
+    results_analyzer : ResultsAnalyzer
+        An instance of the ResultsAnalyzer class, which provides methods for
+        data analysis and manipulation.
+    colors : list
+        A list of colors to be used for plotting the CDFs.
+    linestyles : list
+        A list of linestyles to be used for plotting the CDFs.
+    common_samples : Series
+        A pandas Series containing the common samples across models.
+    global_xlim : list, optional
+        A list containing the global x-axis limits. If None, limits are 
+        determined automatically.
+
+    Returns
+    -------
+    None
     '''
     line_cycle = itertools.cycle(linestyles)
 
@@ -140,6 +214,30 @@ def plot_original_cdfs(
         global_xlim=None
         ):
     '''
+    Plot the cumulative distribution functions (CDFs) for each data series 
+    provided.
+
+    Parameters
+    ----------
+    ax : Axes
+        The matplotlib axes object where the CDFs are to be plotted.
+    y_for_label : dict
+        A dictionary containing different data series for which the CDFs need
+        to be plotted.
+    results_analyzer : ResultsAnalyzer
+        An instance of the ResultsAnalyzer class, which provides methods for
+        data analysis and manipulation.
+    colors : list
+        A list of colors to be used for plotting the CDFs.
+    linestyles : list
+        A list of linestyles to be used for plotting the CDFs.
+    global_xlim : list, optional
+        A list containing the global x-axis limits. If None, limits are 
+        determined automatically.
+
+    Returns
+    -------
+    None
     '''
     line_cycle = itertools.cycle(linestyles)
 
@@ -166,7 +264,33 @@ def plot_cdf(
         global_xlim=None
         ):
     '''
-    Helper function to plot CDF and update global x limits.
+    Plot the cumulative distribution function (CDF) for a given data series on 
+    the specified Axes.
+
+    Parameters
+    ----------
+    ax : Axes
+        The matplotlib axes object where the CDF is to be plotted.
+    data_series : Series
+        A pandas Series containing the data for which the CDF needs to be 
+        plotted.
+    results_analyzer : ResultsAnalyzer
+        An instance of the ResultsAnalyzer class, which provides methods for
+        data analysis and manipulation, including CDF generation.
+    color : str
+        The color to be used for plotting the CDF.
+    linestyle : str
+        The linestyle to be used for plotting the CDF.
+    label : str
+        The label to be used for the plotted CDF in the legend.
+    global_xlim : list, optional
+        A list containing the global x-axis limits. If provided, the function 
+        updates these limits based on the data series. If None, limits are not 
+        updated.
+
+    Returns
+    -------
+    None
     '''
     sorted_values, cumulative_proportions = (
         results_analyzer.generate_cdf_data(data_series, normalize=True))
@@ -195,6 +319,28 @@ def set_row_axs_properties(
         label_for_effect
         ):
     '''
+    Set properties for each Axes object in a row based on their position and 
+    model key.
+
+    Parameters
+    ----------
+    row_axs : array_like
+        An array of Axes objects for a row in a subplot.
+    global_xlim : list
+        A list containing the global x-axis limits to be set for all Axes.
+    i : int
+        The column index of the current Axes in the subplot.
+    model_key : tuple
+        A tuple representing the key for the current model.
+    results_analyzer : ResultsAnalyzer
+        An instance of the ResultsAnalyzer class, which provides methods for
+        data analysis and manipulation.
+    label_for_effect : dict
+        A dictionary mapping effect categories to their corresponding labels.
+
+    Returns
+    -------
+    None
     '''
     for ax_index, ax in enumerate(row_axs):
 
@@ -235,6 +381,23 @@ def set_ax_properties(
         ylabel=None
         ):
     '''
+    Set various properties for a given Axes object.
+
+    Parameters
+    ----------
+    ax : Axes
+        The matplotlib Axes object whose properties are to be set.
+    global_xlim : list, optional
+        A list containing the global x-axis limits to be set for the Axes. If 
+        None, x-limits are not set.
+    title : str, optional
+        The title to be set for the Axes. If None, no title is set.
+    ylabel : str, optional
+        The y-label to be set for the Axes. If None, no y-label is set.
+
+    Returns
+    -------
+    None
     '''
     ax.set_xlabel("$log_{10}POD$")
     ax.grid(True, which='both', linestyle='--', linewidth=0.5)
@@ -247,21 +410,22 @@ def set_ax_properties(
         ax.set_ylabel(ylabel)
 #endregion
 
-#region: get_plot_styles
-def get_plot_styles():
-    '''
-    '''
-    colors = sns.color_palette('colorblind')
-    linestyles = [
-        style for style in mlines.lineStyles.keys() 
-        if isinstance(style, str)
-        ]
-    return colors, linestyles
-#endregion
-
 #region: get_common_samples
 def get_common_samples(y_for_label):
     '''
+    Identify and return the common samples across multiple data series.
+
+    Parameters
+    ----------
+    y_for_label : dict
+        A dictionary containing different data series, each with its own set 
+        of samples.
+
+    Returns
+    -------
+    common_samples : Index
+        A pandas Index object containing the common samples present in all 
+        provided data series.
     '''
     common_samples = (
         y_for_label['Regulatory'].index
@@ -271,9 +435,47 @@ def get_common_samples(y_for_label):
     return common_samples
 #endregion
 
+#region: get_plot_styles
+def get_plot_styles():
+    '''
+    Retrieve and return plot styles including colors and linestyles.
+
+    Returns
+    -------
+    colors : list
+        A list of color codes representing the color palette used for plotting.
+    linestyles : list
+        A list of linestyles used for plotting lines in the plot.
+
+    Notes
+    -----
+    This function utilizes seaborn's 'colorblind' color palette. For 
+    linestyles, it extracts all string-type linestyles from matplotlib's lineStyles.
+    '''
+    colors = sns.color_palette('colorblind')
+    linestyles = [
+        style for style in mlines.lineStyles.keys() 
+        if isinstance(style, str)
+        ]
+    return colors, linestyles
+#endregion
+
 #region: set_legend
 def set_legend(fig, ax):
     '''
+    Set a centralized legend for the entire subplot.
+
+    Parameters
+    ----------
+    fig : Figure
+        The matplotlib figure object for which the legend is to be set.
+    ax : Axes
+        The matplotlib axes object from which the legend handles and labels 
+        are to be extracted.
+
+    Returns
+    -------
+    None
     '''
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(
