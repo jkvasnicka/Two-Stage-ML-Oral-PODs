@@ -12,11 +12,8 @@ from . import utilities
 def cumulative_pod_distributions(results_analyzer, plot_settings):
     '''
     '''
-    colors = sns.color_palette('colorblind')
-    linestyles = [
-        style for style in mlines.lineStyles.keys() 
-        if isinstance(style, str)
-        ]
+    colors, linestyles = get_plot_styles()
+    
     grouped_keys = results_analyzer.group_model_keys('target_effect')
 
     for grouping_key, model_keys in grouped_keys:
@@ -134,4 +131,16 @@ def _plot_cdf(
     # Update global x limits
     global_xlim[0] = min(global_xlim[0], sorted_values.min())
     global_xlim[1] = max(global_xlim[1], sorted_values.max())
+#endregion
+
+#region: get_plot_styles
+def get_plot_styles():
+    '''
+    '''
+    colors = sns.color_palette('colorblind')
+    linestyles = [
+        style for style in mlines.lineStyles.keys() 
+        if isinstance(style, str)
+        ]
+    return colors, linestyles
 #endregion
