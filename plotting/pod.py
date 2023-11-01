@@ -29,12 +29,6 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
         for i, model_key in enumerate(model_keys):
 
             y_for_label = results_analyzer.get_pod_comparison_data(model_key)
-            
-            effect_index = (
-                results_analyzer.read_model_key_names()
-                .index('target_effect')
-            )
-            effect = model_key[effect_index]
 
             # Compute intersection of samples
             common_samples = get_common_samples(y_for_label)
@@ -60,16 +54,14 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
                 global_xlim
             )
 
-            # Set labels and other properties
-            axs[0, i].set_title(plot_settings.label_for_effect[effect])
-            for ax_row in axs[:, i]:
-                ax_row.set_xlabel("$log_{10}POD$")
-                ax_row.grid(True, which='both', linestyle='--', linewidth=0.5)
-                ax_row.set_xlim(global_xlim)
-
-            if i == 0: 
-                axs[0, i].set_ylabel('Proportion of Chemicals (Intersection)')
-                axs[1, i].set_ylabel('Proportion of Chemicals')
+            set_row_axs_properties(
+                axs[:, i],
+                global_xlim,
+                i, 
+                model_key, 
+                results_analyzer, 
+                plot_settings.label_for_effect
+            )
 
         fig.tight_layout()
         fig.subplots_adjust(bottom=0.1)
@@ -170,6 +162,68 @@ def plot_original_cdfs(
             label, 
             global_xlim
         )
+#endregion
+
+#region: set_row_axs_properties
+def set_row_axs_properties(
+        row_axs, 
+        global_xlim, 
+        i, 
+        model_key, 
+        results_analyzer, 
+        label_for_effect
+        ):
+    '''
+    '''
+    for ax_index, ax in enumerate(row_axs):
+
+        is_first_row = ax_index == 0
+        if is_first_row:
+            # Set the title as the effect category
+            effect_index = (
+                results_analyzer.read_model_key_names()
+                .index('target_effect')
+            )
+            effect = model_key[effect_index]
+            title = label_for_effect[effect]
+        else:
+            title = None
+
+        is_first_column = i == 0
+        if is_first_column:
+            if is_first_row:
+                ylabel = 'Proportion of Chemicals (Intersection)'
+            else:
+                ylabel = 'Proportion of Chemicals'
+        else:
+            ylabel = None
+            
+        set_ax_properties(
+            ax, 
+            global_xlim=global_xlim, 
+            title=title,
+            ylabel=ylabel
+        )
+#endregion
+
+#region: set_ax_properties
+def set_ax_properties(
+        ax, 
+        global_xlim=None, 
+        title=None,
+        ylabel=None
+        ):
+    '''
+    '''
+    ax.set_xlabel("$log_{10}POD$")
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+
+    if global_xlim:
+        ax.set_xlim(global_xlim)
+    if title:
+        ax.set_title(title)
+    if ylabel:
+        ax.set_ylabel(ylabel)
 #endregion
 
 #region: get_plot_styles
