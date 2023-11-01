@@ -84,35 +84,6 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
         )
 #endregion
 
-#region: plot_cdf
-def plot_cdf(
-        ax, 
-        data_series, 
-        results_analyzer, 
-        color, 
-        linestyle, 
-        label, 
-        global_xlim
-        ):
-    '''
-    Helper function to plot CDF and update global x limits.
-    '''
-    sorted_values, cumulative_proportions = (
-        results_analyzer.generate_cdf_data(data_series, normalize=True))
-    
-    ax.plot(
-        sorted_values, 
-        cumulative_proportions,
-        color=color,
-        linestyle=linestyle,
-        label=label
-    )
-    
-    # Update global x limits
-    global_xlim[0] = min(global_xlim[0], sorted_values.min())
-    global_xlim[1] = max(global_xlim[1], sorted_values.max())
-#endregion
-
 #region: plot_intersection_cdfs
 def plot_intersection_cdfs(
         ax, 
@@ -162,6 +133,36 @@ def plot_original_cdfs(
             label, 
             global_xlim
         )
+#endregion
+
+#region: plot_cdf
+def plot_cdf(
+        ax, 
+        data_series, 
+        results_analyzer, 
+        color, 
+        linestyle, 
+        label, 
+        global_xlim=None
+        ):
+    '''
+    Helper function to plot CDF and update global x limits.
+    '''
+    sorted_values, cumulative_proportions = (
+        results_analyzer.generate_cdf_data(data_series, normalize=True))
+    
+    ax.plot(
+        sorted_values, 
+        cumulative_proportions,
+        color=color,
+        linestyle=linestyle,
+        label=label
+    )
+    
+    if global_xlim:
+        # Update the global x-limits
+        global_xlim[0] = min(global_xlim[0], sorted_values.min())
+        global_xlim[1] = max(global_xlim[1], sorted_values.max())
 #endregion
 
 #region: set_row_axs_properties
