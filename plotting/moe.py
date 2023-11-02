@@ -22,16 +22,30 @@ def margins_of_exposure_cumulative(
         right_truncation=None
         ):
     '''
-    Plots margins of exposure for different chemicals. 
+    Plot distributions of margin of exposure (MOE), with uncertainty, across
+    chemicals.
+
+    This function creates one Axes for each target effect category. Each Axes
+    shows the cumulative count of chemicals in relation to their MOE. 
+    Exposure uncertainty is represented by separate cumulative distributions 
+    for different exposure percentiles. Hazard (POD) uncertainty is 
+    represented by prediction intervals for each exposure percentile. MOE
+    concern categories are illustrated by vertical spans.
 
     Parameters
     ----------
+    results_analyzer : ResultsAnalyzer
+        An instance of ResultsAnalyzer used to retrieve and process MOE data.
+    plot_settings : PlotSettings
+        An instance of PlotSettings containing label and color configurations.
     right_truncation : float, optional
-        If provided, sets the right truncation limit for x-axis.
+        If provided, sets the right truncation limit for the x-axis.
 
     Returns
     -------
     None
+        The function creates and saves the subplots based on the provided
+        results_analyzer and plot_settings.
     '''
     # TODO: Create a method of ResultsAnalyzer and reuse?
     model_key_names, grouped_keys = group_model_keys(results_analyzer)
