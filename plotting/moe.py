@@ -101,6 +101,67 @@ def margins_of_exposure_cumulative(
         )
 #endregion
 
+#region: single_model_moes
+def single_model_moes(
+        model_key, 
+        results_analyzer, 
+        plot_settings, 
+        title=None,
+        right_truncation=None  # TODO: Move to config
+        ):
+    '''
+    Plot the distribution of margin of exposure (MOE) for a single model.
+
+    Parameters
+    ----------
+    model_key : tuple of str
+        The key representing the model to plot.
+    results_analyzer : ResultsAnalyzer
+        An instance of ResultsAnalyzer used to retrieve and process MOE data.
+    plot_settings : PlotSettings
+        An instance of PlotSettings containing label and color configurations.
+    title : str, optional
+        Title for the plot. If None, no title is set.
+    right_truncation : float, optional
+        If provided, sets the right truncation limit for the x-axis.
+
+    Returns
+    -------
+    2-tuple
+        matplotlib.pyplot Figure and Axes
+    '''
+    fig, ax = plt.subplots()
+
+    plot_model_data(
+        ax, 
+        model_key, 
+        results_analyzer, 
+        plot_settings
+    )
+
+    format_axes(
+        ax, 
+        title=title,
+        ylabel='Cumulative Count of Chemicals',
+        right_truncation=right_truncation
+    )
+
+    annotate_vertical_spans(
+        ax, 
+        MOE_CATEGORIES, 
+        MOE_COLORS
+        )
+
+    utilities.set_centralized_legend(
+        fig, 
+        ax,
+        bottom=0.17,
+        bbox_to_anchor=(0.5, -0.01)        
+    )
+
+    return fig, ax
+#endregion
+
 #region: plot_model_data
 def plot_model_data(ax, model_key, results_analyzer, plot_settings):
     '''
