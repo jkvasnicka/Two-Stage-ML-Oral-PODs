@@ -151,7 +151,7 @@ def single_model_cdfs(
         ylabel='Proportion of Chemicals'
     )
 
-    set_legend(
+    utilities.set_centralized_legend(
         fig, 
         ax, 
         bottom=0.17,
