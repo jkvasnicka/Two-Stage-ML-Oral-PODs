@@ -11,6 +11,14 @@
 
     "chem_ids_file_name" : "qsar-ready-smiles.parquet",
 
+    "pod_fig_file_name" : "pod-figure.pkl",
+
+    "moe_fig_file_name" : "moe-figure.pkl",
+
+    "pod_fig_title" : "Cumulative Distributions of Point of Departure",
+
+    "moe_fig_title" : "Cumulative Distributions of Margin of Exposure",
+
     "label_for_exposure_column" : {
         "95th percentile (mg/kg/day)" : "Median Exposure 95%ile",
         "50th percentile (mg/kg/day)" : "Median Exposure 50%ile",
@@ -20,7 +28,6 @@
       "effect_for_label": {
         "General Noncancer" : "general",
         "Reproductive/Developmental" : "repro_dev"
-      },
+      }
 
-      "right_truncation" : 10
 }
