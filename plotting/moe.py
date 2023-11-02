@@ -7,6 +7,14 @@ import numpy as np
 
 from . import utilities
 
+# Define the limits of the vertical spans in log10 units of MOE.
+# log10(0) is undefined and will be handled dynamically
+MOE_CATEGORIES = {
+    'Potential Concern': (0., 2.),  # 1, 100
+    'Definite Concern' : (-np.inf, 0.)  # 0, 1
+}
+MOE_COLORS = sns.color_palette('Paired', len(MOE_CATEGORIES)+1)
+
 #region: margins_of_exposure_cumulative
 def margins_of_exposure_cumulative(
         results_analyzer, 
@@ -25,16 +33,7 @@ def margins_of_exposure_cumulative(
     -------
     None
     '''
-    model_key_names = results_analyzer.read_model_key_names()
-    grouped_keys = results_analyzer.group_model_keys('target_effect')
-
-    # Define the limits of the vertical spans in log10 units of MOE.
-    # log10(0) is undefined and will be handled dynamically
-    moe_categories = {
-        'Potential Concern': (0., 2.),  # 1, 100
-        'Definite Concern' : (-np.inf, 0.)  # 0, 1
-    }
-    moe_colors = sns.color_palette('Paired', len(moe_categories)+1)
+    model_key_names, grouped_keys = group_model_keys(results_analyzer)
 
     for grouping_key, model_keys in grouped_keys:
 
@@ -79,8 +78,8 @@ def margins_of_exposure_cumulative(
 
             annotate_vertical_spans(
                 axs[i], 
-                moe_categories, 
-                moe_colors
+                MOE_CATEGORIES, 
+                MOE_COLORS
                 )
 
         fig.tight_layout()
@@ -102,6 +101,27 @@ def margins_of_exposure_cumulative(
             margins_of_exposure_cumulative,
             grouping_key
         )
+#endregion
+
+# TODO: Create a method of ResultsAnalyzer and reuse?
+#region: group_model_keys
+def group_model_keys(results_analyzer):
+    '''
+    Group model keys based on the target effect.
+
+    Parameters
+    ----------
+    results_analyzer : ResultsAnalyzer
+        An instance of ResultsAnalyzer used to read and group model keys.
+
+    Returns
+    -------
+    tuple
+        model_key_names, grouped_keys
+    '''
+    model_key_names = results_analyzer.read_model_key_names()
+    grouped_keys = results_analyzer.group_model_keys('target_effect')
+    return model_key_names, grouped_keys
 #endregion
 
 #region: plot_with_prediction_interval
