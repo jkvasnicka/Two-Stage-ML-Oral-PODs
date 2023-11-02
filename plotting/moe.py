@@ -33,6 +33,7 @@ def margins_of_exposure_cumulative(
     -------
     None
     '''
+    # TODO: Create a method of ResultsAnalyzer and reuse?
     model_key_names, grouped_keys = group_model_keys(results_analyzer)
 
     for grouping_key, model_keys in grouped_keys:
@@ -45,20 +46,12 @@ def margins_of_exposure_cumulative(
 
         for i, model_key in enumerate(model_keys):
 
-            results_for_percentile = results_analyzer.moe_and_prediction_intervals(model_key)
-            percentile_colors = sns.color_palette('Set2', len(results_for_percentile))
-
-            for j, (percentile, results) in enumerate(results_for_percentile.items()):
-
-                plot_with_prediction_interval(
-                    axs[i], 
-                    results['moe'], 
-                    results['cum_count'], 
-                    results['lb'], 
-                    results['ub'], 
-                    percentile_colors[j], 
-                    label=plot_settings.label_for_exposure_column[percentile]
-                    )
+            plot_model_data(
+                axs[i], 
+                model_key, 
+                results_analyzer, 
+                plot_settings
+            )
 
             ## Update the limits.
             set_even_ticks(axs[i], axis_type='x', data_type='fill')
@@ -103,25 +96,39 @@ def margins_of_exposure_cumulative(
         )
 #endregion
 
-# TODO: Create a method of ResultsAnalyzer and reuse?
-#region: group_model_keys
-def group_model_keys(results_analyzer):
+#region: plot_model_data
+def plot_model_data(ax, model_key, results_analyzer, plot_settings):
     '''
-    Group model keys based on the target effect.
+    Plot data for a single model.
 
     Parameters
     ----------
+    ax : matplotlib.axes.Axes
+        The Axes object to plot on.
+    model_key : str
+        The key representing the model to plot.
     results_analyzer : ResultsAnalyzer
-        An instance of ResultsAnalyzer used to read and group model keys.
+        An instance of ResultsAnalyzer used to retrieve MOE data.
+    plot_settings : PlotSettings
+        An instance of PlotSettings containing label and color configurations.
 
     Returns
     -------
-    tuple
-        model_key_names, grouped_keys
+    None
     '''
-    model_key_names = results_analyzer.read_model_key_names()
-    grouped_keys = results_analyzer.group_model_keys('target_effect')
-    return model_key_names, grouped_keys
+    results_for_percentile = results_analyzer.moe_and_prediction_intervals(model_key)
+    percentile_colors = sns.color_palette('Set2', len(results_for_percentile))
+
+    for j, (percentile, results) in enumerate(results_for_percentile.items()):
+        plot_with_prediction_interval(
+            ax,
+            results['moe'],
+            results['cum_count'],
+            results['lb'],
+            results['ub'],
+            percentile_colors[j],
+            label=plot_settings.label_for_exposure_column[percentile]
+        )
 #endregion
 
 #region: plot_with_prediction_interval
@@ -374,4 +381,24 @@ def get_data_limits(ax, axis_type='x', data_type='line'):
     data_max = np.max(data)
 
     return data_min, data_max
+#endregion
+
+#region: group_model_keys
+def group_model_keys(results_analyzer):
+    '''
+    Group model keys based on the target effect.
+
+    Parameters
+    ----------
+    results_analyzer : ResultsAnalyzer
+        An instance of ResultsAnalyzer used to read and group model keys.
+
+    Returns
+    -------
+    tuple
+        model_key_names, grouped_keys
+    '''
+    model_key_names = results_analyzer.read_model_key_names()
+    grouped_keys = results_analyzer.group_model_keys('target_effect')
+    return model_key_names, grouped_keys
 #endregion
