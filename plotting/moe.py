@@ -53,13 +53,6 @@ def margins_of_exposure_cumulative(
                 plot_settings
             )
 
-            # FIXME: Remove this
-            ## Update the limits.
-            set_even_ticks(axs[i], axis_type='x', data_type='fill')
-            set_even_log_ticks(axs[i], axis_type='y', data_type='fill')
-            if right_truncation:
-                axs[i].set_xlim(axs[i].get_xlim()[0], right_truncation)
-
             ylabel = 'Cumulative Count of Chemicals' if i == 0 else None 
             # TODO: Create a method and reuse in other modules?
             title = get_effect_label(
