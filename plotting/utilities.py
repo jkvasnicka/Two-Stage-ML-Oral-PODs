@@ -387,6 +387,48 @@ def set_axis_limit(
         ax.set_yticks(np.linspace(limits[0], limits[1], num_ticks))
 #endregion
 
+#region: set_centralized_legend
+def set_centralized_legend(fig, ax, bottom=None, bbox_to_anchor=None):
+    '''
+    Set a centralized legend for the entire subplot.
+
+    This function also adjusts the figure layout to ensure that the legend 
+    does not overlap with the plot.
+
+    Parameters
+    ----------
+    fig : Figure
+        The matplotlib figure object for which the legend is to be set.
+    ax : Axes
+        The matplotlib axes object from which the legend handles and labels 
+        are to be extracted.
+    bottom : float, optional
+        The bottom padding of the subplot layout to accommodate the legend. If 
+        None, the default padding is used.
+    bbox_to_anchor : tuple, optional
+        The bbox_to_anchor argument for the legend. If None, the legend is placed
+        at the default position.
+
+    Returns
+    -------
+    None
+    '''
+    # Adjust layout to accomodate the legend
+    fig.tight_layout()
+    if bottom:
+        fig.subplots_adjust(bottom=bottom)
+    
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(
+        handles, 
+        labels, 
+        loc='lower center', 
+        fontsize='small',
+        ncol=len(labels), 
+        bbox_to_anchor=bbox_to_anchor
+    )
+#endregion
+
 #region: comma_separated
 def comma_separated(number):
     '''Convert float or int to a string with comma-separated thousands.

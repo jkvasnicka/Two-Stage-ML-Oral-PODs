@@ -53,6 +53,7 @@ def margins_of_exposure_cumulative(
                 plot_settings
             )
 
+            # FIXME: Remove this
             ## Update the limits.
             set_even_ticks(axs[i], axis_type='x', data_type='fill')
             set_even_log_ticks(axs[i], axis_type='y', data_type='fill')
@@ -79,18 +80,11 @@ def margins_of_exposure_cumulative(
                 MOE_COLORS
                 )
 
-        fig.tight_layout()
-        fig.subplots_adjust(bottom=0.2)  
-
-        legend_ax = axs[-1]
-        handles, labels = legend_ax.get_legend_handles_labels()
-        fig.legend(
-            handles, 
-            labels, 
-            loc='lower center', 
-            fontsize='small',
-            ncol=len(labels), 
-            bbox_to_anchor=(0.5, -0.01)
+        utilities.set_centralized_legend(
+            fig, 
+            axs[-1],
+            bottom=0.2,
+            bbox_to_anchor=(0.5, -0.01)        
         )
 
         utilities.save_figure(
