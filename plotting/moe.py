@@ -59,15 +59,19 @@ def margins_of_exposure_cumulative(
             if right_truncation:
                 axs[i].set_xlim(axs[i].get_xlim()[0], right_truncation)
 
-            ## Set labels, etc. 
-            key_for = dict(zip(model_key_names, model_key))
-            effect = key_for['target_effect']
-            axs[i].set_title(plot_settings.label_for_effect[effect])
-            axs[i].set_xlabel("$log_{10}MOE$")
-            axs[i].set_yscale('log')
-            axs[i].grid(True, which='both', linestyle='--', linewidth=0.5)
-            if i == 0: 
-                axs[i].set_ylabel('Cumulative Count of Chemicals')
+            ylabel = 'Cumulative Count of Chemicals' if i == 0 else None 
+            # TODO: Create a method and reuse in other modules?
+            title = get_effect_label(
+                model_key, 
+                model_key_names, 
+                plot_settings.label_for_effect
+            )
+            format_axes(
+                axs[i], 
+                title=title,
+                ylabel=ylabel,
+                right_truncation=right_truncation
+            )
 
             annotate_vertical_spans(
                 axs[i], 
@@ -181,6 +185,70 @@ def plot_with_prediction_interval(
         color=color, 
         label=label
         )
+#endregion
+
+#region: format_axes
+def format_axes(
+        ax, 
+        title=None,
+        ylabel=None,
+        right_truncation=None
+        ):
+    '''
+    Format the Axes of a subplot.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The Axes object to format.
+    title : str, optional
+        Title for the subplot. If None, no title is set.
+    ylabel : str, optional
+        Y-axis label for the subplot. If None, no ylabel is set.
+    right_truncation : float, optional
+        If provided, sets the right truncation limit for x-axis.
+
+    Returns
+    -------
+    None
+    '''
+    ## Update the limits.
+    set_even_ticks(ax, axis_type='x', data_type='fill')
+    set_even_log_ticks(ax, axis_type='y', data_type='fill')
+    if right_truncation:
+        ax.set_xlim(ax.get_xlim()[0], right_truncation)
+
+    ## Set labels, etc. 
+    if title:
+        ax.set_title(title)
+    ax.set_xlabel("$log_{10}MOE$")
+    ax.set_yscale('log')
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+    if ylabel: 
+        ax.set_ylabel(ylabel)
+#endregion
+
+#region: get_effect_label
+def get_effect_label(model_key, model_key_names, label_for_effect):
+    '''
+    Retrieve the label for the target effect for the specified model.
+
+    Parameters
+    ----------
+    model_key : tuple of str
+        The key representing the model to plot.
+    model_key_names : list
+        A corresponding list of names for each value in the model key.
+    label_for_effect : dict
+        A dictionary mapping effect categories to labels.
+
+    Returns
+    -------
+    str
+    '''
+    key_for = dict(zip(model_key_names, model_key))
+    effect = key_for['target_effect']
+    return label_for_effect[effect]
 #endregion
 
 #region: annotate_vertical_spans
