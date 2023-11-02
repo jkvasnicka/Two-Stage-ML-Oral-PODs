@@ -16,11 +16,7 @@ MOE_CATEGORIES = {
 MOE_COLORS = sns.color_palette('Paired', len(MOE_CATEGORIES)+1)
 
 #region: margins_of_exposure_cumulative
-def margins_of_exposure_cumulative(
-        results_analyzer, 
-        plot_settings,
-        right_truncation=None
-        ):
+def margins_of_exposure_cumulative(results_analyzer, plot_settings):
     '''
     Plot distributions of margin of exposure (MOE), with uncertainty, across
     chemicals.
@@ -38,8 +34,6 @@ def margins_of_exposure_cumulative(
         An instance of ResultsAnalyzer used to retrieve and process MOE data.
     plot_settings : PlotSettings
         An instance of PlotSettings containing label and color configurations.
-    right_truncation : float, optional
-        If provided, sets the right truncation limit for the x-axis.
 
     Returns
     -------
@@ -47,6 +41,9 @@ def margins_of_exposure_cumulative(
         The function creates and saves the subplots based on the provided
         results_analyzer and plot_settings.
     '''
+    # Get x-axis truncation limit if present
+    right_truncation = plot_settings.__dict__.get('moe_right_truncation', None)
+
     # TODO: Create a method of ResultsAnalyzer and reuse?
     model_key_names, grouped_keys = group_model_keys(results_analyzer)
 
@@ -106,8 +103,7 @@ def single_model_moes(
         model_key, 
         results_analyzer, 
         plot_settings, 
-        title=None,
-        right_truncation=None  # TODO: Move to config
+        title=None
         ):
     '''
     Plot the distribution of margin of exposure (MOE) for a single model.
@@ -122,14 +118,15 @@ def single_model_moes(
         An instance of PlotSettings containing label and color configurations.
     title : str, optional
         Title for the plot. If None, no title is set.
-    right_truncation : float, optional
-        If provided, sets the right truncation limit for the x-axis.
 
     Returns
     -------
     2-tuple
         matplotlib.pyplot Figure and Axes
     '''
+    # Get x-axis truncation limit if present
+    right_truncation = plot_settings.__dict__.get('moe_right_truncation', None)
+
     fig, ax = plt.subplots()
 
     plot_model_data(
