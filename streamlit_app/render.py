@@ -49,13 +49,10 @@ def points_of_departure(chem_pods):
     st.write(chem_pods)
 #endregion
 
-#region: moe_figure
-def moe_figure(fig, chem_moe_data):
+#region: pod_figure
+def pod_figure(fig, chem_pods):
     '''
     '''
-    # Get the single Axes object for modification
-    ax = fig.get_axes()[0]
-    plot.single_chemical_moe_data(ax, chem_moe_data)
     st.pyplot(fig)
 #endregion
 
@@ -65,4 +62,14 @@ def margins_of_exposure(chem_moe_data):
     '''
     st.header('Margins of Exposure')
     st.write(chem_moe_data)
+#endregion
+
+#region: moe_figure
+def moe_figure(fig, chem_moe_data):
+    '''
+    '''
+    # Get the single Axes object for modification
+    ax = fig.get_axes()[0]
+    plot.single_chemical_moe_data(ax, chem_moe_data)
+    st.pyplot(fig)
 #endregion
