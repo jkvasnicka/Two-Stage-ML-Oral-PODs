@@ -97,8 +97,13 @@ def render_outputs(
             pods = dm.load_points_of_departure(config, effect_label)
             render.points_of_departure(pods.loc[chemical_id])
 
-            moe_data = dm.load_margins_of_exposure(config, effect_label)
-            render.margins_of_exposure(moe_data.loc[chemical_id])
+            col1, col2 = st.columns(2)
+            with col2:
+                moe_data = dm.load_margins_of_exposure(config, effect_label)
+                render.margins_of_exposure(moe_data.loc[chemical_id])
+            with col1:
+                moe_fig = dm.load_moe_figure(config, effect_label)
+                render.moe_figure(moe_fig, moe_data.loc[chemical_id])
 #endregion
 
 # Call the main function to execute the app

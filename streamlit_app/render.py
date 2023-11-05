@@ -5,6 +5,8 @@ import streamlit as st
 from rdkit import Chem 
 from rdkit.Chem import Draw
 
+import plot
+
 # TODO: Input chemical_id and check if present
 # TODO: Derive headers from config?
 
@@ -45,6 +47,16 @@ def points_of_departure(chem_pods):
     '''
     st.header('Points of Departure, log10[mg/(kg-d)]')
     st.write(chem_pods)
+#endregion
+
+#region: moe_figure
+def moe_figure(fig, chem_moe_data):
+    '''
+    '''
+    # Get the single Axes object for modification
+    ax = fig.get_axes()[0]
+    plot.single_chemical_moe_data(ax, chem_moe_data)
+    st.pyplot(fig)
 #endregion
 
 #region: margins_of_exposure
