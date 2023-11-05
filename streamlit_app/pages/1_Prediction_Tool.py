@@ -97,8 +97,12 @@ def render_outputs(
             render.features(X.loc[chemical_id])
 
             if predict_button:
+                
                 pods = dm.load_points_of_departure(config, effect_label)
                 render.points_of_departure(pods.loc[chemical_id])
+
+                moe_data = dm.load_margins_of_exposure(config, effect_label)
+                render.margins_of_exposure(moe_data.loc[chemical_id])
 #endregion
 
 # Call the main function to execute the app

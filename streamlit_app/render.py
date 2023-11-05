@@ -43,6 +43,14 @@ def features(chem_features):
 def points_of_departure(chem_pods):
     '''
     '''
-    st.header('POD Estimates log10[mg/(kg-d)]')
+    st.header('Points of Departure, log10[mg/(kg-d)]')
     st.write(chem_pods)
+#endregion
+
+#region: margins_of_exposure
+def margins_of_exposure(chem_moe_data):
+    '''
+    '''
+    st.header('Margins of Exposure')
+    st.write(chem_moe_data)
 #endregion
