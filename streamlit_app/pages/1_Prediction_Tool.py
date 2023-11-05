@@ -89,18 +89,13 @@ def render_outputs(
     '''
     '''
     if chemical_id:
-
-        smiles_for_id = dm.load_qsar_ready_smiles(config)
-
-        col1, col2 = st.columns(2)
         
-        with col1:  # left column
-            render.qsar_ready_structure(smiles_for_id[chemical_id])
+        smiles_for_id = dm.load_qsar_ready_smiles(config)
+        render.qsar_ready_structure(smiles_for_id[chemical_id])
 
-        with col2:  # right column
-            if effect_label:
-                X = dm.load_features(config, effect_label)
-                render.features(X.loc[chemical_id])
+        if effect_label:
+            X = dm.load_features(config, effect_label)
+            render.features(X.loc[chemical_id])
 
     if predict_button:
         pods = dm.load_points_of_departure(config, effect_label)
