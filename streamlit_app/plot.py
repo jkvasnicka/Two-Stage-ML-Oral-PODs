@@ -13,13 +13,10 @@ def single_chemical_pod_data(ax, chem_pod_data, color='#B22222'):
     )
 #endregion
 
-# TODO: Swap the level at data storage
 #region: single_chemical_moe_data
 def single_chemical_moe_data(ax, chem_moe_data, color='#B22222'):
     '''
     '''
-    chem_moe_data = chem_moe_data.swaplevel()  # for convenience
-
     # Plot the central tendencies as  markers
     ax.scatter(
         chem_moe_data['moe'], 
