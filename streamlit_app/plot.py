@@ -1,6 +1,19 @@
 '''
 '''
 
+#region: single_chemical_pod_data
+def single_chemical_pod_data(ax, chem_pod_data, color='#B22222'):
+    '''
+    '''
+    ax.scatter(
+        chem_pod_data['pod'], 
+        chem_pod_data['cum_proportion'], 
+        color=color, 
+        zorder=5  # zorder ensures it's on top
+    )
+#endregion
+
+# TODO: Swap the level at data storage
 #region: single_chemical_moe_data
 def single_chemical_moe_data(ax, chem_moe_data, color='#B22222'):
     '''
