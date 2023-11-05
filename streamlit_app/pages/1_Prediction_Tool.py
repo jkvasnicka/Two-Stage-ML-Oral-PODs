@@ -89,7 +89,6 @@ def render_outputs(
     '''
     '''
     if chemical_id:
-        
         smiles_for_id = dm.load_qsar_ready_smiles(config)
         render.qsar_ready_structure(smiles_for_id[chemical_id])
 
@@ -97,9 +96,9 @@ def render_outputs(
             X = dm.load_features(config, effect_label)
             render.features(X.loc[chemical_id])
 
-    if predict_button:
-        pods = dm.load_points_of_departure(config, effect_label)
-        render.points_of_departure(pods.loc[chemical_id])
+            if predict_button:
+                pods = dm.load_points_of_departure(config, effect_label)
+                render.points_of_departure(pods.loc[chemical_id])
 #endregion
 
 # Call the main function to execute the app
