@@ -91,7 +91,7 @@ def render_outputs(
         render.qsar_ready_structure(smiles_for_id[chemical_id])
 
         if effect_label:
-            
+
             X = dm.load_features(config, effect_label)
             render.features(X.loc[chemical_id])
                 
@@ -102,11 +102,11 @@ def render_outputs(
             ]
 
             with grid[0][1]:  # top right
-                pods = dm.load_points_of_departure(config, effect_label)
-                render.points_of_departure(pods.loc[chemical_id])
+                pod_data = dm.load_points_of_departure(config, effect_label)
+                render.points_of_departure(pod_data['pod'].loc[chemical_id])
             with grid[0][0]:  # top left
                 pod_fig = dm.load_pod_figure(config, effect_label)
-                render.pod_figure(pod_fig, pods.loc[chemical_id])
+                render.pod_figure(pod_fig, pod_data.loc[chemical_id])
             with grid[1][1]:  # bottom right
                 moe_data = dm.load_margins_of_exposure(config, effect_label)
                 render.margins_of_exposure(moe_data.loc[chemical_id])
