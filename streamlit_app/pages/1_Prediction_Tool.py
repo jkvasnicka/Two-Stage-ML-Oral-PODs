@@ -2,6 +2,7 @@
 '''
 
 import streamlit as st 
+import re 
 
 import data_management as dm
 import render
@@ -21,7 +22,8 @@ def main():
 
         chemical_id, effect_label, predict_button = get_user_inputs(effect_labels)
 
-    render_outputs(config, chemical_id, effect_label, predict_button)
+    if is_valid_user_input(chemical_id):
+        render_outputs(config, chemical_id, effect_label, predict_button)
 #endregion
 
 # TODO: Derive parameters from config 
@@ -49,6 +51,32 @@ def get_user_inputs(effect_labels):
     predict_button = st.button('Get POD Estimates')
 
     return chemical_id, effect_label, predict_button
+#endregion
+
+# TODO: Test on the entire DSSTox
+#region: is_valid_user_input
+def is_valid_user_input(chemical_id):
+    '''
+    '''
+    if not chemical_id:
+        st.error('Please enter a valid DTXSID in the sidebar.')
+        is_valid = False
+    elif not is_valid_dtxsid(chemical_id):
+        st.error(
+            f'The DTXSID, "{chemical_id}",  is invalid. It should be "DTXSID" followed by digits.')
+        is_valid = False
+    else:
+        is_valid = True
+    
+    return is_valid
+#endregion
+
+#region: is_valid_dtxsid
+def is_valid_dtxsid(chemical_id):
+    '''
+    '''
+    pattern = r'^DTXSID\d{6,14}$'
+    return re.match(pattern, chemical_id) is not None
 #endregion
 
 #region: render_outputs
