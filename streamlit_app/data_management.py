@@ -5,6 +5,7 @@ import streamlit as st
 import os
 import pandas as pd 
 import json 
+import pickle
 
 #region: load_config
 def load_config(config_file='config.json'):
@@ -80,6 +81,34 @@ def load_margins_of_exposure(config, effect_label):
     return read_data(moe_file)
 #endregion
 
+#region: load_pod_figure
+@st.cache_data
+def load_pod_figure(config, effect_label):
+    '''
+    '''
+    pod_fig_file = build_data_path(
+        'pod_fig_file_name',
+        config, 
+        effect_label=effect_label
+    )
+
+    return read_data(pod_fig_file)
+#endregion
+
+#region: load_moe_figure
+@st.cache_data
+def load_moe_figure(config, effect_label):
+    '''
+    '''
+    moe_fig_file = build_data_path(
+        'moe_fig_file_name',
+        config, 
+        effect_label=effect_label
+    )
+
+    return read_data(moe_fig_file)
+#endregion
+
 #region: read_data
 def read_data(data_file):
     '''
@@ -88,6 +117,12 @@ def read_data(data_file):
 
     if extension == 'parquet':
         return pd.read_parquet(data_file)
+    
+    elif extension == 'pkl':
+        with open(data_file, 'rb') as pkl_file:
+            object = pickle.load(pkl_file)
+        return object
+    
     else:
         raise ValueError(f'File extension not accepted: {extension}')
 #endregion
