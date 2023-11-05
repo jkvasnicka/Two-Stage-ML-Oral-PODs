@@ -20,10 +20,10 @@ def main():
 
         effect_labels = dm.get_effect_labels(config)
 
-        chemical_id, effect_label, predict_button = get_user_inputs(effect_labels)
+        chemical_id, effect_label = get_user_inputs(effect_labels)
 
     if is_valid_user_input(chemical_id):
-        render_outputs(config, chemical_id, effect_label, predict_button)
+        render_outputs(config, chemical_id, effect_label)
 #endregion
 
 # TODO: Derive parameters from config 
@@ -48,9 +48,8 @@ def get_user_inputs(effect_labels):
         'Select the effect category',
         options=effect_labels
     )
-    predict_button = st.button('Get POD Estimates')
 
-    return chemical_id, effect_label, predict_button
+    return chemical_id, effect_label
 #endregion
 
 # TODO: Test on the entire DSSTox
@@ -83,8 +82,7 @@ def is_valid_dtxsid(chemical_id):
 def render_outputs(
         config,
         chemical_id, 
-        effect_label, 
-        predict_button
+        effect_label
         ):
     '''
     '''
@@ -95,14 +93,12 @@ def render_outputs(
         if effect_label:
             X = dm.load_features(config, effect_label)
             render.features(X.loc[chemical_id])
-
-            if predict_button:
                 
-                pods = dm.load_points_of_departure(config, effect_label)
-                render.points_of_departure(pods.loc[chemical_id])
+            pods = dm.load_points_of_departure(config, effect_label)
+            render.points_of_departure(pods.loc[chemical_id])
 
-                moe_data = dm.load_margins_of_exposure(config, effect_label)
-                render.margins_of_exposure(moe_data.loc[chemical_id])
+            moe_data = dm.load_margins_of_exposure(config, effect_label)
+            render.margins_of_exposure(moe_data.loc[chemical_id])
 #endregion
 
 # Call the main function to execute the app
