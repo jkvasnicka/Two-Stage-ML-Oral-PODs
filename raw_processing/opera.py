@@ -321,9 +321,17 @@ def rename_discrete_columns(
         missing_cols = set(discrete_columns) - set(data.columns)
         if missing_cols:
             raise(ValueError(f'Columns {missing_cols} are not in the DataFrame'))
-        
-    mapper = {col : col+suffix for col in discrete_columns}
-    return data.rename(mapper, axis=1)
+    
+    return add_suffix_to_columns(data, discrete_columns, suffix)
+#endregion
+
+#region: add_suffix_to_columns
+def add_suffix_to_columns(data, columns, suffix):
+    '''
+    Helper function to add a suffix to the specified columns.
+    '''
+    mapper = {col: col + suffix for col in columns}
+    return data.rename(columns=mapper)
 #endregion
 
 #region: set_unreliable_values
