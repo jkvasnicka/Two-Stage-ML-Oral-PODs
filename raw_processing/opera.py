@@ -291,16 +291,39 @@ def parse_data_from_csv_files(
     return data_for_model
 #endregion
 
-# TODO: Add a check to ensure correct spelling.
 #region: rename_discrete_columns
 def rename_discrete_columns(
-        data_for_model, discrete_columns, suffix):
-    '''Tag discrete columns by adding a suffix.
-
-    discrete_columns must be contained in data_for_model.columns.
+        data, 
+        discrete_columns, 
+        suffix,
+        validate_columns=True
+        ):
     '''
+    Tag discrete columns by adding a suffix.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+    discrete_columns : list
+        Columns to tag with a suffix.
+    suffix : str
+        Suffix to add to the column names.
+    validate_columns : bool, default True
+        If True, check that all discrete_columns are in the DataFrame.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with renamed columns.
+    '''
+    if validate_columns:
+        # Ensure all discrete_columns are in the DataFrame
+        missing_cols = set(discrete_columns) - set(data.columns)
+        if missing_cols:
+            raise(ValueError(f'Columns {missing_cols} are not in the DataFrame'))
+        
     mapper = {col : col+suffix for col in discrete_columns}
-    return data_for_model.rename(mapper, axis=1)
+    return data.rename(mapper, axis=1)
 #endregion
 
 #region: set_unreliable_values
@@ -395,7 +418,11 @@ def applicability_domain_flags(
         AD_flags.columns = AD_flags.columns.str.replace(log10_pat, '')
     if discrete_columns is not None:
         AD_flags = rename_discrete_columns(
-            AD_flags, discrete_columns, discrete_suffix)
+            AD_flags, 
+            discrete_columns, 
+            discrete_suffix,
+            validate_columns=False  # not all features have a defined AD
+            )
     if write_path is not None:
         AD_flags.to_csv(write_path)
 
