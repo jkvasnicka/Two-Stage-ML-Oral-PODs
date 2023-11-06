@@ -334,6 +334,19 @@ def add_suffix_to_columns(data, columns, suffix):
     return data.rename(columns=mapper)
 #endregion
 
+#region: remove_suffix_from_columns
+def remove_suffix_from_columns(data, suffix):
+    '''
+    Helper function to remove a suffix from all columns that have it.
+    '''
+    # Create a mapper only for columns that end with the suffix
+    mapper = {
+        col: col[:-len(suffix)] for col in data
+        if col.endswith(suffix)
+    }
+    return data.rename(columns=mapper)
+#endregion
+
 #region: set_unreliable_values
 def set_unreliable_values(data, AD_flags):
     '''Helper function which sets unreliable values in 'data' as NaN.
