@@ -21,7 +21,7 @@ def inverse_log10_transform(data, log10_pat):
             f'log10 pattern, "{log10_pat}," not detected in any columns')
     
     data = apply_inverse_log_transform(data, log_columns)
-    
+
     data.columns = data.columns.str.replace(log10_pat, '')
     return data
 #endregion
@@ -42,4 +42,60 @@ def apply_inverse_log_transform(data, columns):
     '''
     data[columns] = 10**data[columns]
     return data
+#endregion
+
+#region: rename_discrete_columns
+def rename_discrete_columns(
+        data, 
+        discrete_columns, 
+        suffix,
+        validate_columns=True
+        ):
+    '''
+    Tag discrete columns by adding a suffix.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+    discrete_columns : list
+        Columns to tag with a suffix.
+    suffix : str
+        Suffix to add to the column names.
+    validate_columns : bool, default True
+        If True, check that all discrete_columns are in the DataFrame.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with renamed columns.
+    '''
+    if validate_columns:
+        # Ensure all discrete_columns are in the DataFrame
+        missing_cols = set(discrete_columns) - set(data.columns)
+        if missing_cols:
+            raise(ValueError(f'Columns {missing_cols} are not in the DataFrame'))
+    
+    return add_suffix_to_columns(data, discrete_columns, suffix)
+#endregion
+
+#region: add_suffix_to_columns
+def add_suffix_to_columns(data, columns, suffix):
+    '''
+    Helper function to add a suffix to the specified columns.
+    '''
+    mapper = {col: col + suffix for col in columns}
+    return data.rename(columns=mapper)
+#endregion
+
+#region: remove_suffix_from_columns
+def remove_suffix_from_columns(data, suffix):
+    '''
+    Helper function to remove a suffix from all columns that have it.
+    '''
+    # Create a mapper only for columns that end with the suffix
+    mapper = {
+        col: col[:-len(suffix)] for col in data
+        if col.endswith(suffix)
+    }
+    return data.rename(columns=mapper)
 #endregion

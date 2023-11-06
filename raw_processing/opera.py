@@ -16,7 +16,7 @@ import logging
 import re
 import json
 
-from .utilities import inverse_log10_transform
+from . import utilities
 
 #region: chemicals_to_exclude_from_qsar
 def chemicals_to_exclude_from_qsar(
@@ -275,76 +275,27 @@ def parse_data_from_csv_files(
         data_for_model[model_name] = model_data[data_columns]
 
     ## Assemble the final DataFrame.
+
     data_for_model = pd.concat(data_for_model.values(), axis=1)
     if index_name is not None:
         data_for_model.index.name = index_name
     if log10_pat is not None:
-        data_for_model = inverse_log10_transform(data_for_model, log10_pat)
+        data_for_model = utilities.inverse_log10_transform(
+            data_for_model, 
+            log10_pat
+        )
     if discrete_columns is not None:
-        data_for_model = rename_discrete_columns(
-            data_for_model, discrete_columns, discrete_suffix)
+        data_for_model = utilities.rename_discrete_columns(
+            data_for_model, 
+            discrete_columns, 
+            discrete_suffix
+        )
     if flags is not None:
         data_for_model = set_unreliable_values(data_for_model, flags)
     if write_path is not None:
         data_for_model.to_csv(write_path)
 
     return data_for_model
-#endregion
-
-#region: rename_discrete_columns
-def rename_discrete_columns(
-        data, 
-        discrete_columns, 
-        suffix,
-        validate_columns=True
-        ):
-    '''
-    Tag discrete columns by adding a suffix.
-
-    Parameters
-    ----------
-    data : pandas.DataFrame
-    discrete_columns : list
-        Columns to tag with a suffix.
-    suffix : str
-        Suffix to add to the column names.
-    validate_columns : bool, default True
-        If True, check that all discrete_columns are in the DataFrame.
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame with renamed columns.
-    '''
-    if validate_columns:
-        # Ensure all discrete_columns are in the DataFrame
-        missing_cols = set(discrete_columns) - set(data.columns)
-        if missing_cols:
-            raise(ValueError(f'Columns {missing_cols} are not in the DataFrame'))
-    
-    return add_suffix_to_columns(data, discrete_columns, suffix)
-#endregion
-
-#region: add_suffix_to_columns
-def add_suffix_to_columns(data, columns, suffix):
-    '''
-    Helper function to add a suffix to the specified columns.
-    '''
-    mapper = {col: col + suffix for col in columns}
-    return data.rename(columns=mapper)
-#endregion
-
-#region: remove_suffix_from_columns
-def remove_suffix_from_columns(data, suffix):
-    '''
-    Helper function to remove a suffix from all columns that have it.
-    '''
-    # Create a mapper only for columns that end with the suffix
-    mapper = {
-        col: col[:-len(suffix)] for col in data
-        if col.endswith(suffix)
-    }
-    return data.rename(columns=mapper)
 #endregion
 
 #region: set_unreliable_values
@@ -438,7 +389,7 @@ def applicability_domain_flags(
     if log10_pat is not None:
         AD_flags.columns = AD_flags.columns.str.replace(log10_pat, '')
     if discrete_columns is not None:
-        AD_flags = rename_discrete_columns(
+        AD_flags = utilities.rename_discrete_columns(
             AD_flags, 
             discrete_columns, 
             discrete_suffix,
