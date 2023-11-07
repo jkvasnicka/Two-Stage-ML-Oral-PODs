@@ -16,11 +16,16 @@ def inverse_log10_transform(data, log10_pat):
     data = data.copy()
 
     log10_columns = get_columns_with_pattern(data.columns, log10_pat)
-    
-    data = apply_inverse_log_transform(data, log10_columns)
-
-    data.columns = data.columns.str.replace(log10_pat, '')
+    data[log10_columns] = 10**data[log10_columns]
     return data
+#endregion
+
+#region: remove_pattern
+def remove_pattern(columns, pattern):
+    '''
+    Helper function to remove a pattern (e.g., 'Log') from the column names.
+    '''
+    return columns.str.replace(pattern, '')
 #endregion
 
 #region: get_columns_with_pattern
@@ -32,16 +37,8 @@ def get_columns_with_pattern(columns, pattern):
     if not pattern_columns:
         raise ValueError(
             f'Pattern, "{pattern}," not detected in any columns')
-#endregion
-
-#region: apply_inverse_log_transform
-def apply_inverse_log_transform(data, columns):
-    '''
-    Helper function to apply inverse log10 transformation to specified 
-    columns.
-    '''
-    data[columns] = 10**data[columns]
-    return data
+    else:
+        return pattern_columns
 #endregion
 
 #region: tag_discrete_columns

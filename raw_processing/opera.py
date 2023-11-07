@@ -284,6 +284,10 @@ def parse_data_from_csv_files(
             data_for_model, 
             log10_pat
         )
+        data_for_model.columns = utilities.remove_pattern(
+            data_for_model.columns, 
+            log10_pat
+        )
     if discrete_columns is not None:
         data_for_model = utilities.tag_discrete_columns(
             data_for_model, 
@@ -387,7 +391,10 @@ def applicability_domain_flags(
     if index_name is not None:
         AD_flags.index.name = index_name
     if log10_pat is not None:
-        AD_flags.columns = AD_flags.columns.str.replace(log10_pat, '')
+        AD_flags.columns = utilities.remove_pattern(
+            AD_flags.columns, 
+            log10_pat
+        )
     if discrete_columns is not None:
         AD_flags = utilities.tag_discrete_columns(
             AD_flags, 
