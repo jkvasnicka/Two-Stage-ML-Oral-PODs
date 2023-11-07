@@ -91,9 +91,6 @@ def render_outputs(
         render.qsar_ready_structure(smiles_for_id[chemical_id])
 
         if effect_label:
-
-            X = dm.load_features(config, effect_label)
-            render.features(X.loc[chemical_id])
                 
             # Initialize a grid with 2 rows and 2 columns
             grid = [
