@@ -43,7 +43,11 @@ def initialize_page(config):
 def get_user_inputs(effect_labels):
     '''
     '''
-    chemical_id = st.text_input('Enter the DTXSID for the chemical')
+    chemical_id = st.text_input(
+        'Enter the DTXSID for the chemical',
+        placeholder='e.g., DTXSID2021315'
+        )
+
     effect_label = st.selectbox(
         'Select the effect category',
         options=effect_labels
