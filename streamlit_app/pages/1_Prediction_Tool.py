@@ -109,13 +109,21 @@ def render_outputs(
                 render.points_of_departure(pod_data['pod'].loc[chemical_id])
             with grid[0][0]:  # top left
                 pod_fig = dm.load_pod_figure(config, effect_label)
-                render.pod_figure(pod_fig, pod_data.loc[chemical_id])
+                render.pod_figure(
+                    pod_fig, 
+                    pod_data.loc[chemical_id], 
+                    config['pod_fig_title']
+                )
             with grid[1][1]:  # bottom right
                 moe_data = dm.load_margins_of_exposure(config, effect_label)
                 render.margins_of_exposure(moe_data.loc[chemical_id])
             with grid[1][0]:  # bottom left
                 moe_fig = dm.load_moe_figure(config, effect_label)
-                render.moe_figure(moe_fig, moe_data.loc[chemical_id])
+                render.moe_figure(
+                    moe_fig, 
+                    moe_data.loc[chemical_id],
+                    config['moe_fig_title']
+                )
 #endregion
 
 # Call the main function to execute the app
