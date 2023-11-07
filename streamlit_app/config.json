@@ -20,10 +20,16 @@
     "moe_fig_title" : "Cumulative Distributions of Margin of Exposure",
 
     "label_for_exposure_column" : {
-        "95th percentile (mg/kg/day)" : "Median Exposure 95%ile",
-        "50th percentile (mg/kg/day)" : "Median Exposure 50%ile",
-        "5th percentile (mg/kg/day)" : "Median Exposure 5%ile"
+      "5th percentile (mg/kg/day)" : "Median Exposure 5%ile",
+      "50th percentile (mg/kg/day)" : "Median Exposure 50%ile",
+      "95th percentile (mg/kg/day)" : "Median Exposure 95%ile"
       },
+
+      "label_for_pod_column" : {
+        "lb" : "POD 5%ile",
+        "moe" : "POD 50%ile",
+        "ub" : "POD 95%ile"
+    },
 
       "effect_for_label": {
         "General Noncancer" : "general",

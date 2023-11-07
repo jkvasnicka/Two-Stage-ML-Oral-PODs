@@ -64,10 +64,17 @@ def pod_figure(fig, chem_pod_data, title):
 #endregion
 
 #region: margins_of_exposure
-def margins_of_exposure(chem_moe_data):
+def margins_of_exposure(chem_moe_data, config):
     '''
     '''
     st.header('Margins of Exposure')
+    chem_moe_data = (
+        chem_moe_data
+        .unstack()
+        .drop('cum_count')  # cumulative count of chemicals
+        .rename(index=config['label_for_pod_column'])
+        .rename(columns=config['label_for_exposure_column'])
+    )
     st.write(chem_moe_data)
 #endregion
 
