@@ -44,8 +44,8 @@ def apply_inverse_log_transform(data, columns):
     return data
 #endregion
 
-#region: rename_discrete_columns
-def rename_discrete_columns(
+#region: tag_discrete_columns
+def tag_discrete_columns(
         data, 
         discrete_columns, 
         suffix,

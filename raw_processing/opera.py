@@ -285,7 +285,7 @@ def parse_data_from_csv_files(
             log10_pat
         )
     if discrete_columns is not None:
-        data_for_model = utilities.rename_discrete_columns(
+        data_for_model = utilities.tag_discrete_columns(
             data_for_model, 
             discrete_columns, 
             discrete_suffix
@@ -389,7 +389,7 @@ def applicability_domain_flags(
     if log10_pat is not None:
         AD_flags.columns = AD_flags.columns.str.replace(log10_pat, '')
     if discrete_columns is not None:
-        AD_flags = utilities.rename_discrete_columns(
+        AD_flags = utilities.tag_discrete_columns(
             AD_flags, 
             discrete_columns, 
             discrete_suffix,
