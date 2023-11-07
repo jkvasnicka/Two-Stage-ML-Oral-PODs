@@ -19,7 +19,6 @@ def main():
         st.header('User Input')
 
         effect_labels = dm.get_effect_labels(config)
-
         effect_label, chemical_id = get_user_inputs(effect_labels)
 
     if is_valid_user_input(chemical_id):
@@ -37,6 +36,13 @@ def initialize_page(config):
     )
 
     st.title('Interactive Data Visualization Tool')
+
+    st.markdown(
+        '''
+        Visualize points of departure (POD) and margins of exposure (MOE) for 
+        a chemical of interest.
+        '''
+    )
 #endregion
 
 #region: get_user_inputs
@@ -124,6 +130,6 @@ def render_outputs(
                 )
 #endregion
 
-# Call the main function to execute the app
+# Execute the page
 if __name__ == '__main__':
     main()
