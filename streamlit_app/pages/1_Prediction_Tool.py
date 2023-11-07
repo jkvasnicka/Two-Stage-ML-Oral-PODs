@@ -111,8 +111,7 @@ def render_outputs(
                 pod_fig = dm.load_pod_figure(config, effect_label)
                 render.pod_figure(
                     pod_fig, 
-                    pod_data.loc[chemical_id], 
-                    config['pod_fig_title']
+                    pod_data.loc[chemical_id]
                 )
             with grid[1][1]:  # bottom right
                 moe_data = dm.load_margins_of_exposure(config, effect_label)
@@ -121,8 +120,7 @@ def render_outputs(
                 moe_fig = dm.load_moe_figure(config, effect_label)
                 render.moe_figure(
                     moe_fig, 
-                    moe_data.loc[chemical_id],
-                    config['moe_fig_title']
+                    moe_data.loc[chemical_id]
                 )
 #endregion
 

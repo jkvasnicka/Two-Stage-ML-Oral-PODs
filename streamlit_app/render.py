@@ -46,28 +46,35 @@ def features(chem_features):
 def points_of_departure(chem_pod_data):
     '''
     '''
-    st.header('Points of Departure, log10[mg/(kg-d)]')
     pods = chem_pod_data['pod']
     pods.name = 'log10 POD'
     st.write(pods)
 #endregion
 
 #region: pod_figure
-def pod_figure(fig, chem_pod_data, title):
+def pod_figure(fig, chem_pod_data):
     '''
     '''
-    st.header(title)
     # Get the single Axes object for modification
     ax = fig.get_axes()[0]
     plot.single_chemical_pod_data(ax, chem_pod_data)
     st.pyplot(fig)
+    st.markdown(
+        '''
+        **Figure 1.** Cumulative distributions of point of departure across 
+        different data sources. “Regulatory” refers to the regulatory 
+        values. “ToxValDB” refers to the surrogate values derived using an 
+        approach by Aurisano et al. (2023). “QSAR” refers to the final model 
+        developed in this study, described in the main text. Data are shown
+        for chemicals within the applicability domain of SEEM3.
+        '''
+    )
 #endregion
 
 #region: margins_of_exposure
 def margins_of_exposure(chem_moe_data, config):
     '''
     '''
-    st.header('Margins of Exposure')
     chem_moe_data = (
         chem_moe_data
         .unstack()
@@ -79,12 +86,24 @@ def margins_of_exposure(chem_moe_data, config):
 #endregion
 
 #region: moe_figure
-def moe_figure(fig, chem_moe_data, title):
+def moe_figure(fig, chem_moe_data):
     '''
     '''
-    st.header(title)
     # Get the single Axes object for modification
     ax = fig.get_axes()[0]
     plot.single_chemical_moe_data(ax, chem_moe_data)
     st.pyplot(fig)
+    st.markdown(
+        '''
+        **Figure 2.** Cumulative counts of chemicals in relation to their 
+        margins of exposure for an individual at the population median 
+        exposure. Uncertainty is represented in two ways: (1) Exposure 
+        uncertainty, reflected by examining margins of exposure at different 
+        exposure percentiles; (2) Point of departure (hazard) uncertainty, 
+        represented by a 90% prediction interval derived from the median 
+        root-mean squared error based on cross validation. Vertical spans 
+        highlight different risk categories. Data are shown for chemicals 
+        within the applicability domain of SEEM3.
+        '''
+    )
 #endregion

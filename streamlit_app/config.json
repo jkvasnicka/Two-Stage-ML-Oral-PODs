@@ -15,10 +15,6 @@
 
     "moe_fig_file_name" : "moe-figure.pkl",
 
-    "pod_fig_title" : "Cumulative Distributions of Point of Departure",
-
-    "moe_fig_title" : "Cumulative Distributions of Margin of Exposure",
-
     "label_for_exposure_column" : {
       "5th percentile (mg/kg/day)" : "Median Exposure 5%ile",
       "50th percentile (mg/kg/day)" : "Median Exposure 50%ile",
