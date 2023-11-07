@@ -2,6 +2,7 @@
 '''
 
 import streamlit as st
+import pandas as pd
 from rdkit import Chem 
 from rdkit.Chem import Draw
 
@@ -46,7 +47,9 @@ def points_of_departure(chem_pod_data):
     '''
     '''
     st.header('Points of Departure, log10[mg/(kg-d)]')
-    st.write(chem_pod_data['pod'])
+    pods = chem_pod_data['pod']
+    pods.name = 'log10 POD'
+    st.write(pods)
 #endregion
 
 #region: pod_figure
