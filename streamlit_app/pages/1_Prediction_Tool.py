@@ -20,10 +20,10 @@ def main():
 
         effect_labels = dm.get_effect_labels(config)
 
-        chemical_id, effect_label = get_user_inputs(effect_labels)
+        effect_label, chemical_id = get_user_inputs(effect_labels)
 
     if is_valid_user_input(chemical_id):
-        render_outputs(config, chemical_id, effect_label)
+        render_outputs(config, effect_label, chemical_id)
 #endregion
 
 # TODO: Derive parameters from config 
@@ -43,17 +43,17 @@ def initialize_page(config):
 def get_user_inputs(effect_labels):
     '''
     '''
-    chemical_id = st.text_input(
-        'Enter the DTXSID for the chemical',
-        placeholder='e.g., DTXSID2021315'
-        )
-
     effect_label = st.selectbox(
         'Select the effect category',
         options=effect_labels
     )
 
-    return chemical_id, effect_label
+    chemical_id = st.text_input(
+        'Enter the DTXSID for the chemical',
+        placeholder='e.g., DTXSID2021315'
+        )
+
+    return effect_label, chemical_id
 #endregion
 
 # TODO: Test on the entire DSSTox
@@ -85,14 +85,16 @@ def is_valid_dtxsid(chemical_id):
 #region: render_outputs
 def render_outputs(
         config,
-        chemical_id, 
-        effect_label
+        effect_label,
+        chemical_id 
         ):
     '''
     '''
     if chemical_id:
-        smiles_for_id = dm.load_qsar_ready_smiles(config)
-        render.qsar_ready_structure(smiles_for_id[chemical_id])
+
+        with st.sidebar:
+            smiles_for_id = dm.load_qsar_ready_smiles(config)
+            render.qsar_ready_structure(smiles_for_id[chemical_id])
 
         if effect_label:
                 
