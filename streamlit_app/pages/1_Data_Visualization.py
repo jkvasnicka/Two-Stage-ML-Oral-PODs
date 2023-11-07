@@ -32,11 +32,11 @@ def initialize_page(config):
     '''
     '''
     st.set_page_config(
-        page_title='Chemical Prediction',
+        page_title='Data Visualization',
         layout='wide'
     )
 
-    st.title('Chemical Prediction Tool')
+    st.title('Interactive Data Visualization Tool')
 #endregion
 
 #region: get_user_inputs
