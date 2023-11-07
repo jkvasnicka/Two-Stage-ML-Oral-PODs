@@ -106,7 +106,7 @@ def render_outputs(
 
             with grid[0][1]:  # top right
                 pod_data = dm.load_points_of_departure(config, effect_label)
-                render.points_of_departure(pod_data['pod'].loc[chemical_id])
+                render.points_of_departure(pod_data.loc[chemical_id])
             with grid[0][0]:  # top left
                 pod_fig = dm.load_pod_figure(config, effect_label)
                 render.pod_figure(

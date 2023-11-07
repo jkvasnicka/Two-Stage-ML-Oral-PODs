@@ -42,11 +42,11 @@ def features(chem_features):
 #endregion
 
 #region: points_of_departure
-def points_of_departure(chem_pods):
+def points_of_departure(chem_pod_data):
     '''
     '''
     st.header('Points of Departure, log10[mg/(kg-d)]')
-    st.write(chem_pods)
+    st.write(chem_pod_data['pod'])
 #endregion
 
 #region: pod_figure
