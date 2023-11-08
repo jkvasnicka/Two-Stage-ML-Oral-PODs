@@ -121,7 +121,7 @@ def render_outputs(inputs, config):
                 )
             with grid[1][1]:  # bottom right
                 moe_data = dm.load_margins_of_exposure(config, effect_label)
-                render.margins_of_exposure(moe_data.loc[chemical_id], config)
+                render.margins_of_exposure(moe_data.loc[chemical_id])
             with grid[1][0]:  # bottom left
                 moe_fig = dm.load_moe_figure(config, effect_label)
                 render.moe_figure(

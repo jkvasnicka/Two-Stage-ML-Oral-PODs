@@ -15,16 +15,17 @@
 
     "moe_fig_file_name" : "moe-figure.pkl",
 
-    "label_for_exposure_column" : {
-      "5th percentile (mg/kg/day)" : "Median Exposure 5%ile",
-      "50th percentile (mg/kg/day)" : "Median Exposure 50%ile",
-      "95th percentile (mg/kg/day)" : "Median Exposure 95%ile"
+    "exposure_key_mapper" : {
+      "5th percentile (mg/kg/day)" : "Median_Exposure_5%ile",
+      "50th percentile (mg/kg/day)" : "Median_Exposure_50%ile",
+      "95th percentile (mg/kg/day)" : "Median_Exposure_95%ile"
       },
 
-      "label_for_pod_column" : {
-        "lb" : "POD 5%ile",
-        "moe" : "POD 50%ile",
-        "ub" : "POD 95%ile"
+      "pod_key_mapper" : {
+        "lb" : "POD_5%ile",
+        "moe" : "POD_50%ile",
+        "ub" : "POD_95%ile",
+        "cum_count" : "Cum_Count"
     },
 
       "effect_for_label": {

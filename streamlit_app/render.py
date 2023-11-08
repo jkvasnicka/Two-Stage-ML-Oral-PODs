@@ -37,7 +37,7 @@ def structure_as_image(smiles):
 def points_of_departure(chem_pod_data):
     '''
     '''
-    pods = chem_pod_data['pod']
+    pods = chem_pod_data['POD']
     pods.name = 'log10 POD'
     st.write(pods)
 #endregion
@@ -63,15 +63,13 @@ def pod_figure(fig, chem_pod_data):
 #endregion
 
 #region: margins_of_exposure
-def margins_of_exposure(chem_moe_data, config):
+def margins_of_exposure(chem_moe_data):
     '''
     '''
     chem_moe_data = (
         chem_moe_data
         .unstack()
-        .drop('cum_count')  # cumulative count of chemicals
-        .rename(index=config['label_for_pod_column'])
-        .rename(columns=config['label_for_exposure_column'])
+        .drop('Cum_Count')
     )
     st.write(chem_moe_data)
 #endregion
