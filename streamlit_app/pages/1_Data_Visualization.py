@@ -69,7 +69,7 @@ def is_valid_user_input(chemical_id):
     '''
     '''
     if not chemical_id:
-        st.info('Please enter a valid DTXSID in the sidebar.')
+        st.info(':point_left: Please enter a valid DTXSID in the sidebar.')
         is_valid = False
     elif not is_valid_dtxsid(chemical_id):
         st.error(
