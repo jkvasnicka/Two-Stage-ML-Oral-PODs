@@ -63,10 +63,10 @@ def get_user_inputs(effect_labels):
 def prepare_data_download(inputs, config):
     '''
     '''
-    zip_buffer = create_downloadable_zip_file(inputs, config)
-
     selected_inputs = [v for k, v in inputs.items() if 'selected' in k]
     if any(selected_inputs):
+        with st.spinner('Preparing the data for download...'):
+            zip_buffer = create_downloadable_zip_file(inputs, config)
         # Offer the zip file for download
         st.download_button(
             label='Download Selected Datasets',
