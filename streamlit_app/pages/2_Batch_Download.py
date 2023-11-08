@@ -75,7 +75,7 @@ def prepare_data_download(inputs, config):
             mime='application/zip'
         )
     else:
-        st.error('Please select at least one dataset in the sidebar.')
+        st.info('Please select at least one dataset in the sidebar.')
 #endregion
 
 #region: create_downloadable_zip_file
