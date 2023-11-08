@@ -4,6 +4,7 @@
 import streamlit as st
 from io import BytesIO
 import zipfile
+from datetime import datetime
 
 import data_management as dm
 
@@ -64,16 +65,22 @@ def prepare_data_download(inputs, config):
     '''
     '''
     selected_inputs = [v for k, v in inputs.items() if 'selected' in k]
+    
     if any(selected_inputs):
+
         with st.spinner('Preparing the data for download...'):
             zip_buffer = create_downloadable_zip_file(inputs, config)
+
         # Offer the zip file for download
+        timestamp  = datetime.now().strftime('%Y%m%d_%H%M%S')
+        zip_filename = f'ML2_Data_Export_{timestamp}.zip'
         st.download_button(
             label='Download Selected Datasets',
             data=zip_buffer,
-            file_name='datasets.zip',
+            file_name=zip_filename,
             mime='application/zip'
         )
+
     else:
         st.info(':point_left: Please select at least one dataset in the sidebar.')
 #endregion
