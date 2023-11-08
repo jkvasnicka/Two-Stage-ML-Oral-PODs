@@ -93,26 +93,29 @@ def create_downloadable_zip_file(inputs, config):
         
         if pod_selected:
             pod_data = dm.load_points_of_departure(config, effect_label)
-            pod_csv = pod_data.to_csv()
-            # TODO: Could hard code the extensions rather than config
-            pod_file_name = config['pod_file_name'].replace('parquet', 'csv')
-            zip_file.writestr(pod_file_name, pod_csv)
+            write_to_zip_file(pod_data, config['pod_file_name'], zip_file)
 
         if moe_selected:
             moe_data = dm.load_margins_of_exposure(config, effect_label)
-            moe_csv = moe_data.to_csv()
-            moe_file_name = config['moe_file_name'].replace('parquet', 'csv')
-            zip_file.writestr(moe_file_name, moe_csv)
+            write_to_zip_file(moe_data, config['moe_file_name'], zip_file)
 
         if features_selected:
             X = dm.load_features(config, effect_label)
-            X_csv = X.to_csv()
-            X_file_name = config['features_file_name'].replace('parquet', 'csv')
-            zip_file.writestr(X_file_name, X_csv)
+            write_to_zip_file(X, config['features_file_name'], zip_file)
 
     # Set the pointer of the BytesIO object to the beginning
     zip_buffer.seek(0)
     return zip_buffer
+#endregion
+
+#region: write_to_zip_file
+def write_to_zip_file(data, file_name, zip_file):
+    '''
+    '''
+    csv_data = data.to_csv()
+    # Remove any previous extension
+    file_name = file_name.split('.')[0] + '.csv'    
+    zip_file.writestr(file_name, csv_data)
 #endregion
 
 # Execute the page
