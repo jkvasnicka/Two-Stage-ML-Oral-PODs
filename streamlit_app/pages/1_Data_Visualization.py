@@ -17,12 +17,11 @@ def main():
 
     with st.sidebar:
         st.header('User Input')
-
         effect_labels = dm.get_effect_labels(config)
-        effect_label, chemical_id = get_user_inputs(effect_labels)
+        inputs = get_user_inputs(effect_labels)
 
-    if is_valid_user_input(chemical_id):
-        render_outputs(config, effect_label, chemical_id)
+    if is_valid_user_input(inputs['chemical_id']):
+        render_outputs(inputs, config)
 #endregion
 
 # TODO: Derive parameters from config 
@@ -49,17 +48,19 @@ def initialize_page(config):
 def get_user_inputs(effect_labels):
     '''
     '''
-    effect_label = st.selectbox(
+    inputs = {}  # initialize
+    
+    inputs['effect_label'] = st.selectbox(
         'Select the effect category',
         options=effect_labels
     )
 
-    chemical_id = st.text_input(
+    inputs['chemical_id'] = st.text_input(
         'Enter the DTXSID for the chemical',
         placeholder='e.g., DTXSID2021315'
         )
 
-    return effect_label, chemical_id
+    return inputs
 #endregion
 
 # TODO: Test on the entire DSSTox
@@ -89,13 +90,12 @@ def is_valid_dtxsid(chemical_id):
 #endregion
 
 #region: render_outputs
-def render_outputs(
-        config,
-        effect_label,
-        chemical_id 
-        ):
+def render_outputs(inputs, config):
     '''
     '''
+    chemical_id = inputs['chemical_id']
+    effect_label = inputs['effect_label']
+
     if chemical_id:
 
         with st.sidebar:
