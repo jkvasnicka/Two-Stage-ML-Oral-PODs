@@ -2,7 +2,6 @@
 '''
 
 import streamlit as st
-import pandas as pd
 from rdkit import Chem 
 from rdkit.Chem import Draw
 
@@ -32,14 +31,6 @@ def structure_as_image(smiles):
 
     # Draw the molecule as an image
     return Draw.MolToImage(mol)
-#endregion
-
-#region: features
-def features(chem_features):
-    '''
-    ''' 
-    st.header('Features from OPERA 2.9')
-    st.write(chem_features)
 #endregion
 
 #region: points_of_departure
