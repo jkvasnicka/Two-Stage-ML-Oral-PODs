@@ -100,11 +100,13 @@ def create_downloadable_zip_file(inputs, config):
         
         if pod_selected:
             pod_data = dm.load_points_of_departure(config, effect_label)
-            write_to_zip_file(pod_data, config['pod_file_name'], zip_file)
+            pods = pod_data['POD'] 
+            write_to_zip_file(pods, config['pod_file_name'], zip_file)
 
         if moe_selected:
             moe_data = dm.load_margins_of_exposure(config, effect_label)
-            write_to_zip_file(moe_data, config['moe_file_name'], zip_file)
+            moes = moe_data.drop('Cum_Count', axis=1)
+            write_to_zip_file(moes, config['moe_file_name'], zip_file)
 
         if features_selected:
             X = dm.load_features(config, effect_label)
