@@ -97,24 +97,43 @@ def create_downloadable_zip_file(inputs, config):
     # Create a zip file in memory
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED) as zip_file:
-        
         if pod_selected:
-            pod_data = dm.load_points_of_departure(config, effect_label)
-            pods = pod_data['POD'] 
-            write_to_zip_file(pods, config['pod_file_name'], zip_file)
-
+            write_pods_to_zip_file(config, effect_label, zip_file)
         if moe_selected:
-            moe_data = dm.load_margins_of_exposure(config, effect_label)
-            moes = moe_data.drop('Cum_Count', axis=1)
-            write_to_zip_file(moes, config['moe_file_name'], zip_file)
-
+            write_moes_to_zip_file(config, effect_label, zip_file)
         if features_selected:
-            X = dm.load_features(config, effect_label)
-            write_to_zip_file(X, config['features_file_name'], zip_file)
+            write_features_to_zip_file(config, effect_label, zip_file)
 
     # Set the pointer of the BytesIO object to the beginning
     zip_buffer.seek(0)
     return zip_buffer
+#endregion
+
+# TODO: Move to data_management.py?
+#region: write_pods_to_zip_file
+def write_pods_to_zip_file(config, effect_label, zip_file):
+    '''
+    '''
+    pod_data = dm.load_points_of_departure(config, effect_label)
+    pods = pod_data['POD'] 
+    write_to_zip_file(pods, config['pod_file_name'], zip_file)
+#endregion
+
+#region: write_moes_to_zip_file
+def write_moes_to_zip_file(config, effect_label, zip_file):
+    '''
+    '''
+    moe_data = dm.load_margins_of_exposure(config, effect_label)
+    moes = moe_data.drop('Cum_Count', axis=1)
+    write_to_zip_file(moes, config['moe_file_name'], zip_file)
+#endregion
+
+#region: write_features_to_zip_file
+def write_features_to_zip_file(config, effect_label, zip_file):
+    '''
+    '''
+    X = dm.load_features(config, effect_label)
+    write_to_zip_file(X, config['features_file_name'], zip_file)
 #endregion
 
 #region: write_to_zip_file
