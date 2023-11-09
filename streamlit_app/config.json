@@ -3,34 +3,44 @@
     
   "exposure_file_name" : "exposure-data.parquet",
 
-    "pod_file_name" : "points-of-departure.parquet",
+  "pod_file_name" : "points-of-departure.parquet",
 
-    "features_file_name" : "features.parquet",
+  "features_file_name" : "features.parquet",
 
-    "moe_file_name" : "margins-of-exposure.parquet",
+  "moe_file_name" : "margins-of-exposure.parquet",
 
-    "chem_ids_file_name" : "qsar-ready-smiles.parquet",
+  "chem_ids_file_name" : "qsar-ready-smiles.parquet",
 
-    "pod_fig_file_name" : "pod-figure.pkl",
+  "pod_fig_file_name" : "pod-figure.pkl",
 
-    "moe_fig_file_name" : "moe-figure.pkl",
+  "moe_fig_file_name" : "moe-figure.pkl",
 
-    "exposure_key_mapper" : {
-      "5th percentile (mg/kg/day)" : "Median_Exposure_5%ile",
-      "50th percentile (mg/kg/day)" : "Median_Exposure_50%ile",
-      "95th percentile (mg/kg/day)" : "Median_Exposure_95%ile"
-      },
+  "metadata_dir" : "Data/metadata",
 
-      "pod_key_mapper" : {
-        "lb" : "POD_5%ile",
-        "moe" : "POD_50%ile",
-        "ub" : "POD_95%ile",
-        "cum_count" : "Cum_Count"
-    },
+  "meta_header_file_name" : "header.txt",
 
-      "effect_for_label": {
-        "General Noncancer" : "general",
-        "Reproductive/Developmental" : "repro_dev"
-      }
+  "pod_meta_file_name" : "points-of-departure.txt",
+
+  "features_meta_file_name" : "features.txt",
+
+  "moe_meta_file_name" : "margins-of-exposure.txt",
+
+  "exposure_key_mapper" : {
+    "5th percentile (mg/kg/day)" : "Median_Exposure_5%ile",
+    "50th percentile (mg/kg/day)" : "Median_Exposure_50%ile",
+    "95th percentile (mg/kg/day)" : "Median_Exposure_95%ile"
+  },
+
+  "pod_key_mapper" : {
+    "lb" : "POD_5%ile",
+    "moe" : "POD_50%ile",
+    "ub" : "POD_95%ile",
+    "cum_count" : "Cum_Count"
+  },
+
+  "effect_for_label": {
+    "General Noncancer" : "general",
+    "Reproductive/Developmental" : "repro_dev"
+  }
 
 }

@@ -1,0 +1,49 @@
+Points of Departure (POD) Metadata
+==================================
+
+Description
+-----------
+
+This dataset contains estimates of points of departure along with cumulative
+proportions. 
+
+Data Sources
+------------
+
+- Regulatory : Regulatory PODs derived from Aurisano et al. (2023). 
+
+- ToxValDB : Surrogate PODs derived from Aurisano et al. (2023).
+
+- QSAR : Predicted by the "ML2" QSAR model developed by Kvasnicka et al. 
+    (2023).
+
+Column Descriptions
+-------------------
+
+- DTXSID : The index column representing the unique chemical identifier.
+
+- [Data Source]: The point of departure values in log10 units for a given 
+    data source listed above. 
+
+Usage Notes
+-----------
+
+The users should consider the context, limitations, and uncertainties of the 
+data as detailed in the original papers. When using these data in publications 
+or presentations, users should cite the original sources provided below.
+
+Citation
+--------
+
+Please cite the following sources for the respective data:
+
+(1) Kvasnicka, J.; Aurisano, N.; Lu, E.-H.; Fantke, P.; Jolliet, O. O.; 
+    Wright, F. A.; Chiu, W. A. ML2 = POD: A Two-Stage Machine Learning-Based 
+    Approach for Predicting Human Health Protective Points of Departure. 
+    Environ. Sci. Technol. 2023, Vol. XX, No. XX, pp. XXX-XXX.
+    
+(2) Aurisano, N., Jolliet, O., Chiu, W. A., Judson, R., Jang, S., 
+    Unnikrishnan, A., ... & Fantke, P. (2023). Probabilistic Points of Departure 
+    and Reference Doses for Characterizing Human Noncancer and 
+    Developmental/Reproductive Effects for 10,145 Chemicals. Environmental 
+    Health Perspectives, 131(3), 037016.
