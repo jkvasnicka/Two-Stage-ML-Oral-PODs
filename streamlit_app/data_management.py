@@ -141,3 +141,71 @@ def build_data_path(file_key, config, effect_label=None):
         
     return os.path.join(data_dir, effect_subdir, file_name)
 #endregion
+
+#region: write_pods_to_zip_file
+def write_pods_to_zip_file(config, effect_label, zip_file):
+    '''
+    '''
+    pod_data = load_points_of_departure(config, effect_label)
+    pods = pod_data['POD'] 
+    write_to_zip_file(pods, config['pod_file_name'], zip_file)
+#endregion
+
+#region: write_moes_to_zip_file
+def write_moes_to_zip_file(config, effect_label, zip_file):
+    '''
+    '''
+    moe_data = load_margins_of_exposure(config, effect_label)
+    moes = moe_data.drop('Cum_Count', axis=1)
+    write_to_zip_file(moes, config['moe_file_name'], zip_file)
+#endregion
+
+#region: write_features_to_zip_file
+def write_features_to_zip_file(config, effect_label, zip_file):
+    '''
+    '''
+    X = load_features(config, effect_label)
+    write_to_zip_file(X, config['features_file_name'], zip_file)
+#endregion
+
+#region: write_to_zip_file
+def write_to_zip_file(data, file_name, zip_file):
+    '''
+    '''
+    csv_data = data.to_csv()
+    # Remove any previous extension
+    file_name = file_name.split('.')[0] + '.csv'    
+    zip_file.writestr(file_name, csv_data)
+#endregion
+
+#region: initialize_metadata
+def initialize_metadata(meta_header_file_name, effect_label):
+    '''
+    '''
+    metadata_content = f'Downloaded Datasets for Effect Category, "{effect_label}"\n'
+    metadata_content += '=' * len(metadata_content) + '\n\n'
+
+    metadata_file_names = []
+    metadata_file_names.append(meta_header_file_name)
+    
+    return metadata_content, metadata_file_names
+#endregion
+
+#region: append_metadata
+def append_metadata(metadata_file_names, data_dir=''):
+    '''
+    '''
+    metadata_content = ''  # initialize
+    for file_name in metadata_file_names:
+        file_path = os.path.join(data_dir, file_name)
+        with open(file_path, 'r') as file:
+            metadata_content += file.read() + '\n\n'
+    return metadata_content
+#endregion
+
+#region: append_metadata_to_zip
+def append_metadata_to_zip(zip_file, metadata_content, file_name):
+    '''
+    '''
+    zip_file.writestr(file_name, metadata_content.encode('utf-8'))
+#endregion

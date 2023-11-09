@@ -5,7 +5,6 @@ import streamlit as st
 from io import BytesIO
 import zipfile
 from datetime import datetime
-import os.path
 
 import data_management as dm
 
@@ -90,7 +89,7 @@ def prepare_data_download(inputs, config):
 def create_downloadable_zip_file(inputs, config):
     '''
     '''
-    metadata_content, metadata_file_names = initialize_metadata(
+    metadata_content, metadata_file_names = dm.initialize_metadata(
         config['meta_header_file_name'], 
         inputs['effect_label']
         )
@@ -99,16 +98,16 @@ def create_downloadable_zip_file(inputs, config):
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED) as zip_file:
         if inputs['pod_selected']:
-            write_pods_to_zip_file(config, inputs['effect_label'], zip_file)
+            dm.write_pods_to_zip_file(config, inputs['effect_label'], zip_file)
             metadata_file_names.append(config['pod_meta_file_name'])
         if inputs['moe_selected']:
-            write_moes_to_zip_file(config, inputs['effect_label'], zip_file)
+            dm.write_moes_to_zip_file(config, inputs['effect_label'], zip_file)
             metadata_file_names.append(config['moe_meta_file_name'])
         if inputs['features_selected']:
-            write_features_to_zip_file(config, inputs['effect_label'], zip_file)
+            dm.write_features_to_zip_file(config, inputs['effect_label'], zip_file)
             metadata_file_names.append(config['features_meta_file_name'])
 
-        metadata_content += append_metadata(
+        metadata_content += dm.append_metadata(
             metadata_file_names, 
             config['metadata_dir']
             )
@@ -117,75 +116,6 @@ def create_downloadable_zip_file(inputs, config):
     # Set the pointer of the BytesIO object to the beginning
     zip_buffer.seek(0)
     return zip_buffer
-#endregion
-
-# TODO: Move to data_management.py?
-#region: write_pods_to_zip_file
-def write_pods_to_zip_file(config, effect_label, zip_file):
-    '''
-    '''
-    pod_data = dm.load_points_of_departure(config, effect_label)
-    pods = pod_data['POD'] 
-    write_to_zip_file(pods, config['pod_file_name'], zip_file)
-#endregion
-
-#region: write_moes_to_zip_file
-def write_moes_to_zip_file(config, effect_label, zip_file):
-    '''
-    '''
-    moe_data = dm.load_margins_of_exposure(config, effect_label)
-    moes = moe_data.drop('Cum_Count', axis=1)
-    write_to_zip_file(moes, config['moe_file_name'], zip_file)
-#endregion
-
-#region: write_features_to_zip_file
-def write_features_to_zip_file(config, effect_label, zip_file):
-    '''
-    '''
-    X = dm.load_features(config, effect_label)
-    write_to_zip_file(X, config['features_file_name'], zip_file)
-#endregion
-
-#region: write_to_zip_file
-def write_to_zip_file(data, file_name, zip_file):
-    '''
-    '''
-    csv_data = data.to_csv()
-    # Remove any previous extension
-    file_name = file_name.split('.')[0] + '.csv'    
-    zip_file.writestr(file_name, csv_data)
-#endregion
-
-#region: initialize_metadata
-def initialize_metadata(meta_header_file_name, effect_label):
-    '''
-    '''
-    metadata_content = f'Downloaded Datasets for Effect Category, "{effect_label}"\n'
-    metadata_content += '=' * len(metadata_content) + '\n\n'
-
-    metadata_file_names = []
-    metadata_file_names.append(meta_header_file_name)
-    
-    return metadata_content, metadata_file_names
-#endregion
-
-#region: append_metadata
-def append_metadata(metadata_file_names, data_dir=''):
-    '''
-    '''
-    metadata_content = ''  # initialize
-    for file_name in metadata_file_names:
-        file_path = os.path.join(data_dir, file_name)
-        with open(file_path, 'r') as file:
-            metadata_content += file.read() + '\n\n'
-    return metadata_content
-#endregion
-
-#region: append_metadata_to_zip
-def append_metadata_to_zip(zip_file, metadata_content, file_name):
-    '''
-    '''
-    zip_file.writestr(file_name, metadata_content.encode('utf-8'))
 #endregion
 
 # Execute the page
