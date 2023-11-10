@@ -1,5 +1,5 @@
 {
-  "data_dir" : "Data",
+  "data_dir" : "data",
     
   "exposure_file_name" : "exposure-data.parquet",
 
@@ -15,7 +15,7 @@
 
   "moe_fig_file_name" : "moe-figure.pkl",
 
-  "metadata_dir" : "Data/metadata",
+  "metadata_dir" : "data/metadata",
 
   "meta_header_file_name" : "header.txt",
 

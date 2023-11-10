@@ -34,7 +34,7 @@ def initialize_page(config):
         layout='wide'
     )
 
-    st.title('Interactive Data Visualization Tool')
+    st.title('Interactive Data Visualization')
 
     st.markdown(
         '''

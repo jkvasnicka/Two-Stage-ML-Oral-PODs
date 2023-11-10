@@ -37,7 +37,7 @@ def initialize_page(config):
 
     st.markdown(
         '''
-        Download data for all chemicals, or for a subset of all chemicals.
+        Download the datasets used by the app.
         '''
     )
 #endregion
