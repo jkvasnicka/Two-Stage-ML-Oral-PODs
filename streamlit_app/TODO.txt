@@ -1,6 +1,5 @@
 Date: November 11, 2023
 
-- Raise informative error message if a valid DTXSID is not in the dataset
 - Add feature descriptions (top 10) to the features metadata text file
     See Excel file
 - Store Figure objects in a compressed zip file

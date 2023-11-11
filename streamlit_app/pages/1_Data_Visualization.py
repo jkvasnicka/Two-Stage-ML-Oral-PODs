@@ -20,7 +20,7 @@ def main():
         effect_labels = dm.get_effect_labels(config)
         inputs = get_user_inputs(effect_labels)
 
-    if is_valid_user_input(inputs['chemical_id']):
+    if is_valid_user_input(inputs['chemical_id'], config):
         render_outputs(inputs, config)
 #endregion
 
@@ -65,16 +65,19 @@ def get_user_inputs(effect_labels):
 
 # TODO: Test on the entire DSSTox
 #region: is_valid_user_input
-def is_valid_user_input(chemical_id):
+def is_valid_user_input(chemical_id, config):
     '''
     '''
+    smiles_for_id = dm.load_qsar_ready_smiles(config)
+
+    is_valid = False  # initialize
     if not chemical_id:
         st.info(':point_left: Please enter a valid DTXSID in the sidebar.')
-        is_valid = False
     elif not is_valid_dtxsid(chemical_id):
         st.error(
             f'The DTXSID, "{chemical_id},"  is invalid. It should be "DTXSID" followed by digits.')
-        is_valid = False
+    elif chemical_id not in smiles_for_id:
+        st.error(f'QSAR-ready structure cannot be obtained for DTXSID, "{chemical_id}".')
     else:
         is_valid = True
     
