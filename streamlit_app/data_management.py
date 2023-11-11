@@ -6,6 +6,7 @@ import os
 import pandas as pd 
 import json 
 import pickle
+import gzip
 
 #region: load_config
 def load_config(config_file='config.json'):
@@ -119,7 +120,7 @@ def read_data(data_file):
         return pd.read_parquet(data_file)
     
     elif extension == 'pkl':
-        with open(data_file, 'rb') as pkl_file:
+        with gzip.open(data_file, 'rb') as pkl_file:
             object = pickle.load(pkl_file)
         return object
     
