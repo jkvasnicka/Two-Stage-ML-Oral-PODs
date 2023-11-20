@@ -97,20 +97,35 @@ def create_downloadable_zip_file(inputs, config):
     # Create a zip file in memory
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED) as zip_file:
+
         if inputs['pod_selected']:
             dm.write_pods_to_zip_file(config, inputs['effect_label'], zip_file)
             metadata_file_names.append(config['pod_meta_file_name'])
         if inputs['moe_selected']:
             dm.write_moes_to_zip_file(config, inputs['effect_label'], zip_file)
             metadata_file_names.append(config['moe_meta_file_name'])
-        if inputs['features_selected']:
-            dm.write_features_to_zip_file(config, inputs['effect_label'], zip_file)
-            metadata_file_names.append(config['features_meta_file_name'])
-
         metadata_content += dm.append_metadata(
             metadata_file_names, 
-            config['metadata_dir']
+            data_dir=config['metadata_dir']
             )
+        
+        # Handle feature descriptions separately
+        if inputs['features_selected']:
+            feature_names = dm.write_features_to_zip_file(
+                config, 
+                inputs['effect_label'], 
+                zip_file
+                )
+            metadata_content += dm.append_metadata(
+                [config['features_meta_file_name']], 
+                data_dir=config['metadata_dir']
+            )
+            metadata_content += dm.extract_feature_descriptions(
+                config['features_desc_file_name'], 
+                data_dir=config['metadata_dir'],
+                feature_names=feature_names
+            )
+
         zip_file.writestr('README.txt', metadata_content.encode('utf-8'))
 
     # Set the pointer of the BytesIO object to the beginning

@@ -23,7 +23,7 @@ Column Descriptions
 
 - DTXSID : The index column representing the unique chemical identifier.
 
-- For remaining columns, please see the enclosed Excel file, OPERA_models_2.9.
+- For remaining columns, please see "Feature Descriptions" below.
 
 Usage Notes
 -----------

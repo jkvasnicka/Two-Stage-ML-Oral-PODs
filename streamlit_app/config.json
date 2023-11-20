@@ -23,6 +23,8 @@
 
   "features_meta_file_name" : "features.txt",
 
+  "features_desc_file_name" : "OPERA-models-2.9.xlsx",
+
   "moe_meta_file_name" : "margins-of-exposure.txt",
 
   "exposure_key_mapper" : {

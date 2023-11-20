@@ -167,6 +167,8 @@ def write_features_to_zip_file(config, effect_label, zip_file):
     '''
     X = load_features(config, effect_label)
     write_to_zip_file(X, config['features_file_name'], zip_file)
+    feature_names = list(X)
+    return feature_names
 #endregion
 
 #region: write_to_zip_file
@@ -209,4 +211,46 @@ def append_metadata_to_zip(zip_file, metadata_content, file_name):
     '''
     '''
     zip_file.writestr(file_name, metadata_content.encode('utf-8'))
+#endregion
+
+#region: extract_feature_descriptions
+def extract_feature_descriptions(file_name, data_dir='', feature_names=None):
+    '''
+    Extract feature descriptions from an Excel file.
+
+    This function assumes that the Excel file has a column 'Feature_Name' 
+    which is used as the index column. It also assumes that 'Unit' and 
+    'Description' columns are present for each feature. If a list of 
+    `feature_names` is provided, only those features will be included in the 
+    output. Missing values in 'Unit' or 'Description' will result in an 
+    incomplete output for that feature.
+    
+    Parameters
+    ----------
+    excel_path : str
+        The file path to the Excel file containing the features.
+    feature_names : list of str, optional
+        A list of feature names to filter the output. If not provided, all 
+        features are included.
+
+    Returns
+    -------
+    str
+        A formatted string containing the feature descriptions.
+    '''
+    excel_path = os.path.join(data_dir, file_name)
+    df = pd.read_excel(excel_path, index_col='Feature_Name')
+    if feature_names:
+        df = df.loc[feature_names]
+    
+    # Initialize the string
+    feature_descriptions = 'Feature Descriptions'
+    # Underline the heading
+    feature_descriptions += '\n' + '-'*len(feature_descriptions) + '\n\n'
+    for feature_name, row in df.iterrows():
+        # Write feature name (units) : <description>
+        feature_descriptions += (
+            f"- {feature_name} ({row['Unit']}) : {row['Description']}.\n"
+        )
+    return feature_descriptions
 #endregion
