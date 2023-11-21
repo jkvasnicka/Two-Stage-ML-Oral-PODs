@@ -13,9 +13,17 @@ def proportions_incomplete_subplots(
         AD_file, 
         targets_file, 
         plot_settings, 
-        base_size_per_feature=(0.2, 6)
+        base_size_per_feature=(0.2, 6),
+        threshold=None
     ):
     '''
+
+    Parameters
+    ----------
+    threshold : float, optional
+        Expressed as a proportion between 0., 1. Features with a proportion of 
+        missing values at or above this treshold would have been dropped from 
+        the Pipeline.
     '''
     X = pd.read_csv(features_file, index_col=0)
     AD_flags = pd.read_csv(AD_file, index_col=0)
@@ -30,7 +38,8 @@ def proportions_incomplete_subplots(
         X, 
         AD_flags, 
         samples_for_effect,
-        base_size_per_feature=base_size_per_feature
+        base_size_per_feature=base_size_per_feature,
+        threshold=threshold
     )
 
     ## Plot all chemicals data.
@@ -38,7 +47,8 @@ def proportions_incomplete_subplots(
         X, 
         AD_flags, 
         {plot_settings.all_chemicals_label : X.index},
-        base_size_per_feature=base_size_per_feature
+        base_size_per_feature=base_size_per_feature,
+        threshold=threshold
     )
 #endregion
 
@@ -47,7 +57,8 @@ def proportions_incomplete_subplot(
         X, 
         AD_flags, 
         samples_dict, 
-        base_size_per_feature=(0.2, 6)
+        base_size_per_feature=(0.2, 6),
+        threshold=None
     ):
     '''
     Generate a subplot for each group of samples in the provided dictionary.
@@ -107,7 +118,8 @@ def proportions_incomplete_subplot(
             outside_AD_prop, 
             valid_prop, 
             title, 
-            n_samples
+            n_samples,
+            threshold=threshold
             )
 
         # Remove ylabel for all but the first subplot
@@ -125,7 +137,14 @@ def proportions_incomplete_subplot(
 
 #region: proportions_incomplete_barchart
 def proportions_incomplete_barchart(
-        ax, missing_prop, outside_AD_prop, valid_prop, title, n_samples):
+        ax, 
+        missing_prop, 
+        outside_AD_prop, 
+        valid_prop, 
+        title, 
+        n_samples,
+        threshold=None,
+        ):
     '''
     Plot the proportions of missing values, values outside AD, and valid 
     values on a given Axes.
@@ -169,6 +188,11 @@ def proportions_incomplete_barchart(
         edgecolor='black', 
         zorder=3
         )
+    if threshold:
+        # Convert to percent to align with the x-axis
+        threshold = 100. * threshold
+        # Add vertical line on top
+        ax.axvline(threshold, linestyle='-.', zorder=5)
     
     ax.set_yticks(y)
     ax.set_yticklabels(
