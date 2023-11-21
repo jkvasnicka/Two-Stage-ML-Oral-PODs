@@ -277,6 +277,9 @@ def format_axes(
     if right_truncation:
         ax.set_xlim(ax.get_xlim()[0], right_truncation)
 
+    # Remove the padding; the data limits will define the axis limits.
+    ax.margins(x=0, y=0)
+
     ## Set labels, etc. 
     if title:
         ax.set_title(title)
