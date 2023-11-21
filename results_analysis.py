@@ -176,6 +176,65 @@ class ResultsAnalyzer:
         return lower_bound, upper_bound
     #endregion
 
+    #region: get_typical_pod_error
+    def get_typical_pod_error(
+            self, 
+            model_key,
+            metric='root_mean_squared_error'
+            ):
+        '''
+        Helper function to get the typical POD prediction error.
+
+        This error can be used to derive the POD prediction interval.
+
+        Returns
+        -------
+        float
+            The median RMSE from cross validation.
+
+        See Also
+        --------
+        ResultsAnalyzer.prediction_interval()
+        '''
+        typical_rmse = (
+            self.read_result(model_key, 'performances')[metric]
+            .quantile()
+        )
+        return typical_rmse
+    #endregion
+
+    #region: pod_and_prediction_interval
+    def pod_and_prediction_interval(self, model_key):
+        '''
+        Compute Points of Departure (PODs) with uncertainty estimates.
+
+        Parameters
+        ----------
+        model_key : tuple
+            Key identifying the model to be analyzed.
+
+        Returns
+        -------
+        dict of pandas.Series
+            - `pod` : sorted Points of Departure.
+            - `cum_count`: Cumulative counts for the sorted PODs.
+            - `lb`: Lower bound of the 90% prediction interval.
+            - `ub`: Upper bound of the 90% prediction interval.
+        '''
+        y_pred, *_ = self.predict_out_of_sample(model_key)
+        sorted_pods, cumulative_counts = self.generate_cdf_data(y_pred)
+        
+        rmse = self.get_typical_pod_error(model_key)
+        lb, ub = self.prediction_interval(sorted_pods, rmse)
+
+        return {
+            'pod' : sorted_pods,
+            'cum_count' : cumulative_counts,
+            'lb' : lb,
+            'ub' : ub
+            }
+    #endregion
+
     #region: moe_and_prediction_intervals
     def moe_and_prediction_intervals(self, model_key):
         '''
@@ -206,20 +265,20 @@ class ResultsAnalyzer:
         
         exposure_df = self.load_exposure_data()
         moes = self.margins_of_exposure(y_pred, exposure_df)
-        
-        rmse = self.read_result(model_key, 'performances')['root_mean_squared_error'].quantile()
+
+        rmse = self.get_typical_pod_error(model_key)
         
         results_for_percentile = {}
         
         for percentile in exposure_df.columns:
             
-            sorted_moe, cumulative_counts = self.generate_cdf_data(moes[percentile])
+            sorted_moes, cumulative_counts = self.generate_cdf_data(moes[percentile])
             
-            lb, ub = self.prediction_interval(sorted_moe, rmse)
+            lb, ub = self.prediction_interval(sorted_moes, rmse)
             
             results_for_percentile[percentile] = pd.DataFrame(
                 {
-                    'moe': sorted_moe,
+                    'moe': sorted_moes,
                     'cum_count': cumulative_counts,
                     'lb': lb,
                     'ub': ub
