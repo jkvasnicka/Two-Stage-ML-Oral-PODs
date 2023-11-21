@@ -55,13 +55,16 @@ def margins_of_exposure_cumulative(results_analyzer, plot_settings):
             figsize=(len(model_keys) * 5, 5),
         )
 
+        global_xlim = utilities.initialize_global_limits()
+
         for i, model_key in enumerate(model_keys):
 
             plot_model_data(
                 axs[i], 
                 model_key, 
                 results_analyzer, 
-                plot_settings
+                plot_settings,
+                global_xlim=global_xlim
             )
 
             ylabel = 'Cumulative Count of Chemicals' if i == 0 else None 
@@ -75,6 +78,7 @@ def margins_of_exposure_cumulative(results_analyzer, plot_settings):
                 axs[i], 
                 title=title,
                 ylabel=ylabel,
+                global_xlim=global_xlim,
                 right_truncation=right_truncation
             )
 
@@ -160,7 +164,13 @@ def single_model_moes(
 #endregion
 
 #region: plot_model_data
-def plot_model_data(ax, model_key, results_analyzer, plot_settings):
+def plot_model_data(
+        ax, 
+        model_key, 
+        results_analyzer, 
+        plot_settings,
+        global_xlim=None
+        ):
     '''
     Plot data for a single model.
 
@@ -192,6 +202,9 @@ def plot_model_data(ax, model_key, results_analyzer, plot_settings):
             percentile_colors[j],
             label=plot_settings.label_for_exposure_column[percentile]
         )
+
+    if global_xlim:
+        utilities.update_global_limits(global_xlim, ax.get_xlim())
 #endregion
 
 #region: plot_with_prediction_interval
@@ -251,6 +264,7 @@ def format_axes(
         ax, 
         title=None,
         ylabel=None,
+        global_xlim=None,
         right_truncation=None
         ):
     '''
@@ -274,6 +288,8 @@ def format_axes(
     ## Update the limits.
     set_even_ticks(ax, axis_type='x', data_type='fill')
     set_even_log_ticks(ax, axis_type='y', data_type='fill')
+    if global_xlim:
+        ax.set_xlim(global_xlim)
     if right_truncation:
         ax.set_xlim(ax.get_xlim()[0], right_truncation)
 

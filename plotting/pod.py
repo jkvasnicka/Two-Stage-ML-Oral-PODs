@@ -55,7 +55,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
             figsize=(len(model_keys)*4, 8)
             )
         
-        global_xlim = [float('inf'), float('-inf')]  # initialize
+        global_xlim = utilities.initialize_global_limits()
 
         for i, model_key in enumerate(model_keys):
 
@@ -313,9 +313,7 @@ def plot_cdf(
     )
     
     if global_xlim:
-        # Update the global x-limits
-        global_xlim[0] = min(global_xlim[0], sorted_values.min())
-        global_xlim[1] = max(global_xlim[1], sorted_values.max())
+        utilities.update_global_limits(global_xlim, ax.get_xlim())
 #endregion
 
 #region: set_row_axs_properties
