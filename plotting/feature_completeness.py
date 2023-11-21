@@ -205,7 +205,11 @@ def proportions_incomplete_barchart(
     ax.set_title(f'{title} (n={n_samples})', size='medium', loc='left')
     ax.set_xlim([0, 100])
     ax.grid(True, axis='x', linestyle='--', color='black', alpha=0.6)
-    ax.legend(fontsize='small', loc='upper right')
+
+    if any(missing_prop >= 1): # %
+        # Some features have an appreciable % of values that are missing yet 
+        # within the AD. Highlight these values using a legend.
+        ax.legend(fontsize='small', loc='upper right')
 #endregion
 
 #region: proportions_incomplete
