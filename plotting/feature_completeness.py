@@ -227,11 +227,14 @@ def proportions_incomplete(X_subset, AD_flags_subset):
         Tuple containing the proportion of missing values, values outside AD, 
         and valid values.
     '''
+    # Filter out any features that don't have applicability domains
+    complete_features = X_subset.columns.difference(AD_flags_subset.columns)
+    X_subset = X_subset.drop(complete_features, axis=1)
+
+    # TODO: Rename "prop" to "props" for clarity
     outside_AD_prop = AD_flags_subset.mean() * 100
     not_outside_AD = ~AD_flags_subset
     missing_prop = (X_subset.isna() & not_outside_AD).mean() * 100
-    missing_prop, outside_AD_prop = missing_prop.align(
-        outside_AD_prop, fill_value=0)
     valid_prop = 100 - missing_prop - outside_AD_prop
     
     # Order by the valid proportion in ascending order
