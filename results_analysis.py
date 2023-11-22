@@ -226,7 +226,7 @@ class ResultsAnalyzer:
 
         Returns
         -------
-        dict of pandas.Series
+        pandas.DataFrame
             - `pod` : sorted Points of Departure.
             - `cum_count`: Cumulative counts for the sorted PODs.
             - `lb`: Lower bound of the 90% prediction interval.
@@ -257,7 +257,7 @@ class ResultsAnalyzer:
             normalize
             )
         
-        return pod_data
+        return pd.DataFrame(pod_data)
     #endregion
 
     #region: moe_and_prediction_intervals
