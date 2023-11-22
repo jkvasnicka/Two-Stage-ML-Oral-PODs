@@ -204,7 +204,12 @@ class ResultsAnalyzer:
     #endregion
 
     #region: pod_and_prediction_interval
-    def pod_and_prediction_interval(self, model_key):
+    def pod_and_prediction_interval(
+            self, 
+            model_key, 
+            inverse_transform=False, 
+            normalize=False
+            ):
         '''
         Compute Points of Departure (PODs) with uncertainty estimates.
 
@@ -212,6 +217,12 @@ class ResultsAnalyzer:
         ----------
         model_key : tuple
             Key identifying the model to be analyzed.
+        inverse_transform : bool, optional
+            If True, applies the inverse transform to the predictions 
+            (default is False).
+        normalize : bool, optional
+            If True, return cumulative frequencies (proportions) instead of 
+            counts.
 
         Returns
         -------
@@ -222,21 +233,40 @@ class ResultsAnalyzer:
             - `ub`: Upper bound of the 90% prediction interval.
         '''
         y_pred, *_ = self.predict_out_of_sample(model_key)
-        sorted_pods, cumulative_counts = self.generate_cdf_data(y_pred)
+        sorted_pods, cumulative_data = self.generate_cdf_data(
+            y_pred, 
+            normalize=normalize
+            )
         
-        rmse = self.get_typical_pod_error(model_key)
+        rmse = self.get_typical_pod_error(model_key)  # log10-units
         lb, ub = self.prediction_interval(sorted_pods, rmse)
+            
+        if inverse_transform:
+            sorted_pods, lb, ub = ResultsAnalyzer._inverse_log10(
+                sorted_pods, lb, ub
+                )
 
-        return {
+        pod_data = {
             'pod' : sorted_pods,
-            'cum_count' : cumulative_counts,
             'lb' : lb,
             'ub' : ub
             }
+        ResultsAnalyzer._insert_cumulative_data(
+            pod_data, 
+            cumulative_data, 
+            normalize
+            )
+        
+        return pod_data
     #endregion
 
     #region: moe_and_prediction_intervals
-    def moe_and_prediction_intervals(self, model_key):
+    def moe_and_prediction_intervals(
+            self, 
+            model_key,
+            inverse_transform=False, 
+            normalize=False            
+            ):
         '''
         Compute Margins of Exposure (MOEs) with uncertainty estimates.
 
@@ -250,6 +280,12 @@ class ResultsAnalyzer:
         ----------
         model_key : tuple
             Key identifying the model to be analyzed.
+        inverse_transform : bool, optional
+            If True, applies the inverse transform to the predictions 
+            (default is False).
+        normalize : bool, optional
+            If True, return cumulative frequencies (proportions) instead of 
+            counts.
         
         Returns
         -------
@@ -266,24 +302,35 @@ class ResultsAnalyzer:
         exposure_df = self.load_exposure_data()
         moes = self.margins_of_exposure(y_pred, exposure_df)
 
-        rmse = self.get_typical_pod_error(model_key)
+        rmse = self.get_typical_pod_error(model_key)  # log10-units
         
-        results_for_percentile = {}
+        results_for_percentile = {}  # initialize
         
         for percentile in exposure_df.columns:
             
-            sorted_moes, cumulative_counts = self.generate_cdf_data(moes[percentile])
+            sorted_moes, cumulative_data = self.generate_cdf_data(
+                moes[percentile],
+                normalize=normalize
+                )
             
             lb, ub = self.prediction_interval(sorted_moes, rmse)
             
-            results_for_percentile[percentile] = pd.DataFrame(
-                {
+            if inverse_transform:
+                sorted_moes, lb, ub = ResultsAnalyzer._inverse_log10(
+                    sorted_moes, lb, ub
+                    )
+
+            moe_data = {
                     'moe': sorted_moes,
-                    'cum_count': cumulative_counts,
                     'lb': lb,
                     'ub': ub
                     }
-            )
+            ResultsAnalyzer._insert_cumulative_data(
+                moe_data, 
+                cumulative_data, 
+                normalize
+                )
+            results_for_percentile[percentile] = pd.DataFrame(moe_data)
             
         return results_for_percentile
     #endregion
@@ -631,4 +678,31 @@ class ResultsAnalyzer:
         Refer to `DataManager.load_oral_equivalent_doses` for documentation
         '''
         return self.data_manager.load_oral_equivalent_doses()
+    #endregion
+
+    #region: _inverse_log10
+    @staticmethod
+    def _inverse_log10(sorted_values, lb, ub):
+        '''
+        Helper function to transform data from log10-units to natural units.
+        '''
+        return (
+            10**sorted_values, 
+            10**lb, 
+            10**ub
+        )
+    #endregion
+
+    #region: _insert_cumulative_data
+    @staticmethod
+    def _insert_cumulative_data(data_dict, cumulative_data, normalize):
+        '''
+        Helper function to insert cumulative data into a dictionary. 
+
+        The key is determined based on whether the data were normalized.
+        '''
+        if normalize:
+            data_dict['cum_freq'] = cumulative_data
+        else:
+            data_dict['cum_count'] = cumulative_data
     #endregion
