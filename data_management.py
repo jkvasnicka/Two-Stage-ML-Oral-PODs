@@ -231,12 +231,17 @@ class DataManager:
         Returns
         -------
         pandas.Series
+
+        References
+        ----------
+        Table S2 of Paul Friedman et al. (2020); DOI: 10.1093/toxsci/kfz201
         '''
         dose_series = (
-            pd.read_csv(
-                self.path_settings.toxcast_oeds_file, 
+            pd.read_excel(
+                self.path_settings.raw_toxcast_oeds_file, 
+                sheet_name=0,
                 index_col=0)
-                ['tox_httk_50']
+                ['pod.nam.50']
                 )
         return dose_series    
     #endregion

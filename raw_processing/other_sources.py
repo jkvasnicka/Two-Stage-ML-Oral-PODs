@@ -161,41 +161,6 @@ def regulatory_toxicity_values_from_csv(
     return reg_pods
 #endregion
 
-#region: toxcast_expocast_from_csv
-def toxcast_expocast_from_csv(
-        data_path, index_col, data_columns=None, log10=True, 
-        write_path=None):
-    '''Load and parse the combined estimates from En-hsuan Lu.
-    '''
-    exposure_data = pd.read_csv(data_path).drop_duplicates()
-
-    ## Rename columns for consistency.
-
-    column_mapper = {
-        'DTXSID.x' : 'DTXSID', 
-        'CAS' : 'CASRN'
-    }
-    exposure_data = (
-        exposure_data
-        .rename(column_mapper, axis=1)
-        .set_index(index_col)
-    )
-
-    if data_columns is not None:
-        exposure_data = exposure_data[data_columns]
-
-    if log10 is True:
-        exposure_data = np.log10(exposure_data)
-
-    exposure_data.columns = exposure_data.columns.str.replace(
-        '.', '_', regex=False)
-
-    if write_path is not None:
-        exposure_data.to_csv(write_path)
-
-    return exposure_data
-#endregion
-
 #region: experimental_ld50s_from_excel
 def experimental_ld50s_from_excel(
         ld50s_path, chem_identifiers, index_col, log10=False, 

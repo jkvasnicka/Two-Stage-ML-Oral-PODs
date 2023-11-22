@@ -68,8 +68,7 @@ class RawDataProcessor:
             'comptox_features' : self._comptox_features_from_raw,
             'surrogate_pods' : self._surrogate_pods_from_raw,
             'regulatory_pods' : self._regulatory_pods_from_raw,
-            'experimental_ld50s' : self._experimental_ld50s_from_raw,
-            'oeds' : self._oral_equivalent_doses_from_raw
+            'experimental_ld50s' : self._experimental_ld50s_from_raw
         }
 #endregion
 
@@ -407,27 +406,4 @@ class RawDataProcessor:
             self._path_settings.comptox_identifiers_file, 
             index_col=self._index_col
         )
-    #endregion
-
-    #region: _oral_equivalent_doses_from_raw
-    def _oral_equivalent_doses_from_raw(self):
-        '''
-        Extract and process oral equivalent doses from raw ToxCast data.
-
-        This method retrieves oral equivalent doses (OEDs) from the raw ToxCast
-        dataset, performs necessary transformations (e.g., taking the logarithm), 
-        and then writes a CSV file to disk.
-
-        Returns
-        -------
-        pandas.DataFrame
-            A DataFrame containing processed oral equivalent doses.
-        '''
-        return other_sources.toxcast_expocast_from_csv(
-            self._path_settings.raw_toxcast_oeds_file, 
-            self._index_col, 
-            data_columns=self._raw_data_settings.oed_columns,
-            log10=self._raw_data_settings.do_log10_target,
-            write_path=self._path_settings.toxcast_oeds_file
-        )            
     #endregion
