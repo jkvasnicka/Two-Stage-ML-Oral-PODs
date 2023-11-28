@@ -52,7 +52,7 @@ def sdf_to_dataframe(sdf_directory, do_write=True):
     if do_write:
         file_name = f'{directory_name}.parquet'
         write_path = os.path.join(sdf_directory, file_name)
-        sdf_data.to_parquet(write_path, index=False)
+        sdf_data.to_parquet(write_path, index=False, compression='gzip')
 
     return sdf_data
 #endregion
