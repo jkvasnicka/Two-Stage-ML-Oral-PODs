@@ -9,7 +9,7 @@
 
     "chemical_id_app_file" : "Input/Raw/OPERA/Input/Application/chemical-identifiers.txt",
     
-    "raw_comptox_features_file" : "Input/Raw/CompTox/CCD-OPERA-TEST-predictions.csv",
+    "raw_comptox_features_file" : "Input/Raw/CofmpTox/CCD-OPERA-TEST-predictions.csv",
     
     "raw_opera_features_dir" : "Input/Raw/OPERA/Output/Development",
 
@@ -31,11 +31,11 @@
         
     "raw_surrogate_pods_file" : "Input/Raw/Aurisano/Supplemental-Excel-File-EHP11524-revised.xlsx",
     
-    "surrogate_pods_file" : "Input/Targets/surrogate-points-of-departure-log10.csv",
+    "surrogate_pods_file" : "Input/Targets/surrogate-points-of-departure.csv",
         
     "raw_regulatory_pods_file" : "Input/Raw/Aurisano/Numeric-data-for-Figures-EHP11524.xlsx",
     
-    "regulatory_pods_file" : "Input/Targets/regulatory-points-of-departure-log10.csv",
+    "regulatory_pods_file" : "Input/Targets/regulatory-points-of-departure.csv",
     
     "raw_toxcast_oeds_file" : "Input/Raw/Paul-Friedman/Paul_Friedman_2020_Table_S2.xlsx",
     
