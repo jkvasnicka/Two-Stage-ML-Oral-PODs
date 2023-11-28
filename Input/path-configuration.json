@@ -25,15 +25,15 @@
 
     "opera_AD_file" : "Input/Features/OPERA-2.9-AD-flags.parquet",
     
-    "raw_ld50_experimental_file" : "Input/Raw/Nicolo/DF_LD50_curated_DB.xlsx",
+    "raw_ld50_experimental_file" : "Input/Raw/Aurisano/DF_LD50_curated_DB.xlsx",
     
     "ld50_experimental_file" : "Input/Features/experimental-LD50s.csv",
         
-    "raw_surrogate_pods_file" : "Input/Raw/Nicolo/Supplemental-Excel-File-EHP11524-revised.xlsx",
+    "raw_surrogate_pods_file" : "Input/Raw/Aurisano/Supplemental-Excel-File-EHP11524-revised.xlsx",
     
     "surrogate_pods_file" : "Input/Targets/surrogate-points-of-departure-log10.csv",
         
-    "raw_regulatory_pods_file" : "Input/Raw/Nicolo/Numeric-data-for-Figures-EHP11524.xlsx",
+    "raw_regulatory_pods_file" : "Input/Raw/Aurisano/Numeric-data-for-Figures-EHP11524.xlsx",
     
     "regulatory_pods_file" : "Input/Targets/regulatory-points-of-departure-log10.csv",
     
