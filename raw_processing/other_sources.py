@@ -180,8 +180,14 @@ def regulatory_toxicity_values_from_excel(
 
 #region: experimental_ld50s_from_excel
 def experimental_ld50s_from_excel(
-        ld50s_path, chem_identifiers, index_col, log10=False, 
-        ld50_columns=None, study_count_thres=None, write_path=None):
+        ld50s_path, 
+        chem_identifiers, 
+        index_col, 
+        log10=False, 
+        ld50_columns=None, 
+        study_count_thres=None, 
+        write_path=None
+        ):
     '''Load and parse the experimental LD50 values from an Excel file.
 
     Parameters
@@ -205,6 +211,11 @@ def experimental_ld50s_from_excel(
     Returns
     -------
     pandas.DataFrame
+
+    Notes
+    -----
+    These data were extracted from ToxValdDB and curated by Nicolo Aurisano. 
+    All data were extrapolated to humans. The data represent acute studies.
     '''
     ld50s = pd.read_excel(ld50s_path)
 
