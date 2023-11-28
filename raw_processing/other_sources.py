@@ -9,9 +9,15 @@ from . import pattern
 
 #region: surrogate_toxicity_values_from_excel
 def surrogate_toxicity_values_from_excel(
-        tox_data_path, sheet_name, tox_metric, index_col, log10=False,
-        study_count_thres=3, chemicals_to_exclude=None, effect_mapper=None, 
-        write_path=None):
+        tox_data_path, 
+        tox_metric, 
+        index_col, 
+        tox_data_kwargs,
+        log10=False,
+        study_count_thres=3, 
+        effect_mapper=None, 
+        write_path=None
+        ):
     '''Load the surrogate toxicity values.
 
     Parameters
@@ -26,8 +32,6 @@ def surrogate_toxicity_values_from_excel(
         If True, apply a log10 transformation to the toxicity values.
     study_count_thres : int (optional)
         Chemicals with study counts exceeding this value will be retained.
-    chemicals_to_exclude : list of str
-        Names of chemicals to drop, which may or may not be present.
     effect_mapper : dict (optional)
         Mapping each original effect type (string) --> preferred string for
         the return.
@@ -48,17 +52,9 @@ def surrogate_toxicity_values_from_excel(
         tox_data_path, 
         tox_metric, 
         index_col, 
-        sheet_name=sheet_name, 
-        header=[0, 1],
-        skiprows=[0]
+        tox_data_kwargs
         )
-    
-    if chemicals_to_exclude is not None:
-        tox_data = tox_data.drop(
-            chemicals_to_exclude, 
-            errors='ignore'
-            )
-    
+
     # Initialize a container.
     parsed_data_for_effect = {}
 
@@ -92,7 +88,11 @@ def surrogate_toxicity_values_from_excel(
 
 #region: toxicity_data_and_study_counts_from_excel
 def toxicity_data_and_study_counts_from_excel(
-        tox_data_path, tox_metric, index_col, **kwargs):
+        tox_data_path, 
+        tox_metric, 
+        index_col, 
+        tox_data_kwargs
+        ):
     '''Helper function to load the toxicity data and study counts from the
     source Excel file.
 
@@ -106,9 +106,8 @@ def toxicity_data_and_study_counts_from_excel(
     --------
     filter_toxicity_data()
     '''
-    # TODO: Move to helper function and use in processor.py
     tox_data = (
-        pd.read_excel(tox_data_path, **kwargs)
+        pd.read_excel(tox_data_path, **tox_data_kwargs)
         .swaplevel(axis=1)
         .set_index(index_col)
         [[tox_metric, 'count']]

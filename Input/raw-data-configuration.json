@@ -2,7 +2,11 @@
 
     "do_log10_target" : true,
 
-    "sheet_name" : "Excel Table S5",
+    "surrogate_tox_data_kwargs" : {
+        "sheet_name" : "Excel Table S5",
+        "header": [0, 1],
+        "skiprows": [0] 
+    },
 
     "tox_metric" : "POD [mg/kg-d]",
 

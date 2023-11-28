@@ -98,17 +98,10 @@ class RawDataProcessor:
         # NOTE: Only DTXSID has been verified to work
         identifier_type = 'dtxsid'
 
-        # Define key-word arguments for pandas.read_excel().
-        kwargs = {
-            'sheet_name': self._raw_data_settings.sheet_name,
-            'header': [0, 1],
-            'skiprows': [0]
-            }
-
         identifiers = (
             pd.read_excel(
                 self._path_settings.raw_surrogate_pods_file, 
-                **kwargs)
+                **self._raw_data_settings.surrogate_tox_data_kwargs)
             .droplevel(axis=1, level=0)
             [['dtxsid', 'casrn']]
             )
@@ -222,9 +215,9 @@ class RawDataProcessor:
         '''
         surrogate_pods = other_sources.surrogate_toxicity_values_from_excel(
             self._path_settings.raw_surrogate_pods_file, 
-            self._raw_data_settings.sheet_name,
             self._raw_data_settings.tox_metric, 
             self._index_col.lower(), 
+            self._raw_data_settings.surrogate_tox_data_kwargs,
             log10=self._raw_data_settings.do_log10_target,
             effect_mapper=self._raw_data_settings.effect_mapper,
             write_path=self._path_settings.surrogate_pods_file
