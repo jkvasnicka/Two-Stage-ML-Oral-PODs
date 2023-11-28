@@ -101,7 +101,8 @@ class RawDataProcessor:
         # Define key-word arguments for pandas.read_excel().
         kwargs = {
             'sheet_name': self._raw_data_settings.sheet_name,
-            'header': [0, 1]
+            'header': [0, 1],
+            'skiprows': [0]
             }
 
         identifiers = (

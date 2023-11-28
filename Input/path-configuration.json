@@ -29,7 +29,7 @@
     
     "ld50_experimental_file" : "Input/Features/experimental-LD50s.csv",
         
-    "raw_surrogate_pods_file" : "Input/Raw/Nicolo/TOX_data_Nicolo_final_v01b.xlsx",
+    "raw_surrogate_pods_file" : "Input/Raw/Nicolo/Supplemental-Excel-File-EHP11524-revised.xlsx",
     
     "surrogate_pods_file" : "Input/Targets/surrogate-points-of-departure-log10.csv",
         

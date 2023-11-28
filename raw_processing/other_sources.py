@@ -35,10 +35,22 @@ def surrogate_toxicity_values_from_excel(
     Returns
     -------
     dict of pandas.DataFrame for each effect type
+
+    Notes
+    -----
+    The data were obtained from Table S5 of Aurisano et al. (2023).
+
+    References
+    ----------
+    https://doi.org/10.1289/EHP11524
     '''
     tox_data = toxicity_data_and_study_counts_from_excel(
-        tox_data_path, tox_metric, index_col, sheet_name=sheet_name, 
-        header=[0, 1]
+        tox_data_path, 
+        tox_metric, 
+        index_col, 
+        sheet_name=sheet_name, 
+        header=[0, 1],
+        skiprows=[0]
         )
     
     if chemicals_to_exclude is not None:
@@ -94,6 +106,7 @@ def toxicity_data_and_study_counts_from_excel(
     --------
     filter_toxicity_data()
     '''
+    # TODO: Move to helper function and use in processor.py
     tox_data = (
         pd.read_excel(tox_data_path, **kwargs)
         .swaplevel(axis=1)

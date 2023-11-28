@@ -2,7 +2,7 @@
 
     "do_log10_target" : true,
 
-    "sheet_name" : "ORAL",
+    "sheet_name" : "Excel Table S5",
 
     "tox_metric" : "POD [mg/kg-d]",
 
