@@ -241,7 +241,7 @@ class RawDataProcessor:
         This method reads and processes raw feature data from OPERA, including 
         training and application batches. It combines the processed feature 
         data, removes duplicates based on chemical intersections, and saves the 
-        combined data to a CSV file on disk.
+        combined data to a Parquet file on disk.
 
         Additionally, applicability domain (AD) flags are extracted and saved.
 
@@ -290,10 +290,10 @@ class RawDataProcessor:
         flags_write_path=self._path_settings.opera_AD_file
 
         opera_features = pd.concat([opera_features_train, opera_features_app])
-        opera_features.to_csv(data_write_path)
+        opera_features.to_parquet(data_write_path, compression='gzip')
 
         AD_flags = pd.concat([AD_flags_train, AD_flags_app])
-        AD_flags.to_csv(flags_write_path)
+        AD_flags.to_parquet(flags_write_path, compression='gzip')
 
         return AD_flags, opera_features
     #endregion

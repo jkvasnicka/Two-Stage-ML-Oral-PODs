@@ -41,7 +41,7 @@ def pairwise_scatters_and_kde_subplots(
         True : plot_settings.marker_size_for_sample_type['in']
     }
 
-    X = pd.read_csv(features_file, index_col=0)
+    X = pd.read_parquet(features_file)
     X = X[features_subset]
 
     # Log10-transform desired features

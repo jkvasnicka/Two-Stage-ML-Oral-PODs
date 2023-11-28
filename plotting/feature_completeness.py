@@ -25,8 +25,8 @@ def proportions_incomplete_subplots(
         missing values at or above this treshold would have been dropped from 
         the Pipeline.
     '''
-    X = pd.read_csv(features_file, index_col=0)
-    AD_flags = pd.read_csv(AD_file, index_col=0)
+    X = pd.read_parquet(features_file)
+    AD_flags = pd.read_parquet(AD_file)
     ys = pd.read_csv(targets_file, index_col=0)
 
     ## Plot the training set data.

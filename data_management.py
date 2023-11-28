@@ -101,7 +101,7 @@ class DataManager:
         features_path = (
             self.path_settings.file_for_features_source[features_source]
         )
-        X = pd.read_csv(features_path, index_col=0)
+        X = pd.read_parquet(features_path)
 
         if self.data_settings.use_experimental_for_ld50[ld50_type]:
             ld50s_experimental = (

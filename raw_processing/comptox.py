@@ -118,7 +118,7 @@ def chemical_properties_from_excel(
         Substring in the columns indicating log10-transformed features, will 
         be used to inverse-transform these features.
     write_path : str (optional)
-        Path to write the return as a CSV file.
+        Path to write the return as a Parquet file.
 
     Returns
     -------
@@ -175,7 +175,7 @@ def chemical_properties_from_excel(
         agg_props = inverse_log10_transform(agg_props, log10_pat)
 
     if write_path is not None:
-        agg_props.to_csv(write_path)
+        agg_props.to_parquet(write_path)
 
     return agg_props
 #endregion
