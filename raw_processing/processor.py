@@ -372,8 +372,9 @@ class RawDataProcessor:
             .to_dict()
         )
 
-        return other_sources.regulatory_toxicity_values_from_csv(
+        return other_sources.regulatory_toxicity_values_from_excel(
             self._path_settings.raw_regulatory_pods_file, 
+            self._raw_data_settings.reg_data_kwargs,
             self._raw_data_settings.reg_file_ilocs_for_effect, 
             chem_id_for_casrn=chem_id_for_casrn, 
             new_chem_id=self._index_col, 

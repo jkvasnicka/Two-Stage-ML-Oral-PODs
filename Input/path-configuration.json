@@ -33,7 +33,7 @@
     
     "surrogate_pods_file" : "Input/Targets/surrogate-points-of-departure-log10.csv",
         
-    "raw_regulatory_pods_file" : "Input/Raw/Nicolo/Numeric-data-for-Figures-EHP11524-S5.csv",
+    "raw_regulatory_pods_file" : "Input/Raw/Nicolo/Numeric-data-for-Figures-EHP11524.xlsx",
     
     "regulatory_pods_file" : "Input/Targets/regulatory-points-of-departure-log10.csv",
     

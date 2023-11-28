@@ -127,10 +127,15 @@ def toxicity_data_and_study_counts_from_excel(
     return tox_data.loc[where_not_missing]
 #endregion
 
-#region: regulatory_toxicity_values_from_csv
-def regulatory_toxicity_values_from_csv(
-        fig_s5_path, ilocs_for_effect, chem_id_for_casrn=None, 
-        new_chem_id=None, write_path=None):
+#region: regulatory_toxicity_values_from_excel
+def regulatory_toxicity_values_from_excel(
+        fig_s5_path, 
+        reg_data_kwargs,
+        ilocs_for_effect, 
+        chem_id_for_casrn=None, 
+        new_chem_id=None, 
+        write_path=None
+        ):
     '''Load and parse the regulatory toxicity values from CSV file.
 
     Parameters
@@ -143,7 +148,7 @@ def regulatory_toxicity_values_from_csv(
     ---------
     '''
     fig_s5_data = (
-        pd.read_csv(fig_s5_path, skiprows=[0], header=[0, 1])
+        pd.read_excel(fig_s5_path, **reg_data_kwargs)
         .droplevel(0, axis=1)  # allows duplicate column names
     )
 
