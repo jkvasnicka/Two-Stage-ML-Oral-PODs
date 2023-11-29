@@ -384,24 +384,13 @@ class RawDataProcessor:
         -------
         pandas.DataFrame
             The processed regulatory Points of Departure values.
-
         '''
-        chem_identifiers = self.load_comptox_identifiers()
-
-        # FIXME: For backwards compatibility
-        # Map CASRN to index_col for replacing the original index.
-        chem_id_for_casrn = (
-            chem_identifiers
-            .reset_index()
-            .set_index('CASRN')[self._index_col]
-        )
-
         return other_sources.regulatory_toxicity_values_from_excel(
             self._path_settings.raw_regulatory_pods_file, 
             self._raw_data_settings.reg_data_kwargs,
             self._raw_data_settings.reg_file_ilocs_for_effect, 
-            chem_id_for_casrn=chem_id_for_casrn, 
-            new_chem_id=self._index_col, 
+            id_for_casrn=self._map_casrn_to_dtxsid(), 
+            id_name=self._index_col, 
             write_path=self._path_settings.regulatory_pods_file
         )
     #endregion
@@ -424,26 +413,5 @@ class RawDataProcessor:
             .set_index(casrn_column)
             [dtxsid_column]
             .to_dict()
-        )
-    #endregion
-
-    # FIXME: For backwards compatibility.
-    #region: load_comptox_identifiers
-    def load_comptox_identifiers(self):
-        '''
-        Load chemical identifiers from the CompTox database.
-
-        This method retrieves the stored chemical identifiers from a CSV file 
-        on disk.
-
-        Returns
-        -------
-        pandas.DataFrame
-            A DataFrame containing chemical identifiers.
-
-        '''
-        return pd.read_csv(
-            self._path_settings.comptox_identifiers_file, 
-            index_col=self._index_col
         )
     #endregion

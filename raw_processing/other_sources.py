@@ -132,8 +132,8 @@ def regulatory_toxicity_values_from_excel(
         fig_s5_path, 
         reg_data_kwargs,
         ilocs_for_effect, 
-        chem_id_for_casrn=None, 
-        new_chem_id=None, 
+        id_for_casrn=None, 
+        id_name=None, 
         write_path=None
         ):
     '''Load and parse the regulatory toxicity values from CSV file.
@@ -164,13 +164,8 @@ def regulatory_toxicity_values_from_excel(
     reg_pods = pd.DataFrame(reg_pods).dropna(how='all')
     reg_pods.index.name = reg_pods.index.name.upper()  # for consistency
 
-    if chem_id_for_casrn is not None:
-        # Replace the CASRN index with the new chemical identifier.
-        chem_id_for_casrn = pd.Series(chem_id_for_casrn, name=new_chem_id)
-        reg_pods = (
-            reg_pods.join(chem_id_for_casrn, how='inner')
-            .set_index(new_chem_id)
-            )
+    if id_for_casrn:
+        reg_pods = _replace_casrn_index(reg_pods, id_for_casrn, id_name)
         
     if write_path is not None:
         reg_pods.to_csv(write_path)
