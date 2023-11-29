@@ -6,6 +6,7 @@ data based on common indexes.
 '''
 
 import pandas as pd 
+import numpy as np
 
 #region: DataManager.__init__
 class DataManager:
@@ -244,4 +245,43 @@ class DataManager:
                 ['pod.nam.50']
                 )
         return dose_series    
+    #endregion
+
+    #region: load_exposure_data
+    def load_exposure_data(self, index_col='DTXSID', log10_transform=True):
+        '''
+        Load exposure data and optionally apply a log10 transformation.
+
+        Parameters
+        ----------
+        index_col : str, optional
+            Column name to set as the DataFrame index, default is 'DTXSID'.
+        log10_transform : bool, optional
+            If True, applies a log10 transformation to the exposure data, 
+            default is True.
+
+        Returns
+        -------
+        exposure_df : pandas.DataFrame
+            DataFrame containing exposure predictions, with columns sorted.
+        '''
+        # TODO: Move to config for flexibility?
+        sorted_columns = [
+            '95th percentile (mg/kg/day)',
+            '50th percentile (mg/kg/day)',
+            '5th percentile (mg/kg/day)'
+        ]
+
+        exposure_df = (
+            pd.read_csv(
+                self.path_settings.seem3_exposure_file,
+                encoding='latin-1',
+                index_col=index_col)
+            [sorted_columns]
+        )
+
+        if log10_transform:
+            exposure_df = np.log10(exposure_df)
+
+        return exposure_df
     #endregion

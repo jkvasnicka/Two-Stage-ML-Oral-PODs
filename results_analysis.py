@@ -43,7 +43,7 @@ class ResultsAnalyzer:
     split_replicates(dataframe, stride) 
         Split a replicates DataFrame into individual DataFrames.
     '''
-    def __init__(self, results_manager, data_manager, exposure_file):
+    def __init__(self, results_manager, data_manager):
         '''
         Initialize the ResultsAnalyzer class.
 
@@ -51,12 +51,9 @@ class ResultsAnalyzer:
         ----------
         results_manager : A `ResultsManager` instance
         data_manager : A `DataManager` instance
-        exposure_file : str
-            Path to the exposure data file.
         '''
         self.results_manager = results_manager
         self.data_manager = data_manager
-        self._seem3_exposure_file = exposure_file
 #endregion
 
     #region: get_in_sample_prediction
@@ -299,7 +296,7 @@ class ResultsAnalyzer:
         '''
         y_pred, *_ = self.predict_out_of_sample(model_key)
         
-        exposure_df = self.load_exposure_data()
+        exposure_df = self.data_manager.load_exposure_data()
         moes = self.margins_of_exposure(y_pred, exposure_df)
 
         rmse = self.get_typical_pod_error(model_key)  # log10-units
@@ -368,45 +365,6 @@ class ResultsAnalyzer:
             cumulative_data = cumulative_counts
             
         return sorted_values, cumulative_data
-    #endregion
-
-    #region: load_exposure_data
-    def load_exposure_data(self, index_col='DTXSID', log10_transform=True):
-        '''
-        Load exposure data and optionally apply a log10 transformation.
-
-        Parameters
-        ----------
-        index_col : str, optional
-            Column name to set as the DataFrame index, default is 'DTXSID'.
-        log10_transform : bool, optional
-            If True, applies a log10 transformation to the exposure data, 
-            default is True.
-
-        Returns
-        -------
-        exposure_df : pandas.DataFrame
-            DataFrame containing exposure predictions, with columns sorted.
-        '''
-        # TODO: Move to config for flexibility?
-        sorted_columns = [
-            '95th percentile (mg/kg/day)',
-            '50th percentile (mg/kg/day)',
-            '5th percentile (mg/kg/day)'
-        ]
-
-        exposure_df = (
-            pd.read_csv(
-                self._seem3_exposure_file,
-                encoding='latin-1',
-                index_col=index_col)
-            [sorted_columns]
-        )
-
-        if log10_transform:
-            exposure_df = np.log10(exposure_df)
-
-        return exposure_df
     #endregion
 
     #region: margins_of_exposure
