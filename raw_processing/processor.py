@@ -184,18 +184,45 @@ class RawDataProcessor:
         https://www.epa.gov/comptox-tools/comptox-chemicals-dashboard-release-notes#latest%20version
         '''
         sdf_data = rdkit_utilities.sdf_to_dataframe(
-            self._path_settings.dsstox_sdf_dir
+            self._path_settings.dsstox_sdf_dir,
+            write_path=self._build_path_dsstox_compiled()
             )
 
-        # Write the DTXSIDs to a text file for OPERA 2.9
+        # Write the DTXSID column to a text file for OPERA 2.9
         dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
-        text_file = os.path.join(
+        dtxsid_file = self._build_path_dsstox_identifiers()
+        sdf_data[dtxsid_column].to_csv(dtxsid_file, header=False, index=False)
+
+        return sdf_data
+    #endregion
+
+    #region: _build_path_dsstox_compiled
+    def _build_path_dsstox_compiled(self):
+        '''
+        Helper function to build a path to the output file containing all 
+        DSSTox data.
+
+        The file name is derived from the directory name and extension.
+        '''
+        sdf_directory = self._path_settings.dsstox_sdf_dir
+        directory_name = os.path.split(sdf_directory)[-1]
+        file_name = f'{directory_name}.parquet'
+        return os.path.join(sdf_directory, file_name)
+    #endregion
+
+    #region: _build_path_dsstox_identifiers
+    def _build_path_dsstox_identifiers(self):
+        '''
+        Helper function to build a path to the output file containing the
+        DSSTox identifiers (DTXSID).
+
+        The file name is derived from the column name and extension.
+        '''
+        dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
+        return os.path.join(
             self._path_settings.dsstox_sdf_dir, 
             f'{dtxsid_column}.txt'
             )
-        sdf_data[dtxsid_column].to_csv(text_file, header=False, index=False)
-
-        return sdf_data
     #endregion
 
     #region: _surrogate_pods_from_raw

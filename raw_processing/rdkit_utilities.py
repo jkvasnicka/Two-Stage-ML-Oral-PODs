@@ -7,7 +7,7 @@ import pandas as pd
 import os
 
 #region: sdf_to_dataframe
-def sdf_to_dataframe(sdf_directory, do_write=True):
+def sdf_to_dataframe(sdf_directory, write_path=None):
     '''
     Parse one or more SDF V2000 files into a pandas.DataFrame.
 
@@ -18,8 +18,8 @@ def sdf_to_dataframe(sdf_directory, do_write=True):
     ----------
     sdf_directory : str
         Path to the directory containing the SDF files.
-    do_write : bool, optional
-        Whether to write the DataFrame to a Parquet file. Default True.
+    write_path : str, optional
+        Path to the output file. If present, will write the DataFrame to disk.
 
     Returns
     -------
@@ -29,9 +29,6 @@ def sdf_to_dataframe(sdf_directory, do_write=True):
         raise ValueError(f'Directory {sdf_directory} does not exist.')
     
     sdf_data = []  # initialize
-    # Use the directory name for the output file name
-    directory_name = os.path.split(sdf_directory)[-1]
-
     for dirpath, _, filenames in os.walk(sdf_directory):
         sdf_files = [f for f in filenames if f.endswith('.sdf')]
 
@@ -49,9 +46,7 @@ def sdf_to_dataframe(sdf_directory, do_write=True):
     
     sdf_data = pd.concat(sdf_data, ignore_index=True)
 
-    if do_write:
-        file_name = f'{directory_name}.parquet'
-        write_path = os.path.join(sdf_directory, file_name)
+    if write_path:
         sdf_data.to_parquet(write_path, index=False, compression='gzip')
 
     return sdf_data
