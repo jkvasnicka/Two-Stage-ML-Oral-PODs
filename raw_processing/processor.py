@@ -364,9 +364,9 @@ class RawDataProcessor:
         '''
         return other_sources.experimental_ld50s_from_excel(
             self._path_settings.raw_ld50_experimental_file, 
+            self._raw_data_settings.ld50_exp_column, 
             id_for_casrn=self._map_casrn_to_dtxsid(), 
             id_name=self._index_col,
-            ld50_columns=self._raw_data_settings.ld50_columns, 
             write_path=self._path_settings.ld50_experimental_file
         )
     #endregion

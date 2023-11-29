@@ -27,9 +27,7 @@
 
     "comptox_log10_pat" : "LOG",
 
-    "ld50_columns" : [
-        "median_LD50"
-    ],
+    "ld50_exp_column" : "median_LD50",
     
     "comptox_columns_to_exclude" : [
         "INPUT", 

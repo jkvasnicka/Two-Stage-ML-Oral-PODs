@@ -173,63 +173,48 @@ def regulatory_toxicity_values_from_excel(
     return reg_pods
 #endregion
 
-# TODO: Remove extraneous logic
 #region: experimental_ld50s_from_excel
 def experimental_ld50s_from_excel(
         ld50s_path, 
+        ld50_exp_column,
         id_for_casrn=None,
         id_name=None,
-        log10=False, 
-        ld50_columns=None, 
-        study_count_thres=None, 
+        inverse_transform=True,
         write_path=None
-        ):
+    ):
     '''Load and parse the experimental LD50 values from an Excel file.
 
     Parameters
     ----------
     ld50s_path : str
         File path. 
+    ld50_exp_column : str
+        Name of column corresponding to LD50 data to extract.
     id_for_casrn : dict, optional
         A dictionary mapping from CASRN to a new identifier.
     id_name : str, optional
         The name to be assigned to the new index.
-    log10 : bool (optional)
-        If False, apply an inverse log10-transformation to the values.
-    ld50_columns : list of str (optional)
-        Names of columns corresponding to LD50 statistics to extract.
-    study_count_thres : int (optional)
-        Chemicals with study counts exceeding this value will be retained.
+    inverse_transform : bool (optional)
+        If True, apply an inverse log10-transformation to the values.
     Write_path : str (optional)
         Path to write the return as a CSV file.
 
     Returns
     -------
-    pandas.DataFrame
+    pandas.Series
 
     Notes
     -----
     These data were extracted from ToxValdDB and curated by Nicolo Aurisano. 
     All data were extrapolated to humans. The data represent acute studies.
     '''
-    ld50s = pd.read_excel(ld50s_path, index_col='casrn')
-
-    if study_count_thres is not None:
-        # Apply the filter.
-        ld50s = ld50s.loc[ld50s['count_LD50'] > study_count_thres]
-    ld50s = ld50s.drop('count_LD50', axis=1)
-
-    if ld50_columns is None:
-        # Use all LD50 columns in the original file.
-        ld50_columns = [c for c in ld50s if 'LD50' in c]
+    # Get the LD50 values in log10-units
+    ld50s = pd.read_excel(ld50s_path, index_col='casrn')[ld50_exp_column]
 
     if id_for_casrn:
         ld50s = _replace_casrn_index(ld50s, id_for_casrn, id_name)
 
-    ld50s = ld50s[ld50_columns]
-
-    if log10 is False:
-        # Apply inverse transformation to get the original scale.
+    if inverse_transform:
         ld50s = 10**ld50s
 
     if write_path is not None:
