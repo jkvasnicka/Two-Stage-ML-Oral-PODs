@@ -56,6 +56,8 @@
         "tox_httk.95"
     ],
 
-    "dsstox_sdf_dtxsid_column" : "DSSTox_Substance_id"
+    "dsstox_sdf_dtxsid_column" : "DSSTox_Substance_id",
+
+    "dsstox_sdf_casrn_column" : "CASRN"
     
 }

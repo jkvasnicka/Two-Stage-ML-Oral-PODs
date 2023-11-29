@@ -178,11 +178,12 @@ def regulatory_toxicity_values_from_excel(
     return reg_pods
 #endregion
 
+# TODO: Remove extraneous logic
 #region: experimental_ld50s_from_excel
 def experimental_ld50s_from_excel(
         ld50s_path, 
-        chem_identifiers, 
-        index_col, 
+        id_for_casrn=None,
+        id_name=None,
         log10=False, 
         ld50_columns=None, 
         study_count_thres=None, 
@@ -194,11 +195,10 @@ def experimental_ld50s_from_excel(
     ----------
     ld50s_path : str
         File path. 
-    chem_identifiers : pandas.DataFrame
-        Used to map CASRNs to the chemical identifier of interest.
-    index_col : str
-        Name of the chemical identifier in the headers of chem_identifiers to 
-        use as the index.
+    id_for_casrn : dict, optional
+        A dictionary mapping from CASRN to a new identifier.
+    id_name : str, optional
+        The name to be assigned to the new index.
     log10 : bool (optional)
         If False, apply an inverse log10-transformation to the values.
     ld50_columns : list of str (optional)
@@ -217,7 +217,7 @@ def experimental_ld50s_from_excel(
     These data were extracted from ToxValdDB and curated by Nicolo Aurisano. 
     All data were extrapolated to humans. The data represent acute studies.
     '''
-    ld50s = pd.read_excel(ld50s_path)
+    ld50s = pd.read_excel(ld50s_path, index_col='casrn')
 
     if study_count_thres is not None:
         # Apply the filter.
@@ -228,14 +228,8 @@ def experimental_ld50s_from_excel(
         # Use all LD50 columns in the original file.
         ld50_columns = [c for c in ld50s if 'LD50' in c]
 
-    # Use the CASRN to get the specified identifier as the index.
-    ld50s = (
-        ld50s.merge(
-            chem_identifiers.reset_index(), 
-            left_on='casrn',
-            right_on='CASRN')
-        .set_index(index_col)
-    )
+    if id_for_casrn:
+        ld50s = _replace_casrn_index(ld50s, id_for_casrn, id_name)
 
     ld50s = ld50s[ld50_columns]
 
@@ -247,4 +241,37 @@ def experimental_ld50s_from_excel(
         ld50s.to_csv(write_path)
 
     return ld50s
+#endregion
+
+#region: _replace_casrn_index
+def _replace_casrn_index(data, id_for_casrn, id_name):
+    '''
+    Replace the index of a DataFrame, originally based on CASRN, with a new 
+    index.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        The DataFrame whose index is to be replaced. The current index should 
+        be CASRN.
+    id_for_casrn : dict
+        A dictionary mapping from CASRN to a new identifier.
+    id_name : str
+        The name to be assigned to the new index.
+
+    Returns
+    -------
+    pd.DataFrame
+        The DataFrame with its index replaced by the new identifiers.
+
+    Note
+    ----
+    Rows in `data` whose CASRN is not found in `id_for_casrn` will be excluded
+    from the returned DataFrame.
+    '''
+    casrn_intersection = list(data.index.intersection(set(id_for_casrn)))
+    data = data.loc[casrn_intersection]
+    data.index = [id_for_casrn[casrn] for casrn in data.index]
+    data.index.name = id_name    
+    return data
 #endregion

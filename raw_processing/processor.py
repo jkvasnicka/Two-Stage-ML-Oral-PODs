@@ -362,17 +362,15 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed experimental LD50 values.
         '''
-        chem_identifiers = self.load_comptox_identifiers()
-
         return other_sources.experimental_ld50s_from_excel(
             self._path_settings.raw_ld50_experimental_file, 
-            chem_identifiers, 
-            self._index_col, 
+            id_for_casrn=self._map_casrn_to_dtxsid(), 
+            id_name=self._index_col,
             ld50_columns=self._raw_data_settings.ld50_columns, 
             write_path=self._path_settings.ld50_experimental_file
         )
     #endregion
-
+        
     #region: _regulatory_pods_from_raw
     def _regulatory_pods_from_raw(self):
         '''
@@ -396,7 +394,6 @@ class RawDataProcessor:
             chem_identifiers
             .reset_index()
             .set_index('CASRN')[self._index_col]
-            .to_dict()
         )
 
         return other_sources.regulatory_toxicity_values_from_excel(
@@ -406,6 +403,27 @@ class RawDataProcessor:
             chem_id_for_casrn=chem_id_for_casrn, 
             new_chem_id=self._index_col, 
             write_path=self._path_settings.regulatory_pods_file
+        )
+    #endregion
+
+    #region: _map_casrn_to_dtxsid
+    def _map_casrn_to_dtxsid(self):
+        '''
+        Map CASRN to DTXSID using the DSSTox dataset.
+
+        Returns
+        -------
+        dict
+            A dictionary mapping CASRN to DTXSID.
+        '''
+        casrn_column = self._raw_data_settings.dsstox_sdf_casrn_column
+        dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
+
+        return (
+            pd.read_parquet(self._build_path_dsstox_compiled())
+            .set_index(casrn_column)
+            [dtxsid_column]
+            .to_dict()
         )
     #endregion
 
