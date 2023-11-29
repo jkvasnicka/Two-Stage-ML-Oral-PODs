@@ -7,7 +7,7 @@
 
     "chemical_id_app_file" : "Input/Raw/OPERA/Input/Application/chemical-identifiers.txt",
     
-    "raw_comptox_features_file" : "Input/Raw/CofmpTox/CCD-OPERA-TEST-predictions.csv",
+    "raw_comptox_features_file" : "Input/Raw/CompTox/CCD-OPERA-TEST-predictions.csv",
     
     "raw_opera_features_dir" : "Input/Raw/OPERA/Output/Development",
 
