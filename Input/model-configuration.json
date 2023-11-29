@@ -25,7 +25,7 @@
     {
       "target_effect" : "general",
       "features_source" : "opera",
-      "ld50_type" : "predicted",
+      "ld50_type" : "experimental",
       "data_condition" : "complete",
       "select_features" : "false",
       "estimators" : ["RandomForestRegressor"]
@@ -34,7 +34,7 @@
     {
       "target_effect" : "repro_dev",
       "features_source" : "opera",
-      "ld50_type" : "predicted",
+      "ld50_type" : "experimental",
       "data_condition" : "complete",
       "select_features" : "false",
       "estimators" : ["RandomForestRegressor"]
