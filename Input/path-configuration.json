@@ -1,7 +1,5 @@
 {
     "dsstox_sdf_dir" : "Input/Raw/DSSTox/DSSToxSDF_01262023_V2000",
-
-    "comptox_identifiers_file" : "Input/Raw/CompTox/CCD-identifiers.csv",
     
     "chemical_id_dev_file" : "Input/Raw/OPERA/Input/Development/chemical-identifiers.txt",
 
