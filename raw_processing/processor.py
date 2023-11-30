@@ -394,8 +394,8 @@ class RawDataProcessor:
         '''
         return other_sources.authoritative_toxicity_values_from_excel(
             self._path_settings.raw_authoritative_pods_file, 
-            self._raw_data_settings.reg_data_kwargs,
-            self._raw_data_settings.reg_file_ilocs_for_effect, 
+            self._raw_data_settings.auth_data_kwargs,
+            self._raw_data_settings.auth_file_ilocs_for_effect, 
             id_for_casrn=self._map_casrn_to_dtxsid(), 
             id_name=self._index_col, 
             write_path=self._path_settings.authoritative_pods_file

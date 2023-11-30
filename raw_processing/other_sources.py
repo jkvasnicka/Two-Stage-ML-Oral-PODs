@@ -130,7 +130,7 @@ def toxicity_data_and_study_counts_from_excel(
 #region: authoritative_toxicity_values_from_excel
 def authoritative_toxicity_values_from_excel(
         fig_s5_path, 
-        reg_data_kwargs,
+        auth_data_kwargs,
         ilocs_for_effect, 
         id_for_casrn=None, 
         id_name=None, 
@@ -148,29 +148,29 @@ def authoritative_toxicity_values_from_excel(
     ---------
     '''
     fig_s5_data = (
-        pd.read_excel(fig_s5_path, **reg_data_kwargs)
+        pd.read_excel(fig_s5_path, **auth_data_kwargs)
         .droplevel(0, axis=1)  # allows duplicate column names
     )
 
     # Initialize a container.
-    reg_pods = {}
+    auth_pods = {}
     for effect, ilocs in ilocs_for_effect.items():
-        reg_pods[effect] = (
+        auth_pods[effect] = (
             fig_s5_data.iloc[:, ilocs]
             .drop_duplicates(subset='casrn')
             .set_index('casrn')
             .squeeze()
         )
-    reg_pods = pd.DataFrame(reg_pods).dropna(how='all')
-    reg_pods.index.name = reg_pods.index.name.upper()  # for consistency
+    auth_pods = pd.DataFrame(auth_pods).dropna(how='all')
+    auth_pods.index.name = auth_pods.index.name.upper()  # for consistency
 
     if id_for_casrn:
-        reg_pods = _replace_casrn_index(reg_pods, id_for_casrn, id_name)
+        auth_pods = _replace_casrn_index(auth_pods, id_for_casrn, id_name)
         
     if write_path is not None:
-        reg_pods.to_csv(write_path)
+        auth_pods.to_csv(write_path)
         
-    return reg_pods
+    return auth_pods
 #endregion
 
 #region: experimental_ld50s_from_excel

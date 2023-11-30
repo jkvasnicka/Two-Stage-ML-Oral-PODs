@@ -38,13 +38,13 @@
         "OPERA_PKAB_OPERA_PRED"
     ],   
 
-    "reg_data_kwargs" : {
+    "auth_data_kwargs" : {
         "sheet_name" : "Data for Figure S5",
         "header" : [0, 1],
         "skiprows" : [0]
     },
 
-    "reg_file_ilocs_for_effect" : {
+    "auth_file_ilocs_for_effect" : {
         "general" : [0, 5],
         "repro_dev" : [6, 11]
     },
