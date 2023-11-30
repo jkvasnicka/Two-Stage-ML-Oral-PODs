@@ -73,7 +73,7 @@ class RawDataProcessor:
             'opera_features' : self._opera_features_from_raw,
             'comptox_features' : self._comptox_features_from_raw,
             'surrogate_pods' : self._surrogate_pods_from_raw,
-            'regulatory_pods' : self._regulatory_pods_from_raw,
+            'authoritative_pods' : self._authoritative_pods_from_raw,
             'experimental_ld50s' : self._experimental_ld50s_from_raw,
             'seem3_exposure_data' : self._seem3_exposure_data_from_raw
         }
@@ -378,27 +378,27 @@ class RawDataProcessor:
         )
     #endregion
         
-    #region: _regulatory_pods_from_raw
-    def _regulatory_pods_from_raw(self):
+    #region: _authoritative_pods_from_raw
+    def _authoritative_pods_from_raw(self):
         '''
-        Extract and process regulatory Points of Departure from raw data.
+        Extract and process authoritative Points of Departure from raw data.
 
-        This method reads raw regulatory PODs and processes them by mapping 
+        This method reads raw authoritative PODs and processes them by mapping 
         CASRN to the specified chemical identifier. The processed data are then 
         saved to a CSV file on disk.
 
         Returns
         -------
         pandas.DataFrame
-            The processed regulatory Points of Departure values.
+            The processed authoritative Points of Departure values.
         '''
-        return other_sources.regulatory_toxicity_values_from_excel(
-            self._path_settings.raw_regulatory_pods_file, 
+        return other_sources.authoritative_toxicity_values_from_excel(
+            self._path_settings.raw_authoritative_pods_file, 
             self._raw_data_settings.reg_data_kwargs,
             self._raw_data_settings.reg_file_ilocs_for_effect, 
             id_for_casrn=self._map_casrn_to_dtxsid(), 
             id_name=self._index_col, 
-            write_path=self._path_settings.regulatory_pods_file
+            write_path=self._path_settings.authoritative_pods_file
         )
     #endregion
 

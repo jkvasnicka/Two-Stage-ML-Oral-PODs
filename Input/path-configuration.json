@@ -31,9 +31,9 @@
     
     "surrogate_pods_file" : "Input/Targets/surrogate-points-of-departure.csv",
         
-    "raw_regulatory_pods_file" : "Input/Raw/Aurisano/Numeric-data-for-Figures-EHP11524.xlsx",
+    "raw_authoritative_pods_file" : "Input/Raw/Aurisano/Numeric-data-for-Figures-EHP11524.xlsx",
     
-    "regulatory_pods_file" : "Input/Targets/regulatory-points-of-departure.csv",
+    "authoritative_pods_file" : "Input/Targets/authoritative-points-of-departure.csv",
     
     "raw_toxcast_oeds_file" : "Input/Raw/Paul-Friedman/Paul_Friedman_2020_Table_S2.xlsx",
     

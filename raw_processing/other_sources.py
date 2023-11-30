@@ -127,8 +127,8 @@ def toxicity_data_and_study_counts_from_excel(
     return tox_data.loc[where_not_missing]
 #endregion
 
-#region: regulatory_toxicity_values_from_excel
-def regulatory_toxicity_values_from_excel(
+#region: authoritative_toxicity_values_from_excel
+def authoritative_toxicity_values_from_excel(
         fig_s5_path, 
         reg_data_kwargs,
         ilocs_for_effect, 
@@ -136,7 +136,7 @@ def regulatory_toxicity_values_from_excel(
         id_name=None, 
         write_path=None
         ):
-    '''Load and parse the regulatory toxicity values from CSV file.
+    '''Load and parse the authoritative toxicity values from CSV file.
 
     Parameters
     ----------

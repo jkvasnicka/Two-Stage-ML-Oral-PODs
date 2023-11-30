@@ -435,7 +435,7 @@ def get_common_samples(y_for_label):
         provided data series.
     '''
     common_samples = (
-        y_for_label['Regulatory'].index
+        y_for_label['Authoritative'].index
         .intersection(y_for_label['ToxValDB'].index)
         .intersection(y_for_label['QSAR'].index)
     )

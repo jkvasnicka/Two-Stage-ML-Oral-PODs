@@ -207,10 +207,10 @@ class DataManager:
         return common_objects
     #endregion
 
-    #region: load_regulatory_pods
-    def load_regulatory_pods(self):
+    #region: load_authoritative_pods
+    def load_authoritative_pods(self):
         '''
-        Load the regulatory points of departure (log10-units). 
+        Load the authoritative points of departure (log10-units). 
 
         Returns
         -------
@@ -218,7 +218,7 @@ class DataManager:
             One column for each target effect, and chemicals along the index.
         '''
         pods_for_effect = pd.read_csv(
-            self.path_settings.regulatory_pods_file, 
+            self.path_settings.authoritative_pods_file, 
             index_col=0
             )
         return pods_for_effect

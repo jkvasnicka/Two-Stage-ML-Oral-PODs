@@ -502,21 +502,21 @@ class ResultsAnalyzer:
         -------
         dict
             A dictionary containing POD data for the given model key. The 
-            dictionary has keys 'Regulatory', 'ToxValDB', and 'QSAR', each 
+            dictionary has keys 'Authoritative', 'ToxValDB', and 'QSAR', each 
             mapping to a corresponding data series.
 
         See Also
         --------
         plot.cumulative_pod_distributions()
         '''        
-        y_regulatory_df = self.load_regulatory_pods()
+        y_auth_df = self.load_authoritative_pods()
         model_key_names = self.read_model_key_names()
         key_for = dict(zip(model_key_names, model_key))
         effect = key_for['target_effect']
         results = self.get_in_sample_prediction(model_key)
         
         y_for_label = {
-            'Regulatory': y_regulatory_df[effect].dropna(),
+            'Authoritative': y_auth_df[effect].dropna(),
             'ToxValDB': results[0],
             'QSAR': results[-1]
         }
@@ -624,10 +624,10 @@ class ResultsAnalyzer:
         return self.data_manager.load_target(*args, **kwargs)
     #endregion
 
-    #region: load_regulatory_pods
-    def load_regulatory_pods(self):
-        '''Refer to `DataManager.load_regulatory_pods` for documentation'''
-        return self.data_manager.load_regulatory_pods()
+    #region: load_authoritative_pods
+    def load_authoritative_pods(self):
+        '''Refer to `DataManager.load_authoritative_pods` for documentation'''
+        return self.data_manager.load_authoritative_pods()
     #endregion
 
     #region: load_oral_equivalent_doses
