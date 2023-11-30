@@ -6,7 +6,6 @@ data based on common indexes.
 '''
 
 import pandas as pd 
-import numpy as np
 
 #region: DataManager.__init__
 class DataManager:
@@ -227,24 +226,20 @@ class DataManager:
     #region: load_oral_equivalent_doses
     def load_oral_equivalent_doses(self):
         '''
-        Load the oral equivalent doses from ToxCast/httk median (log10-units).
+        Load the oral equivalent doses from a CSV file.
 
         Returns
         -------
         pandas.Series
-
-        References
-        ----------
-        Table S2 of Paul Friedman et al. (2020); DOI: 10.1093/toxsci/kfz201
         '''
-        dose_series = (
-            pd.read_excel(
-                self.path_settings.raw_toxcast_oeds_file, 
-                sheet_name=0,
-                index_col=0)
-                ['pod.nam.50']
-                )
-        return dose_series    
+        oeds = (
+            pd.read_csv(
+                self.path_settings.toxcast_oeds_file,
+                index_col=0
+            )
+            .squeeze()
+        )
+        return oeds
     #endregion
 
     #region: load_exposure_data

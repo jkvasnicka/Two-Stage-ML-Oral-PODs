@@ -301,3 +301,41 @@ def seem3_exposure_data_from_excel(
 
     return exposure_data
 #endregion
+
+#region: oral_equivalent_doses_from_excel
+def oral_equivalent_doses_from_excel(
+      oeds_file, 
+      oed_data_kwargs, 
+      index_col,
+      write_path=None
+    ):
+    '''
+    Extract and process the oral equivalent doses. 
+
+    Returns
+    -------
+    pandas.Series
+
+    Notes
+    -----
+    The data are extracted from Table S2 of Paul Friedman et al. (2020). The 
+    values are in log10 units of mg/(kg-d).
+
+    References
+    ----------
+    https://doi.org/10.1093/toxsci/kfz201
+    '''
+    oeds = (
+        pd.read_excel(
+            oeds_file, 
+            **oed_data_kwargs
+        )
+        .set_index(index_col)
+        .squeeze()
+    )
+
+    if write_path:
+        oeds.to_csv(write_path)
+
+    return oeds
+#endregion

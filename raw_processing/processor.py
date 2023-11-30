@@ -75,7 +75,8 @@ class RawDataProcessor:
             'surrogate_pods' : self._surrogate_pods_from_raw,
             'authoritative_pods' : self._authoritative_pods_from_raw,
             'experimental_ld50s' : self._experimental_ld50s_from_raw,
-            'seem3_exposure_data' : self._seem3_exposure_data_from_raw
+            'seem3_exposure_data' : self._seem3_exposure_data_from_raw,
+            'toxcast_oeds' : self._oral_equivalent_doses_from_raw
         }
 #endregion
 
@@ -438,5 +439,22 @@ class RawDataProcessor:
             self._raw_data_settings.seem3_data_kwargs,
             self._index_col,
             write_path=self._path_settings.seem3_exposure_file
+        )
+    #endregion
+
+    #region: _oral_equivalent_doses_from_raw
+    def _oral_equivalent_doses_from_raw(self):
+        '''
+        Extract and process oral equivalent doses from raw data.
+
+        Returns
+        -------
+        pandas.Series
+        '''
+        return other_sources.oral_equivalent_doses_from_excel(
+            self._path_settings.raw_toxcast_oeds_file,
+            self._raw_data_settings.oed_data_kwargs,
+            self._index_col,
+            write_path=self._path_settings.toxcast_oeds_file
         )
     #endregion

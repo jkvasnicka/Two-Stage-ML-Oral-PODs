@@ -49,10 +49,13 @@
         "repro_dev" : [6, 11]
     },
 
-    "oed_columns" : [
-        "tox_httk.50",
-        "tox_httk.95"
-    ],
+    "oed_data_kwargs" : {
+        "sheet_name" : "pod_ratio_master",
+        "usecols" : [
+            "DTXSID",
+            "pod.nam.50"
+        ]
+    },
 
     "seem3_data_kwargs" : {
         "sheet_name" : "Data",
