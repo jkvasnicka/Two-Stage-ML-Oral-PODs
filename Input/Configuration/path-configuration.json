@@ -13,35 +13,35 @@
 
     "file_for_features_source" : {
 
-        "comptox" : "Input/Features/CompTox-predictions.parquet", 
+        "comptox" : "Input/Processed/Features/CompTox/CompTox-predictions.parquet", 
 
-        "opera" : "Input/Features/OPERA-2.9-predictions.parquet"
+        "opera" : "Input/Processed/Features/OPERA/OPERA-2.9-predictions.parquet"
         
     },
     
     "opera_mapper_file" : "Input/Raw/OPERA/Output/feature-columns-mapper.json",
 
-    "opera_AD_file" : "Input/Features/OPERA-2.9-AD-flags.parquet",
+    "opera_AD_file" : "Input/Processed/Features/OPERA/OPERA-2.9-AD-flags.parquet",
     
     "raw_ld50_experimental_file" : "Input/Raw/Aurisano/DF_LD50_curated_DB.xlsx",
     
-    "ld50_experimental_file" : "Input/Features/experimental-LD50s.csv",
+    "ld50_experimental_file" : "Input/Processed/Features/Aurisano/experimental-LD50s.csv",
         
     "raw_surrogate_pods_file" : "Input/Raw/Aurisano/Supplemental-Excel-File-EHP11524-revised.xlsx",
     
-    "surrogate_pods_file" : "Input/Targets/surrogate-points-of-departure.csv",
+    "surrogate_pods_file" : "Input/Processed/Targets/Aurisano/surrogate-points-of-departure.csv",
         
     "raw_authoritative_pods_file" : "Input/Raw/Aurisano/Numeric-data-for-Figures-EHP11524.xlsx",
     
-    "authoritative_pods_file" : "Input/Analysis/Aurisano/authoritative-points-of-departure.csv",
+    "authoritative_pods_file" : "Input/Processed/Analysis/Aurisano/authoritative-points-of-departure.csv",
     
     "raw_toxcast_oeds_file" : "Input/Raw/Paul-Friedman/Paul_Friedman_2020_Table_S2.xlsx",
 
-    "toxcast_oeds_file" : "Input/Analysis/Paul-Friedman/toxcast-oral-equivalent-doses.csv",
+    "toxcast_oeds_file" : "Input/Processed/Analysis/Paul-Friedman/toxcast-oral-equivalent-doses.csv",
     
     "raw_seem3_exposure_file" :  "Input/Raw/SEEM3/Exposure_download_v1.xlsx",
 
-    "seem3_exposure_file" : "Input/Analysis/SEEM3/Exposure_download_v1.parquet",
+    "seem3_exposure_file" : "Input/Processed/Analysis/SEEM3/Exposure_download_v1.parquet",
 
     "opera_application_batches_dir" : "Input/Raw/OPERA/Input/Application/OPERA2.9_batches",
 
