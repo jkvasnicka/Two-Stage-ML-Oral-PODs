@@ -54,6 +54,16 @@
         "tox_httk.95"
     ],
 
+    "seem3_data_kwargs" : {
+        "sheet_name" : "Data",
+        "usecols" : [
+            "DTXSID",
+            "95th percentile (mg/kg/day)",
+            "50th percentile (mg/kg/day)",
+            "5th percentile (mg/kg/day)"
+            ]
+    },
+
     "dsstox_sdf_dtxsid_column" : "DSSTox_Substance_id",
 
     "dsstox_sdf_casrn_column" : "CASRN"

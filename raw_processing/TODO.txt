@@ -1,1 +1,0 @@
-Use Table S5 of Aurisano et al. (2023) for target variable extraction

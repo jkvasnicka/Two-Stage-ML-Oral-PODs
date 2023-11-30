@@ -32,6 +32,12 @@ from . import comptox
 from . import other_sources
 from . import rdkit_utilities
 
+# TODO:
+'''
+Need to make directories if not exist. This class could handle all writing 
+logic, and the other modules could simply handle the processing from raw.
+'''
+
 #region: RawDataProcessor.__init__
 class RawDataProcessor:
     '''
@@ -68,7 +74,8 @@ class RawDataProcessor:
             'comptox_features' : self._comptox_features_from_raw,
             'surrogate_pods' : self._surrogate_pods_from_raw,
             'regulatory_pods' : self._regulatory_pods_from_raw,
-            'experimental_ld50s' : self._experimental_ld50s_from_raw
+            'experimental_ld50s' : self._experimental_ld50s_from_raw,
+            'seem3_exposure_data' : self._seem3_exposure_data_from_raw
         }
 #endregion
 
@@ -413,5 +420,23 @@ class RawDataProcessor:
             .set_index(casrn_column)
             [dtxsid_column]
             .to_dict()
+        )
+    #endregion
+
+    #region: _seem3_exposure_data_from_raw
+    def _seem3_exposure_data_from_raw(self):
+        '''
+        Extract and process SEEM3 exposure data from raw data.
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame containing exposure predictions.
+        '''
+        return other_sources.seem3_exposure_data_from_excel(
+            self._path_settings.raw_seem3_exposure_file,
+            self._raw_data_settings.seem3_data_kwargs,
+            self._index_col,
+            write_path=self._path_settings.seem3_exposure_file
         )
     #endregion

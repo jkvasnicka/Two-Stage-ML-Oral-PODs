@@ -37,7 +37,9 @@
     
     "raw_toxcast_oeds_file" : "Input/Raw/Paul-Friedman/Paul_Friedman_2020_Table_S2.xlsx",
     
-    "seem3_exposure_file" : "Input/Raw/SEEM3/Exposure_download_v1_Data.csv",
+    "raw_seem3_exposure_file" :  "Input/Raw/SEEM3/Exposure_download_v1.xlsx",
+
+    "seem3_exposure_file" : "Input/Analysis/SEEM3/Exposure_download_v1.parquet",
 
     "opera_application_batches_dir" : "Input/Raw/OPERA/Input/Application/OPERA2.9_batches",
 

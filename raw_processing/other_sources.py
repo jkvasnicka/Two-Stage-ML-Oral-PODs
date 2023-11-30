@@ -255,3 +255,49 @@ def _replace_casrn_index(data, id_for_casrn, id_name):
     data.index.name = id_name    
     return data
 #endregion
+
+#region: seem3_exposure_data_from_excel
+def seem3_exposure_data_from_excel(
+        exposure_file, 
+        exposure_data_kwargs,
+        index_col,
+        log10_transform=True,
+        write_path=None
+        ):
+    '''
+    Extract and process SEEM3 exposure data from raw data.
+
+    Parameters
+    ----------
+    exposure_file : str
+        Path to the Excel file containing the exposure data.
+    exposure_data_kwargs : dict
+        Key-word arguments for pandas.read_excel().
+    index_col : str
+        Column name to be used as the index.
+    log10_transform : bool, optional
+        If True, the data will be log10-transformed. Default True.
+    write_path : str, optional
+        Path to the output Parquet file. If present, the data will be written 
+        to disk.
+        
+    Returns
+    -------
+    pandas.DataFrame
+    '''
+    exposure_data = (
+        pd.read_excel(
+            exposure_file,
+            **exposure_data_kwargs
+        )
+        .set_index(index_col)
+    )
+
+    if log10_transform:
+        exposure_data = np.log10(exposure_data)
+
+    if write_path:
+        exposure_data.to_parquet(write_path, compression='gzip')
+
+    return exposure_data
+#endregion
