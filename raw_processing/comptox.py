@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np 
 import warnings
 
-from .utilities import inverse_log10_transform
+from . import utilities
 
 #region: opera_test_predictions_from_csv
 def opera_test_predictions_from_csv(
@@ -71,10 +71,11 @@ def opera_test_predictions_from_csv(
 
     if log10_pat is not None:
         # Transform features into their original scales. Assume base-10.
-        predictions = inverse_log10_transform(predictions, log10_pat)
+        predictions = utilities.inverse_log10_transform(predictions, log10_pat)
+        predictions.columns = utilities.remove_pattern(predictions.columns, log10_pat)
 
     if write_path is not None:
-        predictions.to_csv(write_path)
+        predictions.to_parquet(write_path)
 
     return predictions
 #endregion
