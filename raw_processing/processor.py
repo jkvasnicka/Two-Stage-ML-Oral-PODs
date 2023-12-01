@@ -23,10 +23,8 @@ Example
 '''
 
 import pandas as pd
-import re
 import os.path
 
-from . import pattern
 from . import opera 
 from . import comptox
 from . import other_sources
@@ -242,6 +240,7 @@ class RawDataProcessor:
         return AD_flags, opera_features
     #endregion
 
+    # FIXME: Need to update chemicals_to_exclude using the new OPERA data
     #region: _comptox_features_from_raw
     def _comptox_features_from_raw(self):
         '''

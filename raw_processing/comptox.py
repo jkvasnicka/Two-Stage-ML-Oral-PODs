@@ -5,20 +5,23 @@ These data were batch downloaded and stored as either .CSV or .XLSX files
 from https://comptox.epa.gov/dashboard/
 '''
 import pandas as pd 
-import numpy as np 
-import warnings
 
 from . import utilities
 
 #region: opera_test_predictions_from_csv
 def opera_test_predictions_from_csv(
-        predictions_path, index_col, chemicals_to_exclude=None, 
-        columns_to_exclude=None, log10_pat=None, write_path=None):
+        predictions_path, 
+        index_col, 
+        chemicals_to_exclude=None, 
+        columns_to_exclude=None, 
+        log10_pat=None, 
+        write_path=None
+        ):
     '''Load and parse the "predicted and intrinsic" chemical properties from 
     a CSV file.
 
     For columns in which there are predictions from both QSAR models, OPERA 
-    and TEST, the OPERA predictions are returned.
+    and TEST, the OPERA predictions are given priority.
 
     Parameters
     ----------
@@ -71,8 +74,14 @@ def opera_test_predictions_from_csv(
 
     if log10_pat is not None:
         # Transform features into their original scales. Assume base-10.
-        predictions = utilities.inverse_log10_transform(predictions, log10_pat)
-        predictions.columns = utilities.remove_pattern(predictions.columns, log10_pat)
+        predictions = utilities.inverse_log10_transform(
+            predictions, 
+            log10_pat
+            )
+        predictions.columns = utilities.remove_pattern(
+            predictions.columns, 
+            log10_pat
+            )
 
     if write_path is not None:
         predictions.to_parquet(write_path)
@@ -93,151 +102,3 @@ def strip_model_name(string, model_name):
         .removesuffix('_' + model_name + '_PRED'))
     return string_stripped
 #endregion
-
-# TODO: Could make index_col argument more flexible and optional.
-#region: chemical_properties_from_excel
-def chemical_properties_from_excel(
-        dis_props_file, index_col, chemicals_to_exclude=None, 
-        min_for_column=None, log10_pat=None, write_path=None):
-    '''Parse the raw export of physical-chemical properties.
-
-    Aggregate the values across data sources, giving preference to 
-    experimental/measured data over predicted data.
-
-    Parameters
-    ----------
-    dis_props_file : str
-        File path to the raw data.
-    index_col : str
-        Name of the chemical identifier in the headers to use as index.
-    chemicals_to_exclude : list of str (optional)
-        List of chemical identifiers to exclude from the return.
-    min_for_column : dict (optional)
-        Mapping {column name --> minimum value}, can be used to set/ensure
-        plausible ranges.
-    log10_pat : str (optional)
-        Substring in the columns indicating log10-transformed features, will 
-        be used to inverse-transform these features.
-    write_path : str (optional)
-        Path to write the return as a Parquet file.
-
-    Returns
-    -------
-    pandas.DataFrame
-    '''
-    dis_props = pd.read_excel(
-        dis_props_file, sheet_name='Chemical Properties')
-
-    if chemicals_to_exclude is not None:
-        dis_props = dis_props.set_index(index_col, drop=False)
-        dis_props = dis_props.drop(chemicals_to_exclude, errors='ignore')
-
-    dis_props['VALUE'] = (
-        dis_props['VALUE']
-        .replace(' ', np.nan)
-        .astype('float'))
-    
-    if min_for_column is not None:
-        dis_props = ensure_plausible_ranges(dis_props, min_for_column)
-    
-    # Prepare the index for group-by operations.
-    index_cols = [index_col, 'TYPE', 'NAME']
-    dis_props = dis_props.set_index(index_cols)
-
-    # Aggregate the values across data sources.
-    agg_props = (
-        dis_props
-        .groupby(index_cols)
-        ['VALUE']
-        .quantile(0.5)
-        .unstack(level=['TYPE', 'NAME']))
-
-    ## Use experimental values if available. Else, predicted. 
-
-    agg_props_exp_imputed = (
-        agg_props['experimental']
-        .fillna(agg_props['predicted']))
-    
-    diff_pred_columns = (
-        agg_props['predicted'].columns
-        .difference(agg_props['experimental'].columns))
-    
-    agg_props_pred_remaining = (
-        agg_props['predicted'][diff_pred_columns])
-
-    agg_props = pd.concat(
-        [agg_props_exp_imputed, agg_props_pred_remaining], 
-        axis=1)
-
-    agg_props.columns.name = None
-
-    if log10_pat is not None:
-        # Transform features into their original scales. Assume base-10.
-        agg_props = inverse_log10_transform(agg_props, log10_pat)
-
-    if write_path is not None:
-        agg_props.to_parquet(write_path)
-
-    return agg_props
-#endregion
-
-#region: ensure_plausible_ranges
-def ensure_plausible_ranges(dis_props, min_for_column):
-    '''Helper function set/ensure plausible ranges.
-
-    See Also
-    --------
-    chemical_properties_from_excel
-
-    Parameters
-    ----------
-    min_for_column : dict (optional)
-        Mapping {column name --> minimum value}, can be used to set/ensure
-        plausible ranges.
-    '''
-    for column, theoretical_min in min_for_column.items():
-        
-        where_fails_criteria = (
-            (dis_props['NAME'] == column) 
-            & (dis_props['VALUE'] < theoretical_min))
-
-        # Replace the value with "missing."
-        dis_props.loc[where_fails_criteria, 'VALUE'] = np.nan
-        
-    return dis_props
-#endregion
-
-#region: chemicals_to_exclude_from_qsar
-def chemicals_to_exclude_from_qsar(qsar_ready_smiles):
-    '''Return a list of chemicals (str) that are inappropriate for QSAR
-    modeling. 
-
-    Identify chemicals that are missing "QSAR-ready" SMILES.
-
-    Parameters
-    ----------
-    qsar_ready_smiles : pandas.Series
-        "QSAR-Ready" SMILES for each chemical.
-        Index = chemical identifiers, values = SMILES strings.
-
-    References
-    ----------
-    - https://comptox.epa.gov/dashboard/
-    - https://github.com/kmansouri/QSAR-ready
-
-    Notes
-    -----
-    This standardization workflow by Mansouri was used by the OPERA model and 
-    includes various filters for inorganics, mixtures, etc. As such, we assume
-    that chemicals which lack a QSAR-ready SMILES did not pass these filters 
-    and are therefore inappropriate for QSAR modeling.
-    '''
-    # Check whether the input data is appropriate. 
-    name = qsar_ready_smiles.name
-    # Convert string to uppercase to cover more cases.
-    if name.upper() != 'QSAR_READY_SMILES':
-        warnings.warn(f'Name, "{name}," does not suggest QSAR-Ready Smiles')
-
-    where_missing = qsar_ready_smiles.isna()
-    return list(qsar_ready_smiles.loc[where_missing].index)
-    #endregion
