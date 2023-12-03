@@ -17,14 +17,14 @@ import numpy as np
 
 from . import utilities
 
-POD_XLABEL = '$log_{10}POD$'
-MOE_XLABEL = '$log_{10}MOE$'
+POD_XLABEL = '$\log_{10}POD$ [mg∙(kg∙d)$^{-1}$]'
+MOE_XLABEL = '$\log_{10}MOE$'
 
 # Define the limits of the vertical spans in log10 units of MOE.
 # log10(0) is undefined and will be handled dynamically
 MOE_CATEGORIES = {
-    'Potential Concern': (0., 2.),  # 1, 100
-    'Definite Concern' : (-np.inf, 0.)  # 0, 1
+    'Moderate Concern': (0., 2.),  # 1, 100
+    'High Concern' : (-np.inf, 0.)  # 0, 1
 }
 MOE_COLORS = sns.color_palette('Paired', len(MOE_CATEGORIES)+1)
 
