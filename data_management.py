@@ -254,3 +254,54 @@ class DataManager:
         '''
         return pd.read_parquet(self.path_settings.seem3_exposure_file)
     #endregion
+
+    # TODO: Maybe move these to raw data processing to avoid circularity?
+    #region: get_out_of_sample_chemicals
+    def get_out_of_sample_chemicals(self):
+        '''
+        Get chemical identifiers (DTXSID) for out of sample prediction.
+
+        These identifiers are derived from the intersection of the 
+        "Merged NORMAN Suspect List: SusDat" and SEEM3 chemicals.
+
+        Returns
+        -------
+        list of str
+
+        References
+        ----------
+        https://doi.org/10.5281/zenodo.6853705
+        '''
+        norman_ids = set(
+            pd.read_csv(self.path_settings.norman_chemicals_file)
+            .squeeze()
+            )
+
+        exposure_ids = set(self.load_exposure_data().index)
+
+        return list(norman_ids.intersection(exposure_ids))
+    #endregion
+
+    #region: get_all_chemicals
+    def get_all_chemicals(self):
+        '''
+        Get all chemical identifiers (DTXSID). 
+
+        "All chemicals" in this context is the union of the training set 
+        and out-of-sample chemicals.
+
+        Returns
+        -------
+        list
+        '''
+        training_chem_set = set(
+            pd.read_csv(
+                self.path_settings.surrogate_pods_file, index_col=0
+            )
+            .index
+        )
+
+        oos_chemicals = set(self.get_out_of_sample_chemicals())
+
+        return list(oos_chemicals.union(training_chem_set))
+    #endregion

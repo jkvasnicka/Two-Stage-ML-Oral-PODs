@@ -43,6 +43,8 @@
 
     "seem3_exposure_file" : "Input/Processed/Analysis/SEEM3/Exposure_download_v1.parquet",
 
+    "norman_chemicals_file" : "Input/Raw/NORMAN/SusDat_DTXSIDs_20220118.txt",
+
     "opera_application_batches_dir" : "Input/Raw/OPERA/Input/Application/OPERA2.9_batches",
 
     "results_dir" : "Results"
