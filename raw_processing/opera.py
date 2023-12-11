@@ -269,9 +269,10 @@ def parse_data_from_csv_files(
     for model_name, data_columns in columns_for_model.items():
         file_path = os.path.join(data_dir, data_file_namer(model_name))
         model_data = pd.read_csv(file_path, index_col=0)
-        if molecule_ids is not None:
-            model_data = model_data.reset_index()
-            model_data.index = molecule_ids
+        model_data.index.name = 'DTXSID'
+        # if molecule_ids is not None:
+        #     model_data = model_data.reset_index()
+        #     model_data.index = molecule_ids
         data_for_model[model_name] = model_data[data_columns]
 
     ## Assemble the final DataFrame.
@@ -361,9 +362,10 @@ def applicability_domain_flags(
         
         file_path = os.path.join(data_dir, data_file_namer(model_name))
         model_data = pd.read_csv(file_path, index_col=0)
-        if molecule_ids is not None:
-            model_data = model_data.reset_index()
-            model_data.index = molecule_ids
+        model_data.index.name = 'DTXSID'
+        # if molecule_ids is not None:
+        #     model_data = model_data.reset_index()
+        #     model_data.index = molecule_ids
         
         where_ADs = model_data.columns.str.contains('^AD_')
         ADs = model_data.loc[:, where_ADs]

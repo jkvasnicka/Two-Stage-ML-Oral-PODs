@@ -4,14 +4,11 @@ __pycache__/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-Results
-
 Scratch
+Archive
 
 # Large files
-Input/Raw/OPERA/OPERA2.9_batches
-Input/Raw/OPERA/Input/Application/OPERA2.9_batches
+Results
+Input/Raw/OPERA
 Input/Raw/SEEM3
 Input/Raw/DSSTox
-Input/Features/OPERA-2.9-predictions.csv
-Input/Features/OPERA-2.9-AD-flags.csv
