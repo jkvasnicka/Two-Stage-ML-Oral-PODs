@@ -174,16 +174,13 @@ class RawDataProcessor:
         return surrogate_pods
     #endregion
 
-    # FIXME: For backwards compatibility, training data separate
     #region: _opera_features_from_raw
     def _opera_features_from_raw(self):
         '''
         Extract and process OPERA features from raw data batches.
 
-        This method reads and processes raw feature data from OPERA, including 
-        training and application batches. It combines the processed feature 
-        data, removes duplicates based on chemical intersections, and saves the 
-        combined data to a Parquet file on disk.
+        This method reads and processes raw feature data from OPERA. It also 
+        saves the data to a Parquet file on disk.
 
         Additionally, applicability domain (AD) flags are extracted and saved.
 
@@ -193,25 +190,13 @@ class RawDataProcessor:
             A tuple containing two DataFrames:
             1. AD flags for each chemical.
             2. Processed OPERA features.
-
         '''
         prefix = self._raw_data_settings.opera_file_prefix
         extension = self._raw_data_settings.opera_file_extension
         opera_file_namer = lambda name: prefix + name + extension
 
-        # Load the training data
-        AD_flags_train, opera_features_train = opera.parse_data_with_applicability_domains(
+        AD_flags, X_opera = opera.process_all_batches(
             self._path_settings.raw_opera_features_dir, 
-            self._path_settings.opera_mapper_file, 
-            opera_file_namer, 
-            index_name=self._index_col, 
-            discrete_columns=self._data_settings.discrete_columns_for_source['opera'],
-            discrete_suffix=self._data_settings.discrete_column_suffix,
-            log10_pat=self._raw_data_settings.opera_log10_pat
-        )
-
-        AD_flags_app, opera_features_app = opera.process_all_batches(
-            self._path_settings.opera_application_batches_dir, 
             self._path_settings.opera_mapper_file,
             opera_file_namer,
             self._raw_data_settings.structures_file_name, 
@@ -221,26 +206,19 @@ class RawDataProcessor:
             discrete_suffix=self._data_settings.discrete_column_suffix,
             log10_pat=self._raw_data_settings.opera_log10_pat
         )
+        # Drop any chemicals missing all features (e.g., inorganics)
+        X_opera = X_opera.dropna(how='all')
+        AD_flags = AD_flags.loc[X_opera.index]
 
-        # Drop duplicates. 
-        chem_intersection = list(
-            opera_features_train.index.intersection(opera_features_app.index))
-        AD_flags_app = AD_flags_app.drop(chem_intersection)
-        opera_features_app = opera_features_app.drop(chem_intersection)
+        features_write_path=self._path_settings.file_for_features_source['opera']
+        X_opera.to_parquet(features_write_path, compression='gzip')
 
-        data_write_path=self._path_settings.file_for_features_source['opera']
         flags_write_path=self._path_settings.opera_AD_file
-
-        opera_features = pd.concat([opera_features_train, opera_features_app])
-        opera_features.to_parquet(data_write_path, compression='gzip')
-
-        AD_flags = pd.concat([AD_flags_train, AD_flags_app])
         AD_flags.to_parquet(flags_write_path, compression='gzip')
 
-        return AD_flags, opera_features
+        return AD_flags, X_opera
     #endregion
 
-    # FIXME: Need to update chemicals_to_exclude using the new OPERA data
     #region: _comptox_features_from_raw
     def _comptox_features_from_raw(self):
         '''
@@ -255,9 +233,10 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed CompTox features.
         '''
+        # TODO: Is there a better way to identify these chemicals?
         chemicals_to_exclude = opera.chemicals_to_exclude_from_qsar(
-            self._path_settings.chemical_id_dev_file, 
-            self._path_settings.chemical_structures_dev_file
+            self._path_settings.chemical_identifiers_file, 
+            self._path_settings.opera_structures_file
         )
 
         return comptox.opera_test_predictions_from_csv(
