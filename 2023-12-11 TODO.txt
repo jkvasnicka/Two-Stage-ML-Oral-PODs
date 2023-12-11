@@ -1,0 +1,6 @@
+OPERA-TODO
+
+Rename some functions opera.py, e.g., "parse_data" -> "extract_data"
+Refactor predict_out_of_sample to exclude training set
+Update figure labels, e.g., "All Chemicals"
+Change the config parameters and re-train our models
