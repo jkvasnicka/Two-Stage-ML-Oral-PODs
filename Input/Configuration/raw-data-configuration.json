@@ -23,7 +23,7 @@
 
     "structures_file_name" : "chemical-identifiers.smi",
 
-    "logging_file_name" : "log-batch-run.txt",
+    "logging_file_name" : "preprocessing-log-file.txt",
 
     "comptox_log10_pat" : "LOG",
 
