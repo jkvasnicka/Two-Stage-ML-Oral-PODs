@@ -58,6 +58,18 @@
       "in" : 20
   },
 
+  "kde_features_subset" : [  
+    "CATMoS_LD50_pred",
+    "P_pred",
+    "TopoPolSurfAir",
+    "MolWeight"
+  ],
+
+  "kde_transformation_features" : [
+    "P_pred",
+    "CATMoS_LD50_pred"
+  ],
+
   "model_for_label" : {
     "RandomForestRegressor": ["opera", "predicted", "missing", "false", "RandomForestRegressor"],
     "GradientBoostingRegressor": ["opera", "predicted", "missing", "false", "GradientBoostingRegressor"],
