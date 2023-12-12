@@ -2,25 +2,19 @@
 '''
 
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 
 from . import utilities
 
 #region: feature_distributions
 def feature_distributions(
-        data_manager, 
-        features_source='opera', 
-        ld50_type='predicted', 
-        data_condition='missing',
+        features_file,
         color='cornflowerblue'
         ):
     '''
     '''
-    X = data_manager.load_features(
-        features_source=features_source, 
-        ld50_type=ld50_type, 
-        data_condition=data_condition
-    )
+    X = pd.read_parquet(features_file)
 
     discrete_features = [name for name in X if 'discrete' in name]
     continuous_features = list(X.columns.difference(set(discrete_features)))
