@@ -18,26 +18,11 @@ import json
 
 from . import utilities
 
-#region: chemicals_to_exclude_from_qsar
-def chemicals_to_exclude_from_qsar(
-        chemical_id_file, chemical_structures_file):
-    '''Return a list of chemicals that did not pass the QSAR Standardization 
-    Workflow.
-    '''
-    raw_chemical_ids = set(pd.read_csv(chemical_id_file).squeeze())
-    qsar_ready_ids = set(
-        extract_dtxsid_from_structures_file(chemical_structures_file)
-    )
-
-    return list(raw_chemical_ids.difference(qsar_ready_ids))
-#endregion
-
 #region: process_all_batches
 def process_all_batches(
         main_dir, 
         columns_mapper_path, 
         data_file_namer, 
-        structures_file_name, 
         log_file_name, 
         index_name=None, 
         discrete_columns=None, 
@@ -73,15 +58,13 @@ def process_all_batches(
     for dir_name in os.listdir(main_dir):
         logging.info(f"Processing directory: {dir_name}")
         data_dir = os.path.join(main_dir, dir_name)
-        structures_file = os.path.join(data_dir, structures_file_name)
 
         if os.path.isdir(data_dir):
             try:
-                AD_flags_df, opera_data_df = parse_data_single_batch(
+                AD_flags_df, opera_data_df = parse_data_with_applicability_domains(
                     data_dir, 
                     columns_mapper_path, 
                     data_file_namer,
-                    structures_file, 
                     index_name=index_name, 
                     discrete_columns=discrete_columns, 
                     discrete_suffix=discrete_suffix, 
@@ -103,77 +86,7 @@ def process_all_batches(
 
     return AD_flags, opera_data
 #endregion
-
-# TODO: Could set dtypes for discrete_columns (int).
-#region: parse_data_single_batch
-def parse_data_single_batch(
-        data_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
-        structures_file,
-        index_name, 
-        discrete_columns=None, 
-        discrete_suffix=None, 
-        log10_pat='Log', 
-        data_write_path=None, 
-        flags_write_path=None
-        ):
-    '''
-    Handles each directory by extracting DTXSID values and calling OPERA 
-    functions.
-
-    Returns
-    -------
-    pd.DataFrame
-        A DataFrame with data from OPERA.
-    '''
-    molecule_ids = extract_dtxsid_from_structures_file(structures_file)
-    molecule_ids = pd.Series(molecule_ids, name=index_name)
-
-    # Remove duplicates, if any, and log the event
-    if molecule_ids.duplicated().any():
-        logging.warning(
-            f'Duplicate DTXSIDs found in directory {data_dir}.'
-            'Removing duplicates.')
-        molecule_ids = molecule_ids.drop_duplicates()
-
-    return parse_data_with_applicability_domains(
-        data_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
-        index_name=index_name, 
-        discrete_columns=discrete_columns, 
-        discrete_suffix=discrete_suffix, 
-        log10_pat=log10_pat, 
-        molecule_ids=molecule_ids, 
-        data_write_path=data_write_path, 
-        flags_write_path=flags_write_path
-        )
-#endregion
-
-#region: extract_dtxsid_from_structures_file
-def extract_dtxsid_from_structures_file(structures_file):
-    '''
-    Extracts DTXSID values from a SMI file.
-
-    Parameters
-    ----------
-    structures_file : str
-        The path to the SMI file.
-    index_col : str
-        The name of the index column in the output Series.
-
-    Returns
-    -------
-    pd.Series
-        A Series with the DTXSID values.
-    '''
-    with open(structures_file, 'r') as f:
-        # structure, dtxsid = line.split('\t')
-        dtxsid = [line.split('\t')[1].strip() for line in f.readlines()]
-    return dtxsid
-#endregion
-
+    
 #region: parse_data_with_applicability_domains
 def parse_data_with_applicability_domains(
         data_dir, 
@@ -183,7 +96,6 @@ def parse_data_with_applicability_domains(
         discrete_columns=None, 
         discrete_suffix=None, 
         log10_pat='Log', 
-        molecule_ids=None, 
         data_write_path=None, 
         flags_write_path=None
         ):
@@ -197,7 +109,6 @@ def parse_data_with_applicability_domains(
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix,  
         log10_pat=log10_pat, 
-        molecule_ids=molecule_ids, 
         write_path=flags_write_path
     )
 
@@ -210,9 +121,11 @@ def parse_data_with_applicability_domains(
         discrete_suffix=discrete_suffix, 
         log10_pat=log10_pat, 
         flags=AD_flags,
-        molecule_ids=molecule_ids, 
         write_path=data_write_path
         )
+    
+    if opera_data.index.duplicated().any():
+        raise ValueError('Duplicate DTXSIDs found in directory. Check input data.')
     
     return AD_flags, opera_data
 #endregion
@@ -227,7 +140,6 @@ def parse_data_from_csv_files(
         discrete_suffix=None, 
         log10_pat='Log', 
         flags=None, 
-        molecule_ids=None, 
         write_path=None
         ):
     '''Load and parse the outputs as separate CSV file from OPERA 2.9.
@@ -269,16 +181,13 @@ def parse_data_from_csv_files(
     for model_name, data_columns in columns_for_model.items():
         file_path = os.path.join(data_dir, data_file_namer(model_name))
         model_data = pd.read_csv(file_path, index_col=0)
-        model_data.index.name = 'DTXSID'
-        # if molecule_ids is not None:
-        #     model_data = model_data.reset_index()
-        #     model_data.index = molecule_ids
         data_for_model[model_name] = model_data[data_columns]
 
     ## Assemble the final DataFrame.
 
     data_for_model = pd.concat(data_for_model.values(), axis=1)
     if index_name is not None:
+        # Rename the 'MoleculeID' column
         data_for_model.index.name = index_name
     if log10_pat is not None:
         data_for_model = utilities.inverse_log10_transform(
@@ -340,7 +249,6 @@ def applicability_domain_flags(
         discrete_columns=None, 
         discrete_suffix=None, 
         log10_pat=None, 
-        molecule_ids=None, 
         write_path=None
         ):
     '''Flag any features outside the respective model applicability domains.
@@ -362,10 +270,6 @@ def applicability_domain_flags(
         
         file_path = os.path.join(data_dir, data_file_namer(model_name))
         model_data = pd.read_csv(file_path, index_col=0)
-        model_data.index.name = 'DTXSID'
-        # if molecule_ids is not None:
-        #     model_data = model_data.reset_index()
-        #     model_data.index = molecule_ids
         
         where_ADs = model_data.columns.str.contains('^AD_')
         ADs = model_data.loc[:, where_ADs]
@@ -391,6 +295,7 @@ def applicability_domain_flags(
     ## Assemble the final DataFrame.
     AD_flags = pd.DataFrame(AD_flags)
     if index_name is not None:
+        # Rename the 'MoleculeID' column
         AD_flags.index.name = index_name
     if log10_pat is not None:
         AD_flags.columns = utilities.remove_pattern(
@@ -476,6 +381,43 @@ def split_applicability_domain_columns(global_local_ADs):
     local_AD_indexes = global_local_ADs[local_AD_column].squeeze()
 
     return global_ADs, local_AD_indexes
+#endregion
+
+#region: chemicals_to_exclude_from_qsar
+def chemicals_to_exclude_from_qsar(
+        chemical_id_file, chemical_structures_file):
+    '''Return a list of chemicals that did not pass the QSAR Standardization 
+    Workflow.
+    '''
+    raw_chemical_ids = set(pd.read_csv(chemical_id_file).squeeze())
+    qsar_ready_ids = set(
+        extract_dtxsid_from_structures_file(chemical_structures_file)
+    )
+
+    return list(raw_chemical_ids.difference(qsar_ready_ids))
+#endregion
+
+#region: extract_dtxsid_from_structures_file
+def extract_dtxsid_from_structures_file(structures_file):
+    '''
+    Extracts DTXSID values from a SMI file.
+
+    Parameters
+    ----------
+    structures_file : str
+        The path to the SMI file.
+    index_col : str
+        The name of the index column in the output Series.
+
+    Returns
+    -------
+    pd.Series
+        A Series with the DTXSID values.
+    '''
+    with open(structures_file, 'r') as f:
+        # structure, dtxsid = line.split('\t')
+        dtxsid = [line.split('\t')[1].strip() for line in f.readlines()]
+    return dtxsid
 #endregion
 
 #region: get_failed_directories

@@ -174,6 +174,7 @@ class RawDataProcessor:
         return surrogate_pods
     #endregion
 
+    # TODO: Remove "opera_file_namer". Use file extension (CSV) instead.
     #region: _opera_features_from_raw
     def _opera_features_from_raw(self):
         '''
@@ -199,7 +200,6 @@ class RawDataProcessor:
             self._path_settings.raw_opera_features_dir, 
             self._path_settings.opera_mapper_file,
             opera_file_namer,
-            self._raw_data_settings.structures_file_name, 
             self._raw_data_settings.logging_file_name, 
             index_name=self._index_col, 
             discrete_columns=self._data_settings.discrete_columns_for_source['opera'],
