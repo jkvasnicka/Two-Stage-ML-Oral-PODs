@@ -307,8 +307,8 @@ def out_of_sample_prediction_scatterplots(
         key_without_selection = next(k for k in model_keys if 'false' in k)
         key_with_selection = next(k for k in model_keys if 'true' in k)
 
-        y_pred_without, *_ = results_analyzer.predict_out_of_sample(key_without_selection)
-        y_pred_with, *_ = results_analyzer.predict_out_of_sample(key_with_selection)
+        y_pred_without, *_ = results_analyzer.predict(key_without_selection)
+        y_pred_with, *_ = results_analyzer.predict(key_with_selection)
 
         ## Define figure labels.
         

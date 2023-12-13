@@ -36,8 +36,14 @@ class DataManager:
 
     #region: load_features_and_target
     def load_features_and_target(
-            self, *, target_effect, features_source, ld50_type, 
-            data_condition, **kwargs):
+            self, 
+            *, 
+            target_effect, 
+            features_source, 
+            ld50_type, 
+            data_condition, 
+            **kwargs
+            ):
         '''
         Load both features (X) and target (y) based on the provided 
         parameters. Ensure that X and y share a common index.
@@ -76,7 +82,15 @@ class DataManager:
 
     #region: load_features
     def load_features(
-            self, *, features_source, ld50_type, data_condition, **kwargs):
+            self, 
+            *, 
+            features_source, 
+            ld50_type, 
+            data_condition, 
+            exclude_training=False,
+            target_effect=None,
+            **kwargs
+            ):
         '''
         Load the features (X) based on the provided parameters and 
         configuration.
@@ -89,7 +103,12 @@ class DataManager:
             Type of LD50 data to be used.
         data_condition : str
             Condition for handling data (e.g., dropping missing values).
-
+        exclude_training : bool, optional
+            If True, 'target_effect' must also be passed and chemicals used 
+            for model training will be excluded. Default is False; features 
+            are loaded for all chemicals.
+        target_effect : str, optional
+            The target effect to be considered. Needed if 'exclude_training'.
         **kwargs
             Collects any unneeded key-value pairs.
 
@@ -102,6 +121,11 @@ class DataManager:
             self.path_settings.file_for_features_source[features_source]
         )
         X = pd.read_parquet(features_path)
+
+        if exclude_training:
+            y = self.load_target(target_effect=target_effect)
+            training_chemicals = set(y.index.intersection(X.index))
+            X = X.drop(training_chemicals)
 
         if self.data_settings.use_experimental_for_ld50[ld50_type]:
             ld50s_experimental = (
@@ -255,10 +279,11 @@ class DataManager:
         return pd.read_parquet(self.path_settings.seem3_exposure_file)
     #endregion
 
-    #region: get_out_of_sample_chemicals
-    def get_out_of_sample_chemicals(self):
+    # TODO: This is only used to get DTXSIDs for OPERA, etc. Move upstream.
+    #region: load_application_chemicals
+    def load_application_chemicals(self):
         '''
-        Get chemical identifiers (DTXSID) for out-of-sample prediction.
+        Get chemical identifiers (DTXSID) for model application.
 
         These identifiers are derived from the intersection of the 
         "Merged NORMAN Suspect List: SusDat" and SEEM3 chemicals, excluding
@@ -277,7 +302,7 @@ class DataManager:
             .squeeze()
             )
         exposure_chemicals = set(self.load_exposure_data().index)
-        training_chemicals = self._get_training_chemical_set()      
+        training_chemicals = set(self.load_training_chemicals())
 
         return list(
             norman_chemicals
@@ -286,8 +311,9 @@ class DataManager:
         )
     #endregion
     
-    #region: _get_training_chemical_set
-    def _get_training_chemical_set(self):
+    # TODO: This is only used to get DTXSIDs for OPERA, etc. Move upstream.
+    #region: load_training_chemicals
+    def load_training_chemicals(self):
         '''
         Helper function to get the identifiers for chemicals used for model 
         training.
@@ -296,7 +322,7 @@ class DataManager:
         For all other purposes, training data should be loaded via 
         `DataManager.load_features_and_target()`.
         '''        
-        return set(
+        return list(
             pd.read_csv(
                 self.path_settings.surrogate_pods_file, 
                 index_col=0
@@ -305,9 +331,9 @@ class DataManager:
         )
     #endregion
 
-    # NOTE: This was only used to get DTXSIDs for OPERA, etc. Move elsewhere?
-    #region: get_all_chemicals
-    def get_all_chemicals(self):
+    # TODO: This is only used to get DTXSIDs for OPERA, etc. Move upstream.
+    #region: load_all_chemicals
+    def load_all_chemicals(self):
         '''
         Get all chemical identifiers (DTXSID). 
 
@@ -318,8 +344,8 @@ class DataManager:
         -------
         list
         '''
-        training_chemicals = self._get_training_chemical_set()
-        oos_chemicals = set(self.get_out_of_sample_chemicals())
+        training_chemicals = set(self.load_training_chemicals())
+        app_chemicals = set(self.load_application_chemicals())
 
-        return list(oos_chemicals.union(training_chemicals))
+        return list(app_chemicals.union(training_chemicals))
     #endregion

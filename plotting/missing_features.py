@@ -32,7 +32,7 @@ def predictions_by_missing_feature(results_analyzer, plot_settings):
             series_list = []
             for model_key in model_keys:
                 series_list.append(
-                    results_analyzer.predict_out_of_sample(model_key)[0]
+                    results_analyzer.predict(model_key)[0]
                     )
                 series_list.append(
                     results_analyzer.get_in_sample_prediction(model_key)[0]
@@ -49,7 +49,7 @@ def predictions_by_missing_feature(results_analyzer, plot_settings):
             for i, model_key in enumerate(model_keys):
                 key_for = dict(zip(model_key_names, model_key))
                 y_pred_out, X_out, *_ = (
-                    results_analyzer.predict_out_of_sample(model_key)
+                    results_analyzer.predict(model_key)
                 )
                 y_pred_in, X_in, *_ = (
                     results_analyzer.get_in_sample_prediction(model_key)

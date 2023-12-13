@@ -34,7 +34,7 @@ class ResultsAnalyzer:
     -------
     get_in_sample_prediction(model_key, inverse_transform=False) 
         Get in-sample predictions.
-    predict_out_of_sample(model_key, inverse_transform=False) 
+    predict(model_key, inverse_transform=False) 
         Predict out-of-sample data.
     get_important_features(model_key) 
         Get important features for the model.
@@ -88,10 +88,15 @@ class ResultsAnalyzer:
         return y_pred, X, y_true
     #endregion
 
-    #region: predict_out_of_sample
-    def predict_out_of_sample(self, model_key, inverse_transform=False):
+    #region: predict
+    def predict(
+            self, 
+            model_key, 
+            inverse_transform=False, 
+            exclude_training=False
+            ):
         '''
-        Predict out-of-sample data for the given model key.
+        Make prediction for the given model key.
 
         Parameters
         ----------
@@ -100,6 +105,9 @@ class ResultsAnalyzer:
         inverse_transform : bool, optional
             If True, applies the inverse transform to the predictions 
             (default is False).
+        exclude_training : bool, optional
+            If True, excludes chemicals used for model training. Default is 
+            False; predictions are made for all chemicals with features.
 
         Returns
         -------
@@ -110,8 +118,11 @@ class ResultsAnalyzer:
         '''
         model_key_names = self.results_manager.read_model_key_names()
         key_for = dict(zip(model_key_names, model_key))
-        # Load the entire file
-        X = self.data_manager.load_features(**key_for)
+
+        X = self.data_manager.load_features(
+            **key_for, 
+            exclude_training=exclude_training
+            )
 
         y_pred, X = self._get_prediction(model_key, X, inverse_transform)
 
@@ -229,7 +240,7 @@ class ResultsAnalyzer:
             - `lb`: Lower bound of the 90% prediction interval.
             - `ub`: Upper bound of the 90% prediction interval.
         '''
-        y_pred, *_ = self.predict_out_of_sample(model_key)
+        y_pred, *_ = self.predict(model_key)
         sorted_pods, cumulative_data = self.generate_cdf_data(
             y_pred, 
             normalize=normalize
@@ -294,7 +305,7 @@ class ResultsAnalyzer:
             - `lb`: Lower bound of the 90% prediction interval.
             - `ub`: Upper bound of the 90% prediction interval.
         '''
-        y_pred, *_ = self.predict_out_of_sample(model_key)
+        y_pred, *_ = self.predict(model_key)
         
         exposure_df = self.data_manager.load_exposure_data()
         moes = self.margins_of_exposure(y_pred, exposure_df)
