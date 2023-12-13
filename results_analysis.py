@@ -528,16 +528,21 @@ class ResultsAnalyzer:
         --------
         plot.cumulative_pod_distributions()
         '''        
-        y_auth_df = self.load_authoritative_pods()
         model_key_names = self.read_model_key_names()
         key_for = dict(zip(model_key_names, model_key))
-        effect = key_for['target_effect']
-        results = self.get_in_sample_prediction(model_key)
+        
+        y_auth = (
+            self.load_authoritative_pods()
+            [key_for['target_effect']]
+            .dropna()
+        )
+        _, y_true = self.data_manager.load_features_and_target(**key_for)
+        y_pred, _ = self.predict(model_key)
         
         y_for_label = {
-            'Authoritative': y_auth_df[effect].dropna(),
-            'ToxValDB': results[0],
-            'QSAR': results[-1]
+            'Authoritative': y_auth,
+            'ToxValDB': y_true,
+            'QSAR': y_pred
         }
         
         return y_for_label
