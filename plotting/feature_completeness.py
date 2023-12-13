@@ -30,23 +30,24 @@ def proportions_incomplete_subplots(
     ys = pd.read_csv(targets_file, index_col=0)
 
     ## Plot the data for training chemicals
-    samples_for_effect = {
+    in_samples_for_effect = {
         plot_settings.label_for_effect[effect] : y.dropna().index 
         for effect, y in ys.items()
         }
     proportions_incomplete_subplot(
         X, 
         AD_flags, 
-        samples_for_effect,
+        in_samples_for_effect,
         base_size_per_feature=base_size_per_feature,
         threshold=threshold
     )
 
     ## Plot the data for out-of-sample chemicals
+    out_samples =  X.index.difference(ys.index)
     proportions_incomplete_subplot(
         X, 
         AD_flags, 
-        {plot_settings.label_for_sample_type['out'] : X.index},
+        {plot_settings.label_for_sample_type['out'] : out_samples},
         base_size_per_feature=base_size_per_feature,
         threshold=threshold
     )
