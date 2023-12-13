@@ -255,14 +255,14 @@ class DataManager:
         return pd.read_parquet(self.path_settings.seem3_exposure_file)
     #endregion
 
-    # TODO: Maybe move these to raw data processing to avoid circularity?
     #region: get_out_of_sample_chemicals
     def get_out_of_sample_chemicals(self):
         '''
-        Get chemical identifiers (DTXSID) for out of sample prediction.
+        Get chemical identifiers (DTXSID) for out-of-sample prediction.
 
         These identifiers are derived from the intersection of the 
-        "Merged NORMAN Suspect List: SusDat" and SEEM3 chemicals.
+        "Merged NORMAN Suspect List: SusDat" and SEEM3 chemicals, excluding
+        any chemicals used for model training.
 
         Returns
         -------
@@ -272,16 +272,40 @@ class DataManager:
         ----------
         https://doi.org/10.5281/zenodo.6853705
         '''
-        norman_ids = set(
+        norman_chemicals = set(
             pd.read_csv(self.path_settings.norman_chemicals_file)
             .squeeze()
             )
+        exposure_chemicals = set(self.load_exposure_data().index)
+        training_chemicals = self._get_training_chemical_set()      
 
-        exposure_ids = set(self.load_exposure_data().index)
+        return list(
+            norman_chemicals
+            .intersection(exposure_chemicals)
+            .difference(training_chemicals)
+        )
+    #endregion
+    
+    #region: _get_training_chemical_set
+    def _get_training_chemical_set(self):
+        '''
+        Helper function to get the identifiers for chemicals used for model 
+        training.
 
-        return list(norman_ids.intersection(exposure_ids))
+        These chemicals should be excluded from "out-of-sample" predictions.
+        For all other purposes, training data should be loaded via 
+        `DataManager.load_features_and_target()`.
+        '''        
+        return set(
+            pd.read_csv(
+                self.path_settings.surrogate_pods_file, 
+                index_col=0
+            )
+            .index
+        )
     #endregion
 
+    # NOTE: This was only used to get DTXSIDs for OPERA, etc. Move elsewhere?
     #region: get_all_chemicals
     def get_all_chemicals(self):
         '''
@@ -294,14 +318,8 @@ class DataManager:
         -------
         list
         '''
-        training_chem_set = set(
-            pd.read_csv(
-                self.path_settings.surrogate_pods_file, index_col=0
-            )
-            .index
-        )
-
+        training_chemicals = self._get_training_chemical_set()
         oos_chemicals = set(self.get_out_of_sample_chemicals())
 
-        return list(oos_chemicals.union(training_chem_set))
+        return list(oos_chemicals.union(training_chemicals))
     #endregion
