@@ -201,7 +201,7 @@ def _in_sample_performance_boxplots(
     metrics.
     '''
 
-    title = '(B) Out-of-Sample Performance'
+    title = '(B) Cross-Validation Performance'
 
     # Create a counter for the current row
     index = 0
