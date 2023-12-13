@@ -216,7 +216,8 @@ class ResultsAnalyzer:
             self, 
             model_key, 
             inverse_transform=False, 
-            normalize=False
+            normalize=False, 
+            exclude_training=True
             ):
         '''
         Compute Points of Departure (PODs) with uncertainty estimates.
@@ -231,6 +232,9 @@ class ResultsAnalyzer:
         normalize : bool, optional
             If True, return cumulative frequencies (proportions) instead of 
             counts.
+        exclude_training : bool, optional
+            If True, excludes chemicals used for model training. Default is 
+            True, because these chemicals already have labeled data.
 
         Returns
         -------
@@ -240,7 +244,7 @@ class ResultsAnalyzer:
             - `lb`: Lower bound of the 90% prediction interval.
             - `ub`: Upper bound of the 90% prediction interval.
         '''
-        y_pred, *_ = self.predict(model_key)
+        y_pred, *_ = self.predict(model_key, exclude_training=exclude_training)
         sorted_pods, cumulative_data = self.generate_cdf_data(
             y_pred, 
             normalize=normalize
@@ -273,7 +277,8 @@ class ResultsAnalyzer:
             self, 
             model_key,
             inverse_transform=False, 
-            normalize=False            
+            normalize=False,
+            exclude_training=True           
             ):
         '''
         Compute Margins of Exposure (MOEs) with uncertainty estimates.
@@ -294,6 +299,9 @@ class ResultsAnalyzer:
         normalize : bool, optional
             If True, return cumulative frequencies (proportions) instead of 
             counts.
+        exclude_training : bool, optional
+            If True, excludes chemicals used for model training. Default is 
+            True, because these chemicals already have labeled data.
         
         Returns
         -------
@@ -305,7 +313,7 @@ class ResultsAnalyzer:
             - `lb`: Lower bound of the 90% prediction interval.
             - `ub`: Upper bound of the 90% prediction interval.
         '''
-        y_pred, *_ = self.predict(model_key)
+        y_pred, *_ = self.predict(model_key, exclude_training=exclude_training)
         
         exposure_df = self.data_manager.load_exposure_data()
         moes = self.margins_of_exposure(y_pred, exposure_df)
