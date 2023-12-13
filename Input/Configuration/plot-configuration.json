@@ -39,13 +39,9 @@
 
     "feature_names_label": "Feature Names",
 
-    "all_chemicals_label": "All Chemicals",
-    
-    "train_chemicals_label": "Training Chemicals",
-
     "label_for_sample_type" : {
-      "out" : "Out of Sample",
-      "in" : "In Sample"
+      "out" : "Application Chemicals",
+      "in" : "Training Chemicals"
   },
 
     "color_for_sample_type" : {

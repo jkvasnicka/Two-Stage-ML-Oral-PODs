@@ -29,7 +29,7 @@ def proportions_incomplete_subplots(
     AD_flags = pd.read_parquet(AD_file)
     ys = pd.read_csv(targets_file, index_col=0)
 
-    ## Plot the training set data.
+    ## Plot the data for training chemicals
     samples_for_effect = {
         plot_settings.label_for_effect[effect] : y.dropna().index 
         for effect, y in ys.items()
@@ -42,11 +42,11 @@ def proportions_incomplete_subplots(
         threshold=threshold
     )
 
-    ## Plot all chemicals data.
+    ## Plot the data for out-of-sample chemicals
     proportions_incomplete_subplot(
         X, 
         AD_flags, 
-        {plot_settings.all_chemicals_label : X.index},
+        {plot_settings.label_for_sample_type['out'] : X.index},
         base_size_per_feature=base_size_per_feature,
         threshold=threshold
     )

@@ -88,9 +88,8 @@ def predictions_by_missing_feature(
                 
                 ## Set the Axes titles
                 effect = plot_settings.label_for_effect[key_for['target_effect']]
-                # TODO: Use plot config
-                left_title = f'{effect}\nApplication Chemicals'
-                right_title = 'Training Chemicals'
+                left_title = f"{effect}\n{plot_settings.label_for_sample_type['out']}"
+                right_title = plot_settings.label_for_sample_type['in']
 
                 axs[i, 0].set_title(left_title, size='medium', loc='left')
                 axs[i, 1].set_title(right_title, size='medium', loc='left')
