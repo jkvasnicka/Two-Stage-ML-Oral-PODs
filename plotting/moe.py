@@ -1,4 +1,14 @@
 '''
+Plotting module for Margin of Exposure (MOE) data. 
+
+This module contains functions for plotting cumulative distribution functions
+(CDFs) of POD and MOE data across various models and datasets.
+
+Notes
+-----
+This module is part of a larger plotting sub-package focused on the 
+visualization of results from the main package. It relies on external classes 
+such as ResultsAnalyzer and PlotSetting for data processing and configuration.
 '''
 
 import matplotlib.pyplot as plt 
@@ -7,11 +17,14 @@ import numpy as np
 
 from . import utilities
 
+POD_XLABEL = '$\log_{10}POD$ [mg∙(kg∙d)$^{-1}$]'
+MOE_XLABEL = '$\log_{10}MOE$'
+
 # Define the limits of the vertical spans in log10 units of MOE.
 # log10(0) is undefined and will be handled dynamically
 MOE_CATEGORIES = {
-    'Potential Concern': (0., 2.),  # 1, 100
-    'Definite Concern' : (-np.inf, 0.)  # 0, 1
+    'Moderate Concern': (0., 2.),  # 1, 100
+    'High Concern' : (-np.inf, 0.)  # 0, 1
 }
 MOE_COLORS = sns.color_palette('Paired', len(MOE_CATEGORIES)+1)
 
@@ -49,45 +62,65 @@ def margins_of_exposure_cumulative(results_analyzer, plot_settings):
 
     for grouping_key, model_keys in grouped_keys:
 
+        nrows = 2  # POD & MOE
+        ncols = len(model_keys)  # N effect categories
         fig, axs = plt.subplots(
-            1,
-            len(model_keys),
-            figsize=(len(model_keys) * 5, 5),
+            nrows,
+            ncols,
+            figsize=(5*ncols, 5*nrows),
         )
+
+        global_pod_xlim = utilities.initialize_global_limits()
+        global_moe_xlim = utilities.initialize_global_limits()
 
         for i, model_key in enumerate(model_keys):
 
-            plot_model_data(
-                axs[i], 
-                model_key, 
-                results_analyzer, 
-                plot_settings
-            )
-
             ylabel = 'Cumulative Count of Chemicals' if i == 0 else None 
+
             # TODO: Create a method and reuse in other modules?
             title = get_effect_label(
                 model_key, 
                 model_key_names, 
                 plot_settings.label_for_effect
             )
+
+            plot_model_pod_data(  # first row, column i
+                axs[0, i],
+                model_key, 
+                results_analyzer,
+                global_xlim=global_pod_xlim
+            )
             format_axes(
-                axs[i], 
+                axs[0, i], 
+                POD_XLABEL,
                 title=title,
                 ylabel=ylabel,
-                right_truncation=right_truncation
+                global_xlim=global_pod_xlim
             )
 
+            plot_model_moe_data(  # second row, column i
+                axs[1, i], 
+                model_key, 
+                results_analyzer, 
+                plot_settings,
+                global_xlim=global_moe_xlim
+            )
+            format_axes(
+                axs[1, i], 
+                MOE_XLABEL,
+                ylabel=ylabel,
+                global_xlim=global_moe_xlim,
+                right_truncation=right_truncation
+            )
             annotate_vertical_spans(
-                axs[i], 
+                axs[1, i], 
                 MOE_CATEGORIES, 
                 MOE_COLORS
                 )
-
         utilities.set_centralized_legend(
             fig, 
-            axs[-1],
-            bottom=0.2,
+            axs[1, -1],
+            bottom=0.08,
             bbox_to_anchor=(0.5, -0.01)        
         )
 
@@ -129,7 +162,7 @@ def single_model_moes(
 
     fig, ax = plt.subplots()
 
-    plot_model_data(
+    plot_model_moe_data(
         ax, 
         model_key, 
         results_analyzer, 
@@ -138,6 +171,7 @@ def single_model_moes(
 
     format_axes(
         ax, 
+        MOE_XLABEL,
         title=title,
         ylabel='Cumulative Count of Chemicals',
         right_truncation=right_truncation
@@ -159,10 +193,56 @@ def single_model_moes(
     return fig, ax
 #endregion
 
-#region: plot_model_data
-def plot_model_data(ax, model_key, results_analyzer, plot_settings):
+#region: plot_model_pod_data
+def plot_model_pod_data(
+        ax, 
+        model_key, 
+        results_analyzer,
+        global_xlim=None
+        ):
     '''
-    Plot data for a single model.
+    Plot Point of Departure (POD) data for a single model.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The Axes object to plot on.
+    model_key : str
+        The key representing the model to plot.
+    results_analyzer : ResultsAnalyzer
+        An instance of ResultsAnalyzer used to retrieve MOE data.
+    global_xlim : list, optional
+        The current global limits as a list [min, max].
+
+    Returns
+    -------
+    None
+    '''
+    results = results_analyzer.pod_and_prediction_interval(model_key)
+
+    plot_with_prediction_interval(
+        ax,
+        results['pod'],
+        results['cum_count'],
+        results['lb'],
+        results['ub'],
+        color='black'
+    )
+
+    if global_xlim:
+        utilities.update_global_limits(global_xlim, ax.get_xlim())
+#endregion
+
+#region: plot_model_moe_data
+def plot_model_moe_data(
+        ax, 
+        model_key, 
+        results_analyzer, 
+        plot_settings,
+        global_xlim=None
+        ):
+    '''
+    Plot Margin of Exposure (MOE) data for a single model.
 
     Parameters
     ----------
@@ -174,6 +254,8 @@ def plot_model_data(ax, model_key, results_analyzer, plot_settings):
         An instance of ResultsAnalyzer used to retrieve MOE data.
     plot_settings : PlotSettings
         An instance of PlotSettings containing label and color configurations.
+    global_xlim : list, optional
+        The current global limits as a list [min, max].
 
     Returns
     -------
@@ -189,9 +271,12 @@ def plot_model_data(ax, model_key, results_analyzer, plot_settings):
             results['cum_count'],
             results['lb'],
             results['ub'],
-            percentile_colors[j],
+            color=percentile_colors[j],
             label=plot_settings.label_for_exposure_column[percentile]
         )
+
+    if global_xlim:
+        utilities.update_global_limits(global_xlim, ax.get_xlim())
 #endregion
 
 #region: plot_with_prediction_interval
@@ -201,7 +286,7 @@ def plot_with_prediction_interval(
         cumulative_counts, 
         lower_bound, 
         upper_bound, 
-        color, 
+        color=None, 
         label=None
     ):
     '''
@@ -249,8 +334,10 @@ def plot_with_prediction_interval(
 #region: format_axes
 def format_axes(
         ax, 
+        xlabel,
         title=None,
         ylabel=None,
+        global_xlim=None,
         right_truncation=None
         ):
     '''
@@ -264,6 +351,8 @@ def format_axes(
         Title for the subplot. If None, no title is set.
     ylabel : str, optional
         Y-axis label for the subplot. If None, no ylabel is set.
+    global_xlim : list
+        The current global limits as a list [min, max].
     right_truncation : float, optional
         If provided, sets the right truncation limit for x-axis.
 
@@ -274,13 +363,18 @@ def format_axes(
     ## Update the limits.
     set_even_ticks(ax, axis_type='x', data_type='fill')
     set_even_log_ticks(ax, axis_type='y', data_type='fill')
+    if global_xlim:
+        ax.set_xlim(global_xlim)
     if right_truncation:
         ax.set_xlim(ax.get_xlim()[0], right_truncation)
+
+    # Remove the padding; the data limits will define the axis limits.
+    ax.margins(x=0, y=0)
 
     ## Set labels, etc. 
     if title:
         ax.set_title(title)
-    ax.set_xlabel("$log_{10}MOE$")
+    ax.set_xlabel(xlabel)
     ax.set_yscale('log')
     ax.grid(True, which='both', linestyle='--', linewidth=0.5)
     if ylabel: 

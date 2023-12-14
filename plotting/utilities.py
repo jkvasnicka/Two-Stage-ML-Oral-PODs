@@ -435,3 +435,50 @@ def comma_separated(number):
     '''
     return '{:,}'.format(number)
 #endregion
+
+#region: initialize_global_limits
+def initialize_global_limits():
+    '''
+    Initialize the global limits for data.
+
+    This function initializes the global limits as a list containing positive
+    and negative infinity, which are placeholders to be updated with actual
+    data limits.
+
+    Returns
+    -------
+    list
+        A list of two elements: [float('inf'), float('-inf')]
+    '''
+    return [float('inf'), float('-inf')]
+#endregion
+
+#region: update_global_limits
+def update_global_limits(global_lim, new_lim):
+    '''
+    Update the global limits with new limits.
+
+    This function updates the global limits for the data with new limits
+    provided. The global limits are expected to be a list where the first
+    element is the minimum (lower bound) and the second element is the maximum
+    (upper bound).
+
+    Parameters
+    ----------
+    global_lim : list
+        The current global limits as a list [min, max].
+    new_lim : list
+        The new limits to update the global limits with, as a list [new_min, new_max].
+
+    Returns
+    -------
+    None
+
+    Example
+    -------
+    >>> ax.plot(x, y)
+    >>> update_global_limits(global_xlim, ax.get_xlim())
+    '''
+    global_lim[0] = new_lim[0]
+    global_lim[1] = new_lim[1]
+#endregion

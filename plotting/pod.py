@@ -55,14 +55,11 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
             figsize=(len(model_keys)*4, 8)
             )
         
-        global_xlim = [float('inf'), float('-inf')]  # initialize
+        global_xlim = utilities.initialize_global_limits()
 
         for i, model_key in enumerate(model_keys):
 
             y_for_label = results_analyzer.get_pod_comparison_data(model_key)
-
-            # Compute intersection of samples
-            common_samples = get_common_samples(y_for_label)
             
             # Plot CDFs for intersection of samples in the first row
             plot_intersection_cdfs(
@@ -71,12 +68,11 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
                 results_analyzer, 
                 colors, 
                 linestyles, 
-                common_samples, 
                 global_xlim
             )
 
-            # Plot CDFs as in original in the second row
-            plot_original_cdfs(
+            # Plot CDF for each distinct dataset in the second row
+            plot_distinct_cdfs(
                 axs[1, i], 
                 y_for_label, 
                 results_analyzer, 
@@ -137,7 +133,7 @@ def single_model_cdfs(
 
     colors, linestyles = get_plot_styles()
 
-    plot_original_cdfs(
+    plot_distinct_cdfs(
         ax, 
         y_for_label, 
         results_analyzer, 
@@ -168,7 +164,6 @@ def plot_intersection_cdfs(
         results_analyzer, 
         colors, 
         linestyles, 
-        common_samples, 
         global_xlim=None
         ):
     '''
@@ -189,8 +184,6 @@ def plot_intersection_cdfs(
         A list of colors to be used for plotting the CDFs.
     linestyles : list
         A list of linestyles to be used for plotting the CDFs.
-    common_samples : Series
-        A pandas Series containing the common samples across models.
     global_xlim : list, optional
         A list containing the global x-axis limits. If None, limits are 
         determined automatically.
@@ -200,6 +193,10 @@ def plot_intersection_cdfs(
     None
     '''
     line_cycle = itertools.cycle(linestyles)
+
+    common_samples = list(
+        set.intersection(*[set(y.index) for y in y_for_label.values()])
+        )
 
     for j, (label, data_series) in enumerate(y_for_label.items()):
         plot_cdf(
@@ -213,8 +210,8 @@ def plot_intersection_cdfs(
         )
 #endregion
 
-#region: plot_original_cdfs
-def plot_original_cdfs(
+#region: plot_distinct_cdfs
+def plot_distinct_cdfs(
         ax, 
         y_for_label, 
         results_analyzer, 
@@ -250,12 +247,23 @@ def plot_original_cdfs(
     '''
     line_cycle = itertools.cycle(linestyles)
 
-    for j, (label, data_series) in enumerate(y_for_label.items()):
+    datasets = ['Authoritative', 'ToxValDB', 'QSAR']
+
+    for i, label in enumerate(datasets):
+        distinct_series = y_for_label[label]
+        
+        # Drop samples that are in previously plotted datasets
+        for previous_label in datasets[:i]:
+            distinct_series = distinct_series.drop(
+                y_for_label[previous_label].index,
+                errors='ignore'
+            )
+
         plot_cdf(
             ax, 
-            data_series, 
+            distinct_series, 
             results_analyzer,
-            colors[j], 
+            colors[i], 
             next(line_cycle), 
             label, 
             global_xlim
@@ -313,9 +321,7 @@ def plot_cdf(
     )
     
     if global_xlim:
-        # Update the global x-limits
-        global_xlim[0] = min(global_xlim[0], sorted_values.min())
-        global_xlim[1] = max(global_xlim[1], sorted_values.max())
+        utilities.update_global_limits(global_xlim, ax.get_xlim())
 #endregion
 
 #region: set_row_axs_properties
@@ -417,31 +423,6 @@ def set_ax_properties(
         ax.set_title(title)
     if ylabel:
         ax.set_ylabel(ylabel)
-#endregion
-
-#region: get_common_samples
-def get_common_samples(y_for_label):
-    '''
-    Identify and return the common samples across multiple data series.
-
-    Parameters
-    ----------
-    y_for_label : dict
-        A dictionary containing different data series, each with its own set 
-        of samples.
-
-    Returns
-    -------
-    common_samples : Index
-        A pandas Index object containing the common samples present in all 
-        provided data series.
-    '''
-    common_samples = (
-        y_for_label['Regulatory'].index
-        .intersection(y_for_label['ToxValDB'].index)
-        .intersection(y_for_label['QSAR'].index)
-    )
-    return common_samples
 #endregion
 
 #region: get_plot_styles

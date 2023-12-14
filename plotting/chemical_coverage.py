@@ -21,13 +21,6 @@ def pairwise_scatters_and_kde_subplots(
     Parameters
     ----------
     '''
-    # TODO: Move to plot setting?
-    features_subset = [  
-        'CATMoS_LD50_pred',
-        'P_pred',
-        'TopoPolSurfAir',
-        'MolWeight'
-    ]
     label_for_category = {
         False : plot_settings.label_for_sample_type['out'],
         True :  plot_settings.label_for_sample_type['in']
@@ -41,12 +34,12 @@ def pairwise_scatters_and_kde_subplots(
         True : plot_settings.marker_size_for_sample_type['in']
     }
 
-    X = pd.read_csv(features_file, index_col=0)
-    X = X[features_subset]
+    X = pd.read_parquet(features_file)
+    X = X[plot_settings.kde_features_subset]
 
     # Log10-transform desired features
-    X = _log10_transform_feature(X, 'P_pred')
-    X = _log10_transform_feature(X, 'CATMoS_LD50_pred')
+    for feature_name in plot_settings.kde_transformation_features:
+        X = _log10_transform_feature(X, feature_name)
 
     buffer_fraction = 0.05  # 5% buffer
     limits_for_feature = {}

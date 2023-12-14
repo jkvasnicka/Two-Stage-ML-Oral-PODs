@@ -13,32 +13,43 @@ def proportions_incomplete_subplots(
         AD_file, 
         targets_file, 
         plot_settings, 
-        base_size_per_feature=(0.2, 6)
+        base_size_per_feature=(0.2, 6),
+        threshold=None
     ):
     '''
+
+    Parameters
+    ----------
+    threshold : float, optional
+        Expressed as a proportion between 0., 1. Features with a proportion of 
+        missing values at or above this treshold would have been dropped from 
+        the Pipeline.
     '''
-    X = pd.read_csv(features_file, index_col=0)
-    AD_flags = pd.read_csv(AD_file, index_col=0)
+    X = pd.read_parquet(features_file)
+    AD_flags = pd.read_parquet(AD_file)
     ys = pd.read_csv(targets_file, index_col=0)
 
-    ## Plot the training set data.
-    samples_for_effect = {
+    ## Plot the data for training chemicals
+    in_samples_for_effect = {
         plot_settings.label_for_effect[effect] : y.dropna().index 
         for effect, y in ys.items()
         }
     proportions_incomplete_subplot(
         X, 
         AD_flags, 
-        samples_for_effect,
-        base_size_per_feature=base_size_per_feature
+        in_samples_for_effect,
+        base_size_per_feature=base_size_per_feature,
+        threshold=threshold
     )
 
-    ## Plot all chemicals data.
+    ## Plot the data for out-of-sample chemicals
+    out_samples =  X.index.difference(ys.index)
     proportions_incomplete_subplot(
         X, 
         AD_flags, 
-        {plot_settings.all_chemicals_label : X.index},
-        base_size_per_feature=base_size_per_feature
+        {plot_settings.label_for_sample_type['out'] : out_samples},
+        base_size_per_feature=base_size_per_feature,
+        threshold=threshold
     )
 #endregion
 
@@ -47,7 +58,8 @@ def proportions_incomplete_subplot(
         X, 
         AD_flags, 
         samples_dict, 
-        base_size_per_feature=(0.2, 6)
+        base_size_per_feature=(0.2, 6),
+        threshold=None
     ):
     '''
     Generate a subplot for each group of samples in the provided dictionary.
@@ -107,7 +119,8 @@ def proportions_incomplete_subplot(
             outside_AD_prop, 
             valid_prop, 
             title, 
-            n_samples
+            n_samples,
+            threshold=threshold
             )
 
         # Remove ylabel for all but the first subplot
@@ -125,7 +138,14 @@ def proportions_incomplete_subplot(
 
 #region: proportions_incomplete_barchart
 def proportions_incomplete_barchart(
-        ax, missing_prop, outside_AD_prop, valid_prop, title, n_samples):
+        ax, 
+        missing_prop, 
+        outside_AD_prop, 
+        valid_prop, 
+        title, 
+        n_samples,
+        threshold=None,
+        ):
     '''
     Plot the proportions of missing values, values outside AD, and valid 
     values on a given Axes.
@@ -169,6 +189,11 @@ def proportions_incomplete_barchart(
         edgecolor='black', 
         zorder=3
         )
+    if threshold:
+        # Convert to percent to align with the x-axis
+        threshold = 100. * threshold
+        # Add vertical line on top
+        ax.axvline(threshold, linestyle='-.', zorder=5)
     
     ax.set_yticks(y)
     ax.set_yticklabels(
@@ -181,7 +206,11 @@ def proportions_incomplete_barchart(
     ax.set_title(f'{title} (n={n_samples})', size='medium', loc='left')
     ax.set_xlim([0, 100])
     ax.grid(True, axis='x', linestyle='--', color='black', alpha=0.6)
-    ax.legend(fontsize='small', loc='upper right')
+
+    if any(missing_prop >= 1): # %
+        # Some features have an appreciable % of values that are missing yet 
+        # within the AD. Highlight these values using a legend.
+        ax.legend(fontsize='small', loc='upper right')
 #endregion
 
 #region: proportions_incomplete
@@ -203,11 +232,14 @@ def proportions_incomplete(X_subset, AD_flags_subset):
         Tuple containing the proportion of missing values, values outside AD, 
         and valid values.
     '''
+    # Filter out any features that don't have applicability domains
+    complete_features = X_subset.columns.difference(AD_flags_subset.columns)
+    X_subset = X_subset.drop(complete_features, axis=1)
+
+    # TODO: Rename "prop" to "props" for clarity
     outside_AD_prop = AD_flags_subset.mean() * 100
     not_outside_AD = ~AD_flags_subset
     missing_prop = (X_subset.isna() & not_outside_AD).mean() * 100
-    missing_prop, outside_AD_prop = missing_prop.align(
-        outside_AD_prop, fill_value=0)
     valid_prop = 100 - missing_prop - outside_AD_prop
     
     # Order by the valid proportion in ascending order

@@ -30,7 +30,7 @@ def benchmarking_scatterplots(
     axs : list
         List of axes corresponding to the figures.
     '''
-    y_regulatory_df = results_analyzer.load_regulatory_pods()
+    y_auth_df = results_analyzer.load_authoritative_pods()
     y_toxcast = results_analyzer.load_oral_equivalent_doses()
 
     model_key_names = results_analyzer.read_model_key_names()
@@ -49,7 +49,7 @@ def benchmarking_scatterplots(
             y_pred, _, y_true = results_analyzer.get_in_sample_prediction(model_key)
 
             key_for = dict(zip(model_key_names, model_key))
-            y_comparison = y_regulatory_df[key_for['target_effect']].dropna()
+            y_comparison = y_auth_df[key_for['target_effect']].dropna()
             y_evaluation_dict = {
                 'ToxValDB' : y_true, 
                 'QSAR' : y_pred,
@@ -68,7 +68,7 @@ def benchmarking_scatterplots(
                 if j == 0:  # first row
                     title = plot_settings.label_for_effect[key_for['target_effect']]
                 if j == len(y_evaluation_dict)-1:  # last row
-                    xlabel = f'Regulatory {plot_settings.prediction_label}'
+                    xlabel = f'Authoritative {plot_settings.prediction_label}'
                 if i == 0:  # first column
                     ylabel = f'{label} {plot_settings.prediction_label}'
                 
