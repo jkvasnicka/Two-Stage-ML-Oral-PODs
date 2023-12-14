@@ -15,10 +15,6 @@
         "reproductive/developmental effects" : "repro_dev"
     },
 
-    "opera_file_prefix" : "OPERA2.9_",
-
-    "opera_file_extension" : ".csv", 
-
     "opera_log10_pat" : "Log",
 
     "structures_file_name" : "chemical-identifiers.smi",

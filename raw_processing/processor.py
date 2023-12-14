@@ -174,7 +174,6 @@ class RawDataProcessor:
         return surrogate_pods
     #endregion
 
-    # TODO: Remove "opera_file_namer". Use file extension (CSV) instead.
     #region: _opera_features_from_raw
     def _opera_features_from_raw(self):
         '''
@@ -192,14 +191,9 @@ class RawDataProcessor:
             1. AD flags for each chemical.
             2. Processed OPERA features.
         '''
-        prefix = self._raw_data_settings.opera_file_prefix
-        extension = self._raw_data_settings.opera_file_extension
-        opera_file_namer = lambda name: prefix + name + extension
-
         X_opera, AD_flags = opera.process_all_batches(
             self._path_settings.raw_opera_features_dir, 
             self._path_settings.opera_mapper_file,
-            opera_file_namer,
             self._raw_data_settings.logging_file_name, 
             index_name=self._index_col, 
             discrete_columns=self._data_settings.discrete_columns_for_source['opera'],

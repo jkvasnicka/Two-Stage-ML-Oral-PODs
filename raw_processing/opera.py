@@ -21,7 +21,6 @@ from . import utilities
 def process_all_batches(
         main_dir, 
         columns_mapper_path, 
-        data_file_namer, 
         log_file_name, 
         index_name=None, 
         discrete_columns=None, 
@@ -55,9 +54,9 @@ def process_all_batches(
     predictions, AD_flags = [], []
 
     ## Extract the data for each batch/subdirectory of chemicals
-    for dir_name in os.listdir(main_dir):
-        logging.info(f"Processing directory: {dir_name}")
-        data_dir = os.path.join(main_dir, dir_name)
+    for entry in os.listdir(main_dir):
+        logging.info(f"Processing directory: {entry}")
+        data_dir = os.path.join(main_dir, entry)
 
         if os.path.isdir(data_dir):
             try:
@@ -65,7 +64,6 @@ def process_all_batches(
                     extract_predictions_and_app_domains(
                         data_dir, 
                         columns_mapper_path, 
-                        data_file_namer,
                         index_name=index_name, 
                         discrete_columns=discrete_columns, 
                         discrete_suffix=discrete_suffix, 
@@ -76,7 +74,7 @@ def process_all_batches(
                 AD_flags.append(batch_AD_flags)
             except Exception as e:
                 logging.error(
-                    f"Skipping directory {dir_name} due to error: {str(e)}")
+                    f"Skipping directory {entry} due to error: {str(e)}")
                 continue
     predictions = pd.concat(predictions)
     AD_flags = pd.concat(AD_flags)
@@ -93,7 +91,6 @@ def process_all_batches(
 def extract_predictions_and_app_domains(
         data_dir, 
         columns_mapper_path, 
-        data_file_namer, 
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
@@ -106,7 +103,6 @@ def extract_predictions_and_app_domains(
     AD_flags = extract_app_domains_from_csv_files(
         data_dir, 
         columns_mapper_path, 
-        data_file_namer, 
         index_name=index_name,
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix,  
@@ -117,7 +113,6 @@ def extract_predictions_and_app_domains(
     predictions = extract_predictions_from_csv_files(
         data_dir, 
         columns_mapper_path, 
-        data_file_namer, 
         index_name=index_name, 
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix, 
@@ -136,7 +131,6 @@ def extract_predictions_and_app_domains(
 def extract_predictions_from_csv_files(
         data_dir, 
         columns_mapper_path, 
-        data_file_namer, 
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
@@ -153,9 +147,6 @@ def extract_predictions_from_csv_files(
     columns_mapper_path : str 
         Path to a JSON file that maps model names to the desired column 
         names in the data CSV file: mapper[model_name] --> list of str.
-    data_file_namer : function
-        Inputs each model name from the config_file keys and returns the
-        corresponding filenames.
     index_name : str (optional)
         Can be used to rename the default index ('MoleculeID').
     discrete_columns : list of str (optional)
@@ -178,16 +169,17 @@ def extract_predictions_from_csv_files(
     '''
     columns_for_model = json_to_dict(columns_mapper_path)
 
-    # Initialize a container.
-    predictions = {}
-    for model_name, data_columns in columns_for_model.items():
-        file_path = os.path.join(data_dir, data_file_namer(model_name))
-        model_data = pd.read_csv(file_path, index_col=0)
-        predictions[model_name] = model_data[data_columns]
+    predictions = []  # initialize
+    for entry in os.listdir(data_dir):
+        if entry.endswith('.csv'):
+            model_name = _extract_model_name_from_file_name(entry)
+            if model_name in list(columns_for_model):
+                model_data = _model_data_from_csv(data_dir, entry)
+                predictions.append(model_data[columns_for_model[model_name]])
 
     ## Assemble the final DataFrame.
 
-    predictions = pd.concat(predictions.values(), axis=1)
+    predictions = pd.concat(predictions, axis=1)
     if index_name is not None:
         # Rename the 'MoleculeID' column
         predictions.index.name = index_name
@@ -212,6 +204,38 @@ def extract_predictions_from_csv_files(
         predictions.to_csv(write_path)
 
     return predictions
+#endregion
+
+#region: _extract_model_name_from_file_name
+def _extract_model_name_from_file_name(file_name):
+    '''
+    Helper function to extract an OPERA model name from the specified file 
+    name.
+
+    This function leverages OPERA's file name convention:
+    "<prefix>_<model_name>.csv"
+
+    Parameters
+    ----------
+    file_name : str
+
+    Returns
+    -------
+    str
+        The model name.
+    '''
+    return file_name.split('_')[-1].split('.')[0]
+#endregion
+
+#region: _model_data_from_csv
+def _model_data_from_csv(data_dir, file_name):
+    '''
+    Helper function to load OPERA model data from a CSV file.
+
+    The first column (MoleculeID) is used as the index column
+    '''
+    data_path = os.path.join(data_dir, file_name)
+    return pd.read_csv(data_path, index_col=0)
 #endregion
 
 #region: set_unreliable_values
@@ -246,7 +270,6 @@ def set_unreliable_values(predictions, AD_flags):
 def extract_app_domains_from_csv_files(
         data_dir, 
         columns_mapper_path, 
-        data_file_namer, 
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
@@ -265,34 +288,35 @@ def extract_app_domains_from_csv_files(
     '''
     columns_for_model = json_to_dict(columns_mapper_path)
 
-    # Initialize a container.
-    AD_flags = {}
+    AD_flags = {}   # initialize
 
-    for model_name, feature_columns in columns_for_model.items():
+    for entry in os.listdir(data_dir):
+        if entry.endswith('.csv'):
+            model_name = _extract_model_name_from_file_name(entry)
+            if model_name in list(columns_for_model):
+                model_data = _model_data_from_csv(data_dir, entry)
         
-        file_path = os.path.join(data_dir, data_file_namer(model_name))
-        model_data = pd.read_csv(file_path, index_col=0)
-        
-        where_ADs = model_data.columns.str.contains('^AD_')
-        ADs = model_data.loc[:, where_ADs]
-        
-        if list(ADs):
-            N_ADs = len(ADs.columns)
-            if N_ADs == 2: 
-                # All features share a pair of ADs: 'global' and 'local'.
-                for feature in feature_columns:
-                    AD_flags[feature] = (
-                        is_outside_applicability_domain(ADs)
-                        )
-            elif N_ADs//2 == len(feature_columns):
-                # Each feature has its own pair of ADs.
-                for feature in feature_columns:
-                    where_feature_ADs = ADs.columns.str.contains(
-                        feature.strip('_pred'))
-                    feature_specific_ADs = ADs.loc[:, where_feature_ADs]
-                    AD_flags[feature] = (
-                        is_outside_applicability_domain(feature_specific_ADs)
-                        )
+                where_ADs = model_data.columns.str.contains('^AD_')
+                ADs = model_data.loc[:, where_ADs]
+                
+                feature_columns = columns_for_model[model_name]
+                if list(ADs):
+                    N_ADs = len(ADs.columns)
+                    if N_ADs == 2: 
+                        # All features share a pair of ADs: 'global' and 'local'.
+                        for feature in feature_columns:
+                            AD_flags[feature] = (
+                                is_outside_applicability_domain(ADs)
+                                )
+                    elif N_ADs//2 == len(feature_columns):
+                        # Each feature has its own pair of ADs.
+                        for feature in feature_columns:
+                            where_feature_ADs = ADs.columns.str.contains(
+                                feature.strip('_pred'))
+                            feature_specific_ADs = ADs.loc[:, where_feature_ADs]
+                            AD_flags[feature] = (
+                                is_outside_applicability_domain(feature_specific_ADs)
+                                )
 
     ## Assemble the final DataFrame.
     AD_flags = pd.DataFrame(AD_flags)
