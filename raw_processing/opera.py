@@ -13,7 +13,6 @@ import pandas as pd
 import numpy as np
 import os
 import logging
-import re
 import json
 
 from . import utilities
@@ -53,42 +52,45 @@ def process_all_batches(
         )
 
     # Initialize the containers for all batches.
-    AD_flags, opera_data = [], []
+    predictions, AD_flags = [], []
 
+    ## Extract the data for each batch/subdirectory of chemicals
     for dir_name in os.listdir(main_dir):
         logging.info(f"Processing directory: {dir_name}")
         data_dir = os.path.join(main_dir, dir_name)
 
         if os.path.isdir(data_dir):
             try:
-                AD_flags_df, opera_data_df = parse_data_with_applicability_domains(
-                    data_dir, 
-                    columns_mapper_path, 
-                    data_file_namer,
-                    index_name=index_name, 
-                    discrete_columns=discrete_columns, 
-                    discrete_suffix=discrete_suffix, 
-                    log10_pat=log10_pat
+                batch_predictions, batch_AD_flags = (
+                    extract_predictions_and_app_domains(
+                        data_dir, 
+                        columns_mapper_path, 
+                        data_file_namer,
+                        index_name=index_name, 
+                        discrete_columns=discrete_columns, 
+                        discrete_suffix=discrete_suffix, 
+                        log10_pat=log10_pat
                     )
-                AD_flags.append(AD_flags_df)
-                opera_data.append(opera_data_df)
+                )
+                predictions.append(batch_predictions)
+                AD_flags.append(batch_AD_flags)
             except Exception as e:
                 logging.error(
                     f"Skipping directory {dir_name} due to error: {str(e)}")
                 continue
+    predictions = pd.concat(predictions)
     AD_flags = pd.concat(AD_flags)
-    opera_data = pd.concat(opera_data)
 
+    if data_write_path is not None:
+        predictions.to_csv(data_write_path)
     if flags_write_path is not None:
         AD_flags.to_csv(flags_write_path)
-    if data_write_path is not None:
-        opera_data.to_csv(data_write_path)
 
-    return AD_flags, opera_data
+    return predictions, AD_flags
 #endregion
     
-#region: parse_data_with_applicability_domains
-def parse_data_with_applicability_domains(
+#region: extract_predictions_and_app_domains
+def extract_predictions_and_app_domains(
         data_dir, 
         columns_mapper_path, 
         data_file_namer, 
@@ -101,7 +103,7 @@ def parse_data_with_applicability_domains(
         ):
     '''
     '''
-    AD_flags = applicability_domain_flags(
+    AD_flags = extract_app_domains_from_csv_files(
         data_dir, 
         columns_mapper_path, 
         data_file_namer, 
@@ -112,7 +114,7 @@ def parse_data_with_applicability_domains(
         write_path=flags_write_path
     )
 
-    opera_data = parse_data_from_csv_files(
+    predictions = extract_predictions_from_csv_files(
         data_dir, 
         columns_mapper_path, 
         data_file_namer, 
@@ -124,14 +126,14 @@ def parse_data_with_applicability_domains(
         write_path=data_write_path
         )
     
-    if opera_data.index.duplicated().any():
+    if predictions.index.duplicated().any():
         raise ValueError('Duplicate DTXSIDs found in directory. Check input data.')
     
-    return AD_flags, opera_data
+    return predictions, AD_flags
 #endregion
 
-#region: parse_data_from_csv_files
-def parse_data_from_csv_files(
+#region: extract_predictions_from_csv_files
+def extract_predictions_from_csv_files(
         data_dir, 
         columns_mapper_path, 
         data_file_namer, 
@@ -142,7 +144,7 @@ def parse_data_from_csv_files(
         flags=None, 
         write_path=None
         ):
-    '''Load and parse the outputs as separate CSV file from OPERA 2.9.
+    '''Load and extract the outputs as separate CSV file from OPERA 2.9.
 
     Parameters
     ----------
@@ -177,46 +179,46 @@ def parse_data_from_csv_files(
     columns_for_model = json_to_dict(columns_mapper_path)
 
     # Initialize a container.
-    data_for_model = {}
+    predictions = {}
     for model_name, data_columns in columns_for_model.items():
         file_path = os.path.join(data_dir, data_file_namer(model_name))
         model_data = pd.read_csv(file_path, index_col=0)
-        data_for_model[model_name] = model_data[data_columns]
+        predictions[model_name] = model_data[data_columns]
 
     ## Assemble the final DataFrame.
 
-    data_for_model = pd.concat(data_for_model.values(), axis=1)
+    predictions = pd.concat(predictions.values(), axis=1)
     if index_name is not None:
         # Rename the 'MoleculeID' column
-        data_for_model.index.name = index_name
+        predictions.index.name = index_name
     if log10_pat is not None:
-        data_for_model = utilities.inverse_log10_transform(
-            data_for_model, 
+        predictions = utilities.inverse_log10_transform(
+            predictions, 
             log10_pat
         )
-        data_for_model.columns = utilities.remove_pattern(
-            data_for_model.columns, 
+        predictions.columns = utilities.remove_pattern(
+            predictions.columns, 
             log10_pat
         )
     if discrete_columns is not None:
-        data_for_model = utilities.tag_discrete_columns(
-            data_for_model, 
+        predictions = utilities.tag_discrete_columns(
+            predictions, 
             discrete_columns, 
             discrete_suffix
         )
     if flags is not None:
-        data_for_model = set_unreliable_values(data_for_model, flags)
+        predictions = set_unreliable_values(predictions, flags)
     if write_path is not None:
-        data_for_model.to_csv(write_path)
+        predictions.to_csv(write_path)
 
-    return data_for_model
+    return predictions
 #endregion
 
 #region: set_unreliable_values
-def set_unreliable_values(data, AD_flags):
-    '''Helper function which sets unreliable values in 'data' as NaN.
+def set_unreliable_values(predictions, AD_flags):
+    '''Helper function which sets unreliable values in 'predictions' as NaN.
 
-    For safety, the columns of 'AD_flags' must be in 'data'.
+    For safety, the columns of 'AD_flags' must be in 'predictions'.
 
     See Also
     --------
@@ -225,23 +227,23 @@ def set_unreliable_values(data, AD_flags):
     Raises
     ------
     ValueError
-        If the columns of 'AD_flags' are not in 'data'.
+        If the columns of 'AD_flags' are not in 'predictions'.
     '''
-    data = data.copy()
+    predictions = predictions.copy()
 
-    shared_features = AD_flags.columns.intersection(data.columns)
+    shared_features = AD_flags.columns.intersection(predictions.columns)
     if len(shared_features) != len(AD_flags.columns):
-        raise ValueError('The columns of "AD_flags" must be in "data"')
+        raise ValueError('The columns of "AD_flags" must be in "predictions"')
         
     for feature in shared_features:
         where_unreliable = AD_flags[feature]
-        data.loc[where_unreliable, feature] = np.NaN    
+        predictions.loc[where_unreliable, feature] = np.NaN    
 
-    return data
+    return predictions
 #endregion
 
-#region: applicability_domain_flags
-def applicability_domain_flags(
+#region: extract_app_domains_from_csv_files
+def extract_app_domains_from_csv_files(
         data_dir, 
         columns_mapper_path, 
         data_file_namer, 
@@ -334,7 +336,7 @@ def is_outside_applicability_domain(global_local_ADs):
 
     See Also
     --------
-    common.opera.applicability_domain_flags()
+    extract_app_domains_from_csv_files()
     '''
     global_ADs, local_AD_indexes = (
         split_applicability_domain_columns(global_local_ADs))
@@ -418,65 +420,6 @@ def extract_dtxsid_from_structures_file(structures_file):
         # structure, dtxsid = line.split('\t')
         dtxsid = [line.split('\t')[1].strip() for line in f.readlines()]
     return dtxsid
-#endregion
-
-#region: get_failed_directories
-def get_failed_directories(main_dir, log_file_name):
-    '''
-    Get a list of directories with failed operations from the main log file.
-
-    Parameters
-    ----------
-    main_dir : str
-        The main directory containing the main log file.
-    log_file_name : str
-        The name of the main log file.
-
-    Returns
-    -------
-    list
-        List of directories with failed operations.
-    '''
-    failed_directories = []
-    main_log_file_path = os.path.join(main_dir, log_file_name)
-
-    try:
-        with open(main_log_file_path, 'r') as file:
-            for line in file:
-                if "Skipping directory" in line:
-                    dir_name = re.search(
-                        'Skipping directory (.*?) due to error', line).group(1)
-                    failed_directories.append(dir_name)
-    except Exception as e:
-        print(f"Could not open main log file due to error: {str(e)}")
-
-    return failed_directories
-#endregion
-
-#region: print_error_log_files
-def print_error_log_files(
-        main_dir, failed_directories, log_file_name="errorLogBatchRun.txt"):
-    '''
-    Print the contents of the log files located at the given paths.
-
-    Parameters
-    ----------
-    main_dir : str
-        The main directory.
-    failed_directories : list
-        List of directories with failed operations.
-    log_file_name : str, optional
-        The name of the log file. Defaults to "errorLogBatchRun.txt".
-    '''
-    for dir_name in failed_directories:
-        path = os.path.join(main_dir, dir_name, log_file_name)
-        try:
-            with open(path, 'r') as file:
-                print(f"Contents of log file at {path}:")
-                print(file.read())
-                print("\n----------\n")
-        except Exception as e:
-            print(f"Could not open and print the log file at {path} due to error: {str(e)}")
 #endregion
 
 #region: json_to_dict

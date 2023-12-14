@@ -196,7 +196,7 @@ class RawDataProcessor:
         extension = self._raw_data_settings.opera_file_extension
         opera_file_namer = lambda name: prefix + name + extension
 
-        AD_flags, X_opera = opera.process_all_batches(
+        X_opera, AD_flags = opera.process_all_batches(
             self._path_settings.raw_opera_features_dir, 
             self._path_settings.opera_mapper_file,
             opera_file_namer,
@@ -216,7 +216,7 @@ class RawDataProcessor:
         flags_write_path=self._path_settings.opera_AD_file
         AD_flags.to_parquet(flags_write_path, compression='gzip')
 
-        return AD_flags, X_opera
+        return X_opera, AD_flags
     #endregion
 
     #region: _comptox_features_from_raw
