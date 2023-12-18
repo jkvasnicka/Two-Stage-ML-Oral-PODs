@@ -76,7 +76,7 @@
     "MLPRegressor": ["opera", "predicted", "missing", "false", "MLPRegressor"],
     "CompTox Features": ["comptox", "predicted", "missing", "false", "RandomForestRegressor"],
     "Experimental LD50s": ["opera", "experimental", "missing", "false", "RandomForestRegressor"],
-    "Complete Data": ["opera", "predicted", "complete", "false", "RandomForestRegressor"]
+    "No Imputation": ["opera", "predicted", "complete", "false", "RandomForestRegressor"]
   }
 
 }
