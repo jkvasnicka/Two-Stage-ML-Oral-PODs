@@ -193,7 +193,7 @@ class RawDataProcessor:
         '''
         X_opera, AD_flags = opera.process_all_batches(
             self._path_settings.raw_opera_features_dir, 
-            self._path_settings.opera_mapper_file,
+            self._raw_data_settings.opera_features_for_model,
             self._raw_data_settings.logging_file_name, 
             index_name=self._index_col, 
             discrete_columns=self._data_settings.discrete_columns_for_source['opera'],

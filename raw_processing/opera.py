@@ -20,7 +20,7 @@ from . import utilities
 #region: process_all_batches
 def process_all_batches(
         main_dir, 
-        columns_mapper_path, 
+        columns_for_model, 
         log_file_name, 
         index_name=None, 
         discrete_columns=None, 
@@ -63,7 +63,7 @@ def process_all_batches(
                 batch_predictions, batch_AD_flags = (
                     extract_predictions_and_app_domains(
                         data_dir, 
-                        columns_mapper_path, 
+                        columns_for_model, 
                         index_name=index_name, 
                         discrete_columns=discrete_columns, 
                         discrete_suffix=discrete_suffix, 
@@ -90,7 +90,7 @@ def process_all_batches(
 #region: extract_predictions_and_app_domains
 def extract_predictions_and_app_domains(
         data_dir, 
-        columns_mapper_path, 
+        columns_for_model, 
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
@@ -102,7 +102,7 @@ def extract_predictions_and_app_domains(
     '''
     AD_flags = extract_app_domains_from_csv_files(
         data_dir, 
-        columns_mapper_path, 
+        columns_for_model, 
         index_name=index_name,
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix,  
@@ -112,7 +112,7 @@ def extract_predictions_and_app_domains(
 
     predictions = extract_predictions_from_csv_files(
         data_dir, 
-        columns_mapper_path, 
+        columns_for_model, 
         index_name=index_name, 
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix, 
@@ -130,7 +130,7 @@ def extract_predictions_and_app_domains(
 #region: extract_predictions_from_csv_files
 def extract_predictions_from_csv_files(
         data_dir, 
-        columns_mapper_path, 
+        columns_for_model, 
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
@@ -144,9 +144,9 @@ def extract_predictions_from_csv_files(
     ----------
     data_dir : str
         Path to the data directory. 
-    columns_mapper_path : str 
-        Path to a JSON file that maps model names to the desired column 
-        names in the data CSV file: mapper[model_name] --> list of str.
+    columns_for_model : dict 
+        Mapping of OPERA2.9 model names (str) to the desired column names 
+        (str) in the data CSV file.
     index_name : str (optional)
         Can be used to rename the default index ('MoleculeID').
     discrete_columns : list of str (optional)
@@ -167,8 +167,6 @@ def extract_predictions_from_csv_files(
     pandas.DataFrame
         Axis 0 = chemical ID; Axis 1 = feature.
     '''
-    columns_for_model = json_to_dict(columns_mapper_path)
-
     predictions = []  # initialize
     for entry in os.listdir(data_dir):
         if entry.endswith('.csv'):
@@ -269,7 +267,7 @@ def set_unreliable_values(predictions, AD_flags):
 #region: extract_app_domains_from_csv_files
 def extract_app_domains_from_csv_files(
         data_dir, 
-        columns_mapper_path, 
+        columns_for_model, 
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
@@ -286,8 +284,6 @@ def extract_app_domains_from_csv_files(
     ----------
     https://doi.org/10.1186/s13321-018-0263-1
     '''
-    columns_for_model = json_to_dict(columns_mapper_path)
-
     AD_flags = {}   # initialize
 
     for entry in os.listdir(data_dir):
@@ -444,17 +440,4 @@ def extract_dtxsid_from_structures_file(structures_file):
         # structure, dtxsid = line.split('\t')
         dtxsid = [line.split('\t')[1].strip() for line in f.readlines()]
     return dtxsid
-#endregion
-
-#region: json_to_dict
-def json_to_dict(json_path):
-    '''Load a JSON file as a dictionary.
-
-    Parameters
-    ----------
-    json_path : str
-        Path to the JSON file.
-    '''
-    with open(json_path) as f:
-        return json.loads(f.read())
 #endregion

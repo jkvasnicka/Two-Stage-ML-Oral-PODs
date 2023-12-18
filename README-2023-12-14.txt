@@ -1,3 +1,0 @@
-Refactored opera.py. The OPERA features are the same except for the order of
-features/columns. This affected some of the results, suggesting a dependence
-on column order despite the same data.
