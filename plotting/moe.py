@@ -23,10 +23,15 @@ MOE_XLABEL = '$\log_{10}MOE$'
 # Define the limits of the vertical spans in log10 units of MOE.
 # log10(0) is undefined and will be handled dynamically
 MOE_CATEGORIES = {
-    'Moderate Concern': (0., 2.),  # 1, 100
+    'Low Concern' : (2., np.inf),
+    'Moderate Concern' : (0., 2.),  # 1, 100
     'High Concern' : (-np.inf, 0.)  # 0, 1
 }
-MOE_COLORS = sns.color_palette('Paired', len(MOE_CATEGORIES)+1)
+MOE_CATEGORY_KWARGS = {
+    'Low Concern' : {'color' : 'white', 'alpha' : 0.},  # transparent
+    'Moderate Concern' : {'color' : '#a6cee3', 'alpha' : 0.2},
+    'High Concern' : {'color' : '#1f78b4', 'alpha' : 0.2},
+}
 
 #region: margins_of_exposure_cumulative
 def margins_of_exposure_cumulative(results_analyzer, plot_settings):
@@ -115,7 +120,7 @@ def margins_of_exposure_cumulative(results_analyzer, plot_settings):
             annotate_vertical_spans(
                 axs[1, i], 
                 MOE_CATEGORIES, 
-                MOE_COLORS
+                MOE_CATEGORY_KWARGS
                 )
         utilities.set_centralized_legend(
             fig, 
@@ -180,7 +185,7 @@ def single_model_moes(
     annotate_vertical_spans(
         ax, 
         MOE_CATEGORIES, 
-        MOE_COLORS
+        MOE_CATEGORY_KWARGS
         )
 
     utilities.set_centralized_legend(
@@ -405,7 +410,7 @@ def get_effect_label(model_key, model_key_names, label_for_effect):
 #endregion
 
 #region: annotate_vertical_spans
-def annotate_vertical_spans(ax, categories, colors, y_pos_axes=0.97):
+def annotate_vertical_spans(ax, categories, category_kwargs, y_pos_axes=0.97):
     '''
     Annotate vertical spans and category labels in a matplotlib Axes object.
 
@@ -416,8 +421,8 @@ def annotate_vertical_spans(ax, categories, colors, y_pos_axes=0.97):
     categories : dict
         Dictionary defining the categories and their corresponding 
         vertical span limits.
-    colors : list
-        List of colors for the vertical spans.
+    category_kwargs : dict
+        Mapping of category names to key-word arguments for Axes.axvspan().
     y_pos_axes : float
         The y-position of the category labels in Axes fraction units.
 
@@ -425,12 +430,14 @@ def annotate_vertical_spans(ax, categories, colors, y_pos_axes=0.97):
     -------
     None
     '''
-    for k, (category, (lower, upper)) in enumerate(categories.items()):
+    for category, (lower, upper) in categories.items():
         if lower == -np.inf:
             # Extend the lower limit to the xmin of the Axes
             lower = ax.get_xlim()[0]
+        if upper == np.inf:
+            upper = ax.get_xlim()[-1]
 
-        ax.axvspan(lower, upper, alpha=0.2, color=colors[k])
+        ax.axvspan(lower, upper, **category_kwargs[category])
 
         x_pos_data = (lower + upper) / 2  # arithmetic mean in linear scale
 
