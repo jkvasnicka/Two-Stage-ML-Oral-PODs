@@ -430,6 +430,11 @@ def annotate_vertical_spans(ax, categories, category_kwargs, y_pos_axes=0.97):
     -------
     None
     '''
+    # Manually increase the axis limit to accomodate the labels. 
+    # TODO: Consider more sophisticated options.
+    ymin, ymax = ax.get_ylim()
+    ax.set_ylim(ymin, 5*ymax)
+
     for category, (lower, upper) in categories.items():
         if lower == -np.inf:
             # Extend the lower limit to the xmin of the Axes
