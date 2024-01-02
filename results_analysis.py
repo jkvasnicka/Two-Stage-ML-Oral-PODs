@@ -43,7 +43,7 @@ class ResultsAnalyzer:
     split_replicates(dataframe, stride) 
         Split a replicates DataFrame into individual DataFrames.
     '''
-    def __init__(self, results_manager, data_manager):
+    def __init__(self, results_manager, data_manager, plot_settings):
         '''
         Initialize the ResultsAnalyzer class.
 
@@ -54,6 +54,7 @@ class ResultsAnalyzer:
         '''
         self.results_manager = results_manager
         self.data_manager = data_manager
+        self.plot_settings = plot_settings
 #endregion
 
     #region: get_in_sample_prediction
@@ -540,9 +541,9 @@ class ResultsAnalyzer:
         y_pred, _ = self.predict(model_key)
         
         y_for_label = {
-            'Authoritative': y_auth,
-            'ToxValDB': y_true,
-            'QSAR': y_pred
+            self.plot_settings.authoritative_label: y_auth,
+            self.plot_settings.surrogate_label: y_true,
+            self.plot_settings.qsar_label: y_pred
         }
         
         return y_for_label

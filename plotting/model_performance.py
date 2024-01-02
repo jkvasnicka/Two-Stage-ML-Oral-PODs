@@ -158,7 +158,7 @@ def _in_sample_performance_scatterplots(
             xlabel, ylabel = '', ''
             if i == len(grouped_keys_inner) - 1:
                 select_features = plot_settings.label_for_select_features[key_for['select_features']]
-                xlabel = f'Observed {plot_settings.prediction_label}\n{select_features}'
+                xlabel = f'{plot_settings.surrogate_label} {plot_settings.prediction_label}\n{select_features}'
             if j == 0:
                 effect = plot_settings.label_for_effect[key_for['target_effect']]
                 ylabel = f'{effect}\nPredicted {plot_settings.prediction_label}'

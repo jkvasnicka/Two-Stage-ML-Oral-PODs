@@ -27,6 +27,11 @@
       "false": "Without Selection"
     },
 
+    "authoritative_label" : "Authoritative",
+    "surrogate_label" : "ToxValDB Surrogate", 
+    "qsar_label" : "QSAR",
+    "toxcast_label" : "ToxCast/httk",
+
     "label_for_exposure_column" : {
       "95th percentile (mg/kg/day)" : "Median Exposure 95%ile",
       "50th percentile (mg/kg/day)" : "Median Exposure 50%ile",

@@ -51,9 +51,9 @@ def benchmarking_scatterplots(
             key_for = dict(zip(model_key_names, model_key))
             y_comparison = y_auth_df[key_for['target_effect']].dropna()
             y_evaluation_dict = {
-                'ToxValDB' : y_true, 
-                'QSAR' : y_pred,
-                'ToxCast/httk' : y_toxcast,
+                plot_settings.surrogate_label : y_true, 
+                plot_settings.qsar_label : y_pred,
+                plot_settings.toxcast_label : y_toxcast,
             }
 
             for j, (label, y_evaluation) in enumerate(

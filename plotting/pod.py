@@ -76,6 +76,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
                 axs[1, i], 
                 y_for_label, 
                 results_analyzer, 
+                plot_settings,
                 colors, 
                 linestyles, 
                 global_xlim
@@ -108,6 +109,7 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
 def single_model_cdfs(
         y_for_label, 
         results_analyzer, 
+        plot_settings,
         title=None
         ):
     '''
@@ -137,6 +139,7 @@ def single_model_cdfs(
         ax, 
         y_for_label, 
         results_analyzer, 
+        plot_settings,
         colors, 
         linestyles
     )
@@ -215,6 +218,7 @@ def plot_distinct_cdfs(
         ax, 
         y_for_label, 
         results_analyzer, 
+        plot_settings,
         colors, 
         linestyles, 
         global_xlim=None
@@ -247,7 +251,11 @@ def plot_distinct_cdfs(
     '''
     line_cycle = itertools.cycle(linestyles)
 
-    datasets = ['Authoritative', 'ToxValDB', 'QSAR']
+    datasets = [
+        plot_settings.authoritative_label, 
+        plot_settings.surrogate_label, 
+        plot_settings.qsar_label
+        ]
 
     for i, label in enumerate(datasets):
         distinct_series = y_for_label[label]
