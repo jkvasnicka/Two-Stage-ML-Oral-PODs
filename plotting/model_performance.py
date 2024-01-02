@@ -52,21 +52,12 @@ def in_and_out_sample_comparisons(
             model_keys=model_keys
             )
         
-        in_sample_prediction_scatterplots(
+        in_sample_performance_comparisons(
             results_analyzer, 
             grouped_keys_inner, 
             model_key_names,
             grouping_key_outer,
             function_for_metric,
-            plot_settings,
-            xlim=xlim
-        )
-
-        cross_validation_generalization(
-            results_analyzer, 
-            grouped_keys_inner, 
-            model_key_names,
-            grouping_key_outer,
             plot_settings,
             xlim=xlim
         )
@@ -81,26 +72,74 @@ def in_and_out_sample_comparisons(
     )
 #endregion
 
-#region: in_sample_prediction_scatterplots
-def in_sample_prediction_scatterplots(
+#region: in_sample_performance_comparisons
+def in_sample_performance_comparisons(
         results_analyzer, 
         grouped_keys_inner, 
-        model_key_names, 
+        model_key_names,
         grouping_key_outer,
         function_for_metric,
         plot_settings,
         xlim=(0., 1.)
     ):
     '''
+    Generate in-sample performance comparisons plots using scatterplots and 
+    boxplots.
+    '''
+    # Initialize a Figure for the subplot.
+    fig = plt.figure(figsize=(7, 5))
+
+    gs1 = gridspec.GridSpec(2, 2)
+    gs2 = gridspec.GridSpec(6, 1)
+
+    _in_sample_performance_scatterplots(
+        fig, 
+        gs1, 
+        results_analyzer, 
+        grouped_keys_inner, 
+        model_key_names,
+        function_for_metric,
+        plot_settings
+        )
+    
+    _in_sample_performance_boxplots(
+        fig, 
+        gs2, 
+        results_analyzer, 
+        grouped_keys_inner, 
+        plot_settings,
+        xlim=xlim
+        )
+
+    # adjust the 'right' value for gs1 and 'left' value for gs2
+    gs1.tight_layout(fig, rect=[0, 0, 0.7, 1]) 
+    gs2.tight_layout(fig, rect=[0.7, 0, 1, 1], h_pad=0.5)
+
+    utilities.save_figure(
+        fig, 
+        in_sample_performance_comparisons, 
+        grouping_key_outer
+        )
+#endregion
+
+#region: _in_sample_performance_scatterplots
+def _in_sample_performance_scatterplots(
+        fig, 
+        gs1, 
+        results_analyzer, 
+        grouped_keys_inner, 
+        model_key_names, 
+        function_for_metric,
+        plot_settings
+    ):
+    '''
     Generate scatterplots of observed vs predicted for the in-sample 
     performance comparisons.
     '''
-    fig, axs = plt.subplots(
-        figsize=(5, 5),
-        nrows=len(plot_settings.label_for_effect),
-        ncols=len(plot_settings.label_for_select_features)
-        )
 
+    title = '(A) In-Sample Performance'
+
+    all_axs = []
     # Initialize the limits.
     xmin, xmax = np.inf, -np.inf
 
@@ -108,10 +147,10 @@ def in_sample_prediction_scatterplots(
 
         for j, model_key in enumerate(model_keys):
 
-            # Get the current Axes
-            ax = axs[i, j]
-
             key_for = dict(zip(model_key_names, model_key))
+
+            ax = fig.add_subplot(gs1[i, j])
+            all_axs.append(ax)
 
             y_pred, _, y_true = results_analyzer.get_in_sample_prediction(model_key)
 
@@ -123,6 +162,8 @@ def in_sample_prediction_scatterplots(
             if j == 0:
                 effect = plot_settings.label_for_effect[key_for['target_effect']]
                 ylabel = f'{effect}\nPredicted {plot_settings.prediction_label}'
+                if i == 0:
+                    ax.set_title(title, loc='left', size='small', style='italic')
             ax.set_xlabel(xlabel, size='small')
             ax.set_ylabel(ylabel, size='small')
             
@@ -142,24 +183,16 @@ def in_sample_prediction_scatterplots(
             ax.tick_params(axis='both', labelsize='small')
 
     # Use the same scale.
-    for ax in axs.flatten():
+    for ax in all_axs:
         utilities.plot_one_one_line(ax, xmin, xmax)
-
-    fig.tight_layout()
-
-    utilities.save_figure(
-        fig, 
-        in_sample_prediction_scatterplots, 
-        grouping_key_outer
-        )
 #endregion
 
-#region: cross_validation_generalization
-def cross_validation_generalization(
+#region: _in_sample_performance_boxplots
+def _in_sample_performance_boxplots(
+        fig, 
+        gs2, 
         results_analyzer, 
         grouped_keys_inner, 
-        model_key_names,
-        grouping_key_outer, 
         plot_settings,
         xlim=(0., 1.)
         ):
@@ -167,10 +200,8 @@ def cross_validation_generalization(
     Create boxplots for in-sample performances across different models and 
     metrics.
     '''
-    fig, axs = plt.subplots(
-        nrows=len(plot_settings.label_for_metric) * len(grouped_keys_inner),
-        figsize=(3, 7)
-    )
+
+    title = '(B) Cross-Validation Performance'
 
     # Create a counter for the current row
     index = 0
@@ -211,8 +242,7 @@ def cross_validation_generalization(
 
         for j, metric in enumerate(metrics):
 
-            # Get the current Axes
-            ax = axs[index]
+            ax = fig.add_subplot(gs2[index])                
 
             # Filter and format the data.
             metric_data_long = (
@@ -241,22 +271,12 @@ def cross_validation_generalization(
             # Set labels. 
             ax.set_xlabel(metric, size='small') 
             ax.set_ylabel('')
-            middle_row = len(metrics)//2
-            if j == middle_row:
-                effect = model_keys[0][model_key_names.index('target_effect')]
-                ax.set_ylabel(plot_settings.label_for_effect[effect], size='medium')
             ax.tick_params(axis='both', labelsize='small')
+            if i == j == 0:
+                ax.set_title(title, size='small', loc='right', style='italic')
 
             # Increase the counter
             index += 1
-
-    fig.tight_layout()
-
-    utilities.save_figure(
-        fig, 
-        cross_validation_generalization, 
-        grouping_key_outer
-        )
 #endregion
 
 #region: out_of_sample_prediction_scatterplots
