@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 #region: save_figure
-def save_figure(fig, function, fig_label, extension='.pdf', bbox_inches=None):
+def save_figure(fig, function, fig_label, extension='.png', bbox_inches=None):
     '''
     '''
     output_dir = function_directory(function)
@@ -18,7 +18,7 @@ def save_figure(fig, function, fig_label, extension='.pdf', bbox_inches=None):
 #endregion
 
 #region: figure_path
-def figure_path(function_dir, fig_label, extension='.pdf'):
+def figure_path(function_dir, fig_label, extension='.png'):
     '''
     '''
     if isinstance(fig_label, (tuple, list)):
