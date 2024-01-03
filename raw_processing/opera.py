@@ -13,9 +13,17 @@ import pandas as pd
 import numpy as np
 import os
 import logging
-import json
 
 from . import utilities
+
+# FIXME: 
+def get_original_columns(columns_for_model):
+    '''
+    Return features columns in original order as manuscript submission. 
+
+    This is only a temporary fix for backwards compatibility.
+    '''
+    return [item for sublist in columns_for_model.values() for item in sublist]
 
 #region: process_all_batches
 def process_all_batches(
@@ -178,6 +186,9 @@ def extract_predictions_from_csv_files(
     ## Assemble the final DataFrame.
 
     predictions = pd.concat(predictions, axis=1)
+
+    predictions = predictions[get_original_columns(columns_for_model)]
+
     if index_name is not None:
         # Rename the 'MoleculeID' column
         predictions.index.name = index_name
@@ -316,6 +327,10 @@ def extract_app_domains_from_csv_files(
 
     ## Assemble the final DataFrame.
     AD_flags = pd.DataFrame(AD_flags)
+
+    original_columns = [c for c in get_original_columns(columns_for_model) if c in AD_flags]
+    AD_flags = AD_flags[original_columns]
+
     if index_name is not None:
         # Rename the 'MoleculeID' column
         AD_flags.index.name = index_name
