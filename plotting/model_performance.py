@@ -137,7 +137,7 @@ def _in_sample_performance_scatterplots(
     performance comparisons.
     '''
 
-    title = '(A) In-Sample Performance'
+    title = '(A) Mean Cross-Validation Predictions'
 
     all_axs = []
     # Initialize the limits.
@@ -153,6 +153,7 @@ def _in_sample_performance_scatterplots(
             all_axs.append(ax)
 
             y_pred, _, y_true = results_analyzer.get_in_sample_prediction(model_key)
+            # y_pred, y_true = results_analyzer.get_out_sample_prediction(model_key)
 
             ## Set labels depending on the Axes.
             xlabel, ylabel = '', ''
@@ -161,9 +162,9 @@ def _in_sample_performance_scatterplots(
                 xlabel = f'{plot_settings.surrogate_label} {plot_settings.prediction_label}\n{select_features}'
             if j == 0:
                 effect = plot_settings.label_for_effect[key_for['target_effect']]
-                ylabel = f'{effect}\nPredicted {plot_settings.prediction_label}'
-                if i == 0:
-                    ax.set_title(title, loc='left', size='small', style='italic')
+                ylabel = f'{effect}\nFitted {plot_settings.prediction_label}'
+                # if i == 0:
+                    # ax.set_title(title, loc='left', size='small', style='italic')
             ax.set_xlabel(xlabel, size='small')
             ax.set_ylabel(ylabel, size='small')
             
@@ -173,7 +174,8 @@ def _in_sample_performance_scatterplots(
                 y_pred,
                 function_for_metric, 
                 plot_settings.label_for_metric,
-                color='black'
+                color='black',
+                size=plot_settings.marker_size_for_sample_type['out']
             )
 
             # Update the limits for the one-one line.

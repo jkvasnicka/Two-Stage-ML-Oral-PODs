@@ -54,6 +54,7 @@ def generate_scatterplot(
         label_for_metric,
         with_sample_size=True,
         color='black', 
+        size=None,
         alpha=0.7,
         highlight_size=None,
         main_size=None,
@@ -132,7 +133,8 @@ def generate_scatterplot(
             y_true, 
             y_pred, 
             alpha=alpha, 
-            color=color
+            color=color,
+            s=size
             )
 
     ## Set the performance scores as text.
