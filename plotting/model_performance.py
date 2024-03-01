@@ -52,7 +52,16 @@ def in_and_out_sample_comparisons(
             model_keys=model_keys
             )
         
-        in_sample_performance_comparisons(
+        in_sample_performance_comparison(
+            results_analyzer, 
+            grouped_keys_inner, 
+            model_key_names,
+            grouping_key_outer,
+            function_for_metric,
+            plot_settings
+            )
+
+        out_sample_performance_comparisons(
             results_analyzer, 
             grouped_keys_inner, 
             model_key_names,
@@ -62,7 +71,7 @@ def in_and_out_sample_comparisons(
             xlim=xlim
         )
 
-        out_of_sample_prediction_scatterplots(
+        scatter_with_vs_without_selection(
             results_analyzer, 
             grouped_keys_inner,
             grouping_key_outer, 
@@ -72,8 +81,46 @@ def in_and_out_sample_comparisons(
     )
 #endregion
 
-#region: in_sample_performance_comparisons
-def in_sample_performance_comparisons(
+#region: in_sample_performance_comparison
+def in_sample_performance_comparison(
+        results_analyzer, 
+        grouped_keys_inner, 
+        model_key_names,
+        grouping_key_outer,
+        function_for_metric,
+        plot_settings
+    ):
+    '''Generate scatterplots of in-sample performance.
+    '''
+    # FIXME: nrows, ncols hardcoded for now. Should be dynamic
+    fig, axs = plt.subplots(
+        figsize=(5, 5),
+        nrows=2, 
+        ncols=2
+        )
+
+    _performance_scatterplots(
+        fig, 
+        axs, 
+        results_analyzer, 
+        grouped_keys_inner, 
+        model_key_names,
+        function_for_metric,
+        plot_settings, 
+        in_sample=True
+        )
+    
+    fig.tight_layout()
+    
+    utilities.save_figure(
+        fig, 
+        in_sample_performance_comparison, 
+        grouping_key_outer
+        )
+#endregion
+        
+#region: out_sample_performance_comparisons
+def out_sample_performance_comparisons(
         results_analyzer, 
         grouped_keys_inner, 
         model_key_names,
@@ -83,8 +130,10 @@ def in_sample_performance_comparisons(
         xlim=(0., 1.)
     ):
     '''
-    Generate in-sample performance comparisons plots using scatterplots and 
-    boxplots.
+    Generate out-of-sample performance comparisons plots using scatterplots 
+    and boxplots.
+
+    This is a multi-panel figure.
     '''
     # Initialize a Figure for the subplot.
     fig = plt.figure(figsize=(7, 5))
@@ -92,17 +141,17 @@ def in_sample_performance_comparisons(
     gs1 = gridspec.GridSpec(2, 2)
     gs2 = gridspec.GridSpec(6, 1)
 
-    _in_sample_performance_scatterplots(
+    _performance_scatterplots(
         fig, 
         gs1, 
         results_analyzer, 
         grouped_keys_inner, 
         model_key_names,
         function_for_metric,
-        plot_settings
+        plot_settings, 
         )
     
-    _in_sample_performance_boxplots(
+    _out_sample_performance_boxplots(
         fig, 
         gs2, 
         results_analyzer, 
@@ -117,27 +166,37 @@ def in_sample_performance_comparisons(
 
     utilities.save_figure(
         fig, 
-        in_sample_performance_comparisons, 
+        out_sample_performance_comparisons, 
         grouping_key_outer
         )
 #endregion
 
-#region: _in_sample_performance_scatterplots
-def _in_sample_performance_scatterplots(
+#region: _performance_scatterplots
+def _performance_scatterplots(
         fig, 
-        gs1, 
+        axs, 
         results_analyzer, 
         grouped_keys_inner, 
         model_key_names, 
         function_for_metric,
-        plot_settings
+        plot_settings,
+        in_sample=False
     ):
     '''
     Generate scatterplots of observed vs predicted for the in-sample 
     performance comparisons.
     '''
-
-    title = '(A) Mean Cross-Validation Predictions'
+    # TODO: This could go into plot_settings config file
+    if in_sample is False:
+        # The scatterplots are part of a multi-panel figure
+        title = '(A) Mean Cross-Validation Predictions' 
+        result_function = 'get_out_sample_prediction'
+        result_type = 'Predicted'
+    else:
+        # in-sample performance is not multi-panel
+        title = ''
+        result_function = 'get_in_sample_prediction'
+        result_type = 'Fitted'       
 
     all_axs = []
     # Initialize the limits.
@@ -149,22 +208,24 @@ def _in_sample_performance_scatterplots(
 
             key_for = dict(zip(model_key_names, model_key))
 
-            ax = fig.add_subplot(gs1[i, j])
+            ax = fig.add_subplot(axs[i, j])
             all_axs.append(ax)
 
-            y_pred, _, y_true = results_analyzer.get_in_sample_prediction(model_key)
-            # y_pred, y_true = results_analyzer.get_out_sample_prediction(model_key)
+            # This is a workaround, due to inconsistent returns
+            result = getattr(results_analyzer, result_function)(model_key)
+            y_pred = result[0]
+            y_true = result[-1]
 
-            ## Set labels depending on the Axes.
+            ## Set labels depending on the Axes
             xlabel, ylabel = '', ''
             if i == len(grouped_keys_inner) - 1:
                 select_features = plot_settings.label_for_select_features[key_for['select_features']]
                 xlabel = f'{plot_settings.surrogate_label} {plot_settings.prediction_label}\n{select_features}'
             if j == 0:
                 effect = plot_settings.label_for_effect[key_for['target_effect']]
-                ylabel = f'{effect}\nFitted {plot_settings.prediction_label}'
-                # if i == 0:
-                    # ax.set_title(title, loc='left', size='small', style='italic')
+                ylabel = f'{effect}\n{result_type} {plot_settings.prediction_label}'
+                if i == 0:
+                    ax.set_title(title, loc='left', size='small', style='italic')
             ax.set_xlabel(xlabel, size='small')
             ax.set_ylabel(ylabel, size='small')
             
@@ -189,8 +250,8 @@ def _in_sample_performance_scatterplots(
         utilities.plot_one_one_line(ax, xmin, xmax)
 #endregion
 
-#region: _in_sample_performance_boxplots
-def _in_sample_performance_boxplots(
+#region: _out_sample_performance_boxplots
+def _out_sample_performance_boxplots(
         fig, 
         gs2, 
         results_analyzer, 
@@ -281,8 +342,8 @@ def _in_sample_performance_boxplots(
             index += 1
 #endregion
 
-#region: out_of_sample_prediction_scatterplots
-def out_of_sample_prediction_scatterplots(
+#region: scatter_with_vs_without_selection
+def scatter_with_vs_without_selection(
         results_analyzer, 
         grouped_keys_inner,
         grouping_key_outer, 
@@ -360,7 +421,7 @@ def out_of_sample_prediction_scatterplots(
 
     utilities.save_figure(
         fig, 
-        out_of_sample_prediction_scatterplots, 
+        scatter_with_vs_without_selection, 
         grouping_key_outer
         )
 #endregion

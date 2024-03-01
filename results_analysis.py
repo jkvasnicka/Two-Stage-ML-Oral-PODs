@@ -57,6 +57,7 @@ class ResultsAnalyzer:
         self.plot_settings = plot_settings
 #endregion
 
+    # FIXME: Appears that inverse_transform only applied to y_pred, not y_true?
     #region: get_in_sample_prediction
     def get_in_sample_prediction(self, model_key, inverse_transform=False):
         '''
@@ -87,6 +88,50 @@ class ResultsAnalyzer:
         y_pred, X = self._get_prediction(model_key, X, inverse_transform)
 
         return y_pred, X, y_true
+    #endregion
+
+    # TODO: Add optional inverse_transform?
+    #region: get_out_sample_prediction
+    def get_out_sample_prediction(self, model_key, aggregation='mean'):
+        '''
+        Get out-of-sample aggregated predictions for the given model key.
+
+        Aggregates predictions across cross-validation replicates for each
+        chemical, providing a single prediction per chemical based on the 
+        specified aggregation method (e.g., mean).
+
+        Parameters
+        ----------
+        model_key : Tuple
+            Key identifying the model for which predictions are required.
+        aggregation : str
+            Type of aggregation to apply ('mean', 'median', etc.). Must be a 
+            valid method of pd.core.groupby.GroupBy.
+
+        Returns
+        -------
+        y_pred_agg : pandas.Series
+            Aggregated predicted target values.
+        y_true : pandas.Series
+            True target values.
+        '''
+        # Load the observed values for comparison
+        model_key_names = self.results_manager.read_model_key_names()
+        key_for = dict(zip(model_key_names, model_key))
+        y_true = self.data_manager.load_target(**key_for)
+
+        # Get the out-of-sample predictions
+        predictions = self.results_manager.read_result(model_key, 'predictions').squeeze()
+
+        if not hasattr(pd.core.groupby.GroupBy, aggregation):
+            raise ValueError(f"Aggregation method '{aggregation}' is not valid.")
+
+        # Perform the aggregation
+        group = predictions.groupby(level=0)
+        y_pred_agg = getattr(group, aggregation)()
+
+        prediction_chemicals = list(y_pred_agg.index.unique(level=0))
+        return y_pred_agg, y_true[prediction_chemicals]
     #endregion
 
     #region: predict
