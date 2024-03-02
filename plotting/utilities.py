@@ -253,6 +253,7 @@ def vertical_boxplots_subplot(
         sorting_level,
         evaluation_label_mapper,
         evaluation_level,
+        do_sort=True,  # New parameter to control sorting
         ascending=False,
         xlim=(),
         ylabel=None, 
@@ -264,39 +265,61 @@ def vertical_boxplots_subplot(
 
     Parameters
     ----------
-    workflow : object
-        The workflow object containing the model keys and corresponding 
-        history.
+    axs : matplotlib axes object
+        Axes on which to plot the boxplots.
+    df_wide : DataFrame
+        Wide-form DataFrame containing the data to plot.
+    sorting_level : str
+        The level in the DataFrame to sort by if sorting is enabled.
+    evaluation_label_mapper : dict
+        Dictionary mapping evaluation metrics to their labels.
+    evaluation_level : str
+        The level in the DataFrame corresponding to the evaluation metrics.
+    do_sort : bool, optional
+        Whether to sort the boxes according to the median of the first metric.
+        Default is True.
+    ascending : bool, optional
+        Whether to sort the values in ascending order. Default is False.
+    xlim : tuple, optional
+        Limits for the x-axis.
+    ylabel : str, optional
+        Label for the y-axis.
+    start : int, optional
+        Starting index for plotting axes. Default is 0.
+    palette : str, optional
+        Color palette for the boxplots.
 
     Returns
     -------
-    None : None
+    None
     '''
-    # Compute the sorting order based on the median of the first metric
-    first_metric_key = list(evaluation_label_mapper.keys())[0]
-    medians_first_metric = (
-        df_wide.xs(first_metric_key, axis=1, level=evaluation_level)
-        .median(axis=0)
-        .sort_values(ascending=ascending)
-    )
-    sorted_keys_first_metric = list(medians_first_metric.index)
+    if do_sort:
+        # Compute the sorting order based on the median of the first metric
+        first_metric_key = list(evaluation_label_mapper.keys())[0]
+        medians_first_metric = (
+            df_wide.xs(first_metric_key, axis=1, level=evaluation_level)
+            .median(axis=0)
+            .sort_values(ascending=ascending)
+        )
+        sorted_keys_first_metric = list(medians_first_metric.index)
+    else:
+        # Use the original order of keys if sorting is not required
+        sorted_keys_first_metric = df_wide.columns.get_level_values(sorting_level).unique()
 
-    reverse_metric = evaluation_label_mapper.get(
-        'r2_score', 'r2_score'
-    )
+    reverse_metric = evaluation_label_mapper.get('r2_score', 'r2_score')
     
-    for i, (k, metric) in enumerate(
-            evaluation_label_mapper.items(), start=start):
+    for i, (k, metric) in enumerate(evaluation_label_mapper.items(), start=start):
         
         df_long = df_wide.xs(k, axis=1, level=evaluation_level).melt()
         
-        # Use the sorting order from the first metric
-        df_long[sorting_level] = pd.Categorical(
-            df_long[sorting_level], 
-            categories=sorted_keys_first_metric, 
-            ordered=True
-            )
-        df_long = df_long.sort_values(by=sorting_level)
+        if do_sort:
+            # Use the sorting order from the first metric
+            df_long[sorting_level] = pd.Categorical(
+                df_long[sorting_level], 
+                categories=sorted_keys_first_metric, 
+                ordered=True
+                )
+            df_long = df_long.sort_values(by=sorting_level)
         
         _sns_boxplot_wrapper(
             axs[i], 
@@ -325,8 +348,7 @@ def vertical_boxplots_subplot(
         for i, ax in enumerate(axs.flatten()):
             ax.tick_params(axis='y', size=10)
             if i == 0:
-                ax.set_ylabel(ylabel, size=12) 
-   
+                ax.set_ylabel(ylabel, size=12)
 #endregion
 
 #region: _sns_boxplot_wrapper

@@ -89,6 +89,7 @@ def sensitivity_analysis_boxplots(
             'model_name',
             plot_settings.label_for_metric,
             'metric',
+            do_sort=False,
             ascending=True,
             xlim=xlim,
             ylabel='Models', 
