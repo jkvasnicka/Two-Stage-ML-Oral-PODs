@@ -76,6 +76,19 @@ def sensitivity_analysis_boxplots(
                 metric = col[-1]
                 df_wide_new[(new_label, metric)] = df_wide[col]
 
+        ## Re-order the labels to match the order in plot_settings
+        # FIXME: This is a quick and rough fix during manuscript revision
+        ordered_model_labels = [
+            label for label in plot_settings.model_for_label.keys()
+            ]
+        ordered_columns = []
+        for label in ordered_model_labels:
+            for col in df_wide_new.columns:
+            # Check if the label part of the column matches the ordered label
+                if label in col[0]:  
+                    ordered_columns.append(col)
+        df_wide_new = df_wide_new[ordered_columns]
+
         names = ['model_name', df_wide.columns.names[-1]]
         df_wide_new.columns = pd.MultiIndex.from_tuples(
             df_wide_new.columns, names=names
