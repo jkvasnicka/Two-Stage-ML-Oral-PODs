@@ -6,6 +6,7 @@ import pandas as pd
 
 from . import utilities
 
+# FIXME: Split into helper functions
 #region: sensitivity_analysis_boxplots
 def sensitivity_analysis_boxplots(
         results_manager, 
@@ -105,7 +106,6 @@ def sensitivity_analysis_boxplots(
             do_sort=False,
             ascending=True,
             xlim=xlim,
-            ylabel='Models', 
             palette='vlag',
         )
                   

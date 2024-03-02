@@ -79,7 +79,7 @@
     "XGBRegressor": ["opera", "predicted", "missing", "false", "XGBRegressor"],
     "SVR": ["opera", "predicted", "missing", "false", "SVR"],
     "MLPRegressor": ["opera", "predicted", "missing", "false", "MLPRegressor"],
-    "Experimental LD50s": ["opera", "experimental", "missing", "false", "RandomForestRegressor"],
+    "OPERA w/ Exp. LD50s": ["opera", "experimental", "missing", "false", "RandomForestRegressor"],
     "CompTox Features": ["comptox", "predicted", "missing", "false", "RandomForestRegressor"],
     "No Imputation": ["opera", "predicted", "complete", "false", "RandomForestRegressor"]
   }
