@@ -70,6 +70,7 @@ class RawDataProcessor:
             'dsstox_sdf_data' : self._dsstox_sdf_data_from_raw,
             'opera_features' : self._opera_features_from_raw,
             'comptox_features' : self._comptox_features_from_raw,
+            'rdkit_features' : self._rdkit_features_from_raw,
             'surrogate_pods' : self._surrogate_pods_from_raw,
             'authoritative_pods' : self._authoritative_pods_from_raw,
             'experimental_ld50s' : self._experimental_ld50s_from_raw,
@@ -220,7 +221,7 @@ class RawDataProcessor:
 
         This method reads raw feature data from CompTox and processes them by 
         excluding certain chemicals based on OPERA data. The processed data 
-        are then saved to a CSV file on disk.
+        are then saved to a parquet file on disk.
 
         Returns
         -------
@@ -240,6 +241,33 @@ class RawDataProcessor:
             columns_to_exclude=self._raw_data_settings.comptox_columns_to_exclude,
             log10_pat=self._raw_data_settings.comptox_log10_pat, 
             write_path=self._path_settings.file_for_features_source['comptox']
+        )
+    #endregion
+
+    #region: _rdkit_features_from_raw
+    def _rdkit_features_from_raw(self):
+        '''
+        # Extract and process two-dimensional molecular descriptors from the
+        RDKit library.
+
+        The processed data are saved to a parquet file on disk.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The processed RDKit features.
+        '''
+        # Get the QSAR-ready SMILES from OPERA
+        smi_file = self._path_settings.opera_structures_file
+        smiless = opera.extract_smiles_from_structures_file(smi_file)
+        dtxsids = opera.extract_dtxsid_from_structures_file(smi_file)
+        smiles_for_chem = dict(zip(dtxsids, smiless))
+
+        return rdkit_utilities.get_2d_descriptors(
+            smiles_for_chem,
+            self._index_col,
+            discrete_suffix=self._data_settings.discrete_column_suffix,
+            write_path=self._path_settings.file_for_features_source['rdkit']
         )
     #endregion
 

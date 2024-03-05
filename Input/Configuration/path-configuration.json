@@ -15,7 +15,9 @@
 
         "comptox" : "Input/Processed/Features/CompTox/CompTox-predictions.parquet", 
 
-        "opera" : "Input/Processed/Features/OPERA/OPERA-2.9-predictions.parquet"
+        "opera" : "Input/Processed/Features/OPERA/OPERA-2.9-predictions.parquet",
+
+        "rdkit" : "Input/Processed/Features/RDKit/RDKit-2D-descriptors.parquet"
         
     },
     

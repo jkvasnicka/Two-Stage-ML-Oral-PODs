@@ -437,22 +437,55 @@ def chemicals_to_exclude_from_qsar(
 #region: extract_dtxsid_from_structures_file
 def extract_dtxsid_from_structures_file(structures_file):
     '''
-    Extracts DTXSID values from a SMI file.
+    Extract DTXSID values from a SMI file.
 
     Parameters
     ----------
     structures_file : str
         The path to the SMI file.
-    index_col : str
-        The name of the index column in the output Series.
 
     Returns
     -------
-    pd.Series
-        A Series with the DTXSID values.
+    list
+    '''
+    return extract_from_smi_file(structures_file, 1)
+#endregion
+
+#region: extract_smiles_from_structures_file
+def extract_smiles_from_structures_file(structures_file):
+    '''
+    Extract "QSAR-ready" SMILES strings from a SMI file.
+
+    Parameters
+    ----------
+    structures_file : str
+        The path to the SMI file.
+
+    Returns
+    -------
+    list
+    '''
+    return extract_from_smi_file(structures_file, 0)
+#endregion
+
+#region: extract_from_smi_file
+def extract_from_smi_file(structures_file, index):
+    '''
+    Helper function to extract data from a SMI file based on the given index.
+
+    Parameters
+    ----------
+    structures_file : str
+        The path to the SMI file.
+    index : int
+        The index of the data to extract from each line (0 for SMILES, 1 for 
+        DTXSID).
+
+    Returns
+    -------
+    list
     '''
     with open(structures_file, 'r') as f:
-        # structure, dtxsid = line.split('\t')
-        dtxsid = [line.split('\t')[1].strip() for line in f.readlines()]
-    return dtxsid
+        data = [line.split('\t')[index].strip() for line in f.readlines()]
+    return data
 #endregion
