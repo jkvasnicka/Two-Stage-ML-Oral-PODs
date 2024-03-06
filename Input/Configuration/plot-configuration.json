@@ -81,6 +81,7 @@
     "MLPRegressor": ["opera", "predicted", "missing", "false", "MLPRegressor"],
     "OPERA w/ Exp. LD50s": ["opera", "experimental", "missing", "false", "RandomForestRegressor"],
     "CompTox Features": ["comptox", "predicted", "missing", "false", "RandomForestRegressor"],
+    "RDKit Features" : ["rdkit", "predicted", "missing", "false", "RandomForestRegressor"],
     "No Imputation": ["opera", "predicted", "complete", "false", "RandomForestRegressor"]
   }
 

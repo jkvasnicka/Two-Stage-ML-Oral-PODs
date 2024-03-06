@@ -108,6 +108,24 @@
       "data_condition" : "complete",
       "select_features" : "false",
       "estimators" : ["RandomForestRegressor"]
+    },
+
+    {
+      "target_effect" : "general",
+      "features_source" : "rdkit",
+      "ld50_type" : "predicted",
+      "data_condition" : "missing",
+      "select_features" : "false",
+      "estimators" : ["RandomForestRegressor"]
+    },
+
+    {
+      "target_effect" : "repro_dev",
+      "features_source" : "rdkit",
+      "ld50_type" : "predicted",
+      "data_condition" : "missing",
+      "select_features" : "false",
+      "estimators" : ["RandomForestRegressor"]
     }
 
   ]
