@@ -51,7 +51,12 @@ class ResultsManager:
         Read the result file and returns a DataFrame.
     ... (other methods)
     '''
-    def __init__(self, output_dir, results_file_type='csv', model_key_creator=None):
+    def __init__(
+            self, 
+            output_dir='Results', 
+            results_file_type='csv', 
+            model_key_creator=None
+            ):
         '''
         Initialize the ResultsManager with the specified output directory.
 
@@ -61,8 +66,9 @@ class ResultsManager:
 
         Parameters
         ----------
-        output_dir : str
+        output_dir : str, optional
             Path to the directory where results and estimators will be saved.
+            Default is 'Results'.
         results_file_type : str, optional
             Must be 'csv' or 'parquet'. Default 'csv'.
         model_key_creator : ModelKeyCreator, optional
