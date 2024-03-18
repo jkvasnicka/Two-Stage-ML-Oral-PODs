@@ -72,6 +72,7 @@
   ],
 
   "model_for_label" : {
+    "RandomForestRegressor (final)": ["opera", "predicted", "missing", "true", "RandomForestRegressor"],
     "RandomForestRegressor": ["opera", "predicted", "missing", "false", "RandomForestRegressor"],
     "GradientBoostingRegressor": ["opera", "predicted", "missing", "false", "GradientBoostingRegressor"],
     "Ridge": ["opera", "predicted", "missing", "false", "Ridge"],
