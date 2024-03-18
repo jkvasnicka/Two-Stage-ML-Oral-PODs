@@ -31,16 +31,10 @@ from . import other_sources
 from . import rdkit_utilities
 from . import utilities
 
-# TODO:
-'''
-Need to make directories if not exist. This class could handle all writing 
-logic, and the other modules could simply handle the processing from raw.
-'''
-
 #region: RawDataProcessor.__init__
 class RawDataProcessor:
     '''
-    Processe raw datasets to extract and structure relevant features and 
+    Process raw datasets to extract and structure relevant features and 
     targets for the LCIA-QSAR modeling workflow.
 
     The RawDataProcessor class provides methods to handle raw input files, 
@@ -67,7 +61,7 @@ class RawDataProcessor:
         self._index_col = 'DTXSID'
 
         # Map data types to their respective processing function
-        self._dispatcher = {
+        self.dispatcher = {
             'dsstox_sdf_data' : self._dsstox_sdf_data_from_raw,
             'opera_features' : self._opera_features_from_raw,
             'comptox_features' : self._comptox_features_from_raw,
@@ -84,7 +78,7 @@ class RawDataProcessor:
     def process_from_raw(self, data_type):
         '''
         '''
-        return self._dispatcher[data_type]()
+        return self.dispatcher[data_type]()
     #endregion
 
     #region: _dsstox_sdf_data_from_raw
