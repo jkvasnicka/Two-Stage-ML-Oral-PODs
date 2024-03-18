@@ -6,6 +6,7 @@ import pandas as pd
 
 from . import utilities
 
+# FIXME: This function only works if 'axs' is a 2D array
 #region: sensitivity_analysis_boxplots
 def sensitivity_analysis_boxplots(
         results_manager, 
@@ -36,13 +37,6 @@ def sensitivity_analysis_boxplots(
     '''
     ## Get the data
     performances = results_manager.combine_results('performances')
-    without_selection = results_manager.read_model_keys(
-        inclusion_string='false'
-        )
-    performances = results_manager.combine_results(
-        'performances', 
-        model_keys=without_selection
-    )
 
     effects = performances.columns.unique(level='target_effect')
 
