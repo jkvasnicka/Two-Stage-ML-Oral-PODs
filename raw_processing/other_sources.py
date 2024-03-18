@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import re 
 
-from . import pattern
+from . import pattern, utilities
 
 #region: surrogate_toxicity_values_from_excel
 def surrogate_toxicity_values_from_excel(
@@ -81,6 +81,7 @@ def surrogate_toxicity_values_from_excel(
     parsed_data_for_effect = pd.DataFrame(parsed_data_for_effect)
     
     if write_path is not None:
+        utilities.ensure_directory_exists(write_path)
         parsed_data_for_effect.to_csv(write_path)
 
     return parsed_data_for_effect
@@ -168,6 +169,7 @@ def authoritative_toxicity_values_from_excel(
         auth_pods = _replace_casrn_index(auth_pods, id_for_casrn, id_name)
         
     if write_path is not None:
+        utilities.ensure_directory_exists(write_path)
         auth_pods.to_csv(write_path)
         
     return auth_pods
@@ -218,6 +220,7 @@ def experimental_ld50s_from_excel(
         ld50s = 10**ld50s
 
     if write_path is not None:
+        utilities.ensure_directory_exists(write_path)
         ld50s.to_csv(write_path)
 
     return ld50s
@@ -297,6 +300,7 @@ def seem3_exposure_data_from_excel(
         exposure_data = np.log10(exposure_data)
 
     if write_path:
+        utilities.ensure_directory_exists(write_path)
         exposure_data.to_parquet(write_path, compression='gzip')
 
     return exposure_data
@@ -335,6 +339,7 @@ def oral_equivalent_doses_from_excel(
     )
 
     if write_path:
+        utilities.ensure_directory_exists(write_path)
         oeds.to_csv(write_path)
 
     return oeds

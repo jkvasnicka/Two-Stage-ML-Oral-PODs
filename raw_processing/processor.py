@@ -29,6 +29,7 @@ from . import opera
 from . import comptox
 from . import other_sources
 from . import rdkit_utilities
+from . import utilities
 
 # TODO:
 '''
@@ -113,6 +114,7 @@ class RawDataProcessor:
         # Write the DTXSID column to a text file for OPERA 2.9
         dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
         dtxsid_file = self._build_path_dsstox_identifiers()
+        utilities.ensure_directory_exists(dtxsid_file)
         sdf_data[dtxsid_column].to_csv(dtxsid_file, header=False, index=False)
 
         return sdf_data
@@ -206,9 +208,11 @@ class RawDataProcessor:
         AD_flags = AD_flags.loc[X_opera.index]
 
         features_write_path=self._path_settings.file_for_features_source['opera']
+        utilities.ensure_directory_exists(features_write_path)
         X_opera.to_parquet(features_write_path, compression='gzip')
 
         flags_write_path=self._path_settings.opera_AD_file
+        utilities.ensure_directory_exists(flags_write_path)
         AD_flags.to_parquet(flags_write_path, compression='gzip')
 
         return X_opera, AD_flags

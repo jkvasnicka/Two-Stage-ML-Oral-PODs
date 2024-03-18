@@ -51,6 +51,7 @@ def sdf_to_dataframe(sdf_directory, write_path=None):
     sdf_data = pd.concat(sdf_data, ignore_index=True)
 
     if write_path:
+        utilities.ensure_directory_exists(write_path)
         sdf_data.to_parquet(write_path, index=False, compression='gzip')
 
     return sdf_data
@@ -116,6 +117,7 @@ def get_2d_descriptors(
         )
         
     if write_path is not None:
+        utilities.ensure_directory_exists(write_path)
         descriptors.to_parquet(write_path)
 
     return descriptors

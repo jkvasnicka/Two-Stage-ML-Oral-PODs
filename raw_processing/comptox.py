@@ -84,6 +84,7 @@ def opera_test_predictions_from_csv(
             )
 
     if write_path is not None:
+        utilities.ensure_directory_exists(write_path)
         predictions.to_parquet(write_path)
 
     return predictions

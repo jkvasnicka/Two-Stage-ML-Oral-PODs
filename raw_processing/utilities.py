@@ -1,6 +1,8 @@
 '''Module for shared utility functions for preprocessing raw data.
 '''
 
+import os 
+
 #region: inverse_log10_transform
 def inverse_log10_transform(data, log10_pat):
     '''Inverse transform any log10-transformed columns.
@@ -95,4 +97,16 @@ def remove_suffix_from_columns(data, suffix):
         if col.endswith(suffix)
     }
     return data.rename(columns=mapper)
+#endregion
+
+# FIXME: There may be multiple copies of this function throughout the package
+#region: ensure_directory_exists
+def ensure_directory_exists(file_path):
+    '''Check if the directory at `path` exists and if not, create it.'''
+    # Extract the directory path from the file_path
+    directory_path = os.path.dirname(file_path)
+    
+    # Check and create directories as needed
+    if directory_path and not os.path.exists(directory_path):
+        os.makedirs(directory_path)
 #endregion
