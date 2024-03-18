@@ -64,15 +64,16 @@ class UnifiedConfiguration:
         'plot'
         }
 
-    def __init__(self, config_mapping_path, encoding='utf-8'):
+    def __init__(self, config_mapping_path='config.json', encoding='utf-8'):
         '''
         Initialize the UnifiedConfiguration object.
 
         Parameters
         ----------
-        config_mapping_path : str
+        config_mapping_path : str, optional
             Path to the JSON file mapping categories to configuration file 
-            paths.
+            paths. By default, will look for 'config.json' in the working 
+            directory.
         encoding : str, optional
             Default is 'utf-8'.
         '''
