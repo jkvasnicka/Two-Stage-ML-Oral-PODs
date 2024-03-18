@@ -643,13 +643,15 @@ class ResultsAnalyzer:
             self, 
             exclusion_key_names, 
             string_to_exclude=None, 
-            model_keys=None
+            model_keys=None,
+            filter_single_key=True
             ):
         '''Refer to `ResultsManager.group_model_keys` for documentation'''
         return self.results_manager.group_model_keys(
             exclusion_key_names, 
             string_to_exclude, 
-            model_keys
+            model_keys,
+            filter_single_key
             )
     #endregion
 

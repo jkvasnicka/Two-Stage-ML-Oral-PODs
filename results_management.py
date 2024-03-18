@@ -667,6 +667,7 @@ class ResultsManager:
             exclusion_key_names , 
             string_to_exclude=None,
             model_keys=None,
+            filter_single_key=True
         ):
         '''
         Group model keys by grouping keys. A grouping key is formed by taking a model 
@@ -684,6 +685,9 @@ class ResultsManager:
         model_keys : list of tuples, optional
             Model keys to be grouped. Each tuple represents a model key. If None, 
             all model keys available in the ResultsManager object will be used.
+        filter_single_key : bool, optional
+            If True, groups with only one model key will be excluded from the final output.
+
 
         Returns
         -------
@@ -727,6 +731,14 @@ class ResultsManager:
             for grouping_key, group in itertools.groupby(
             sorted_model_keys, key=create_grouping_key)
         ]
+
+        if filter_single_key:
+            # Filter out groups with only one model key
+            grouped_model_keys = [
+                (grouping_key, group)
+                for grouping_key, group in grouped_model_keys
+                if len(group) > 1
+            ]
 
         return grouped_model_keys
     #endregion
