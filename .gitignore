@@ -4,12 +4,7 @@ __pycache__/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-Scratch
-Archive
-
 # Large files
 Results
 Results_
-Input/Raw/OPERA
-Input/Raw/SEEM3
-Input/Raw/DSSTox
+Input
