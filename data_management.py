@@ -1,8 +1,6 @@
 '''
-This module manages the loading and handling of features and target data 
-within the LCIA-QSAR modeling workflow. It includes functionalities to 
-load features and target variables, handle missing values, and align 
-data based on common indexes.
+This module contains the `DataManager` class which manages the loading and 
+handling of features and target data.
 '''
 
 import pandas as pd 
@@ -10,13 +8,7 @@ import pandas as pd
 #region: DataManager.__init__
 class DataManager:
     '''
-    Manages the loading and handling of features and target data 
-    within the LCIA-QSAR modeling workflow.
-
-    Attributes
-    ----------
-    config : UnifiedConfiguration
-        Configuration settings for data management.
+    Manages the loading and handling of features and target data.
     '''
     def __init__(self, data_settings, path_settings):
         '''

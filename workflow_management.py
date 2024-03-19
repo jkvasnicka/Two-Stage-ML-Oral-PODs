@@ -40,8 +40,7 @@ class WorkflowManager:
     '''
     This class serves as the main orchestrator of the modeling workflows. It 
     integrates various components like data management, pipeline building, 
-    feature selection, model evaluation, and results storage to ensure the 
-    entire process from data loading to results storage is seamless.
+    feature selection, model evaluation, and results storage.
 
     Attributes
     ----------
@@ -118,6 +117,8 @@ class WorkflowManager:
         Returns
         -------
         None
+            The results are written to a dedicated directory as specified by 
+            the configuration file.
         '''
         # For reproducibility,
         self.results_manager.write_configuration(self._config)

@@ -1,4 +1,12 @@
 '''
+Plotting module for visualizing counts of important features across replicate
+models from cross-validation.
+
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt 
@@ -13,6 +21,25 @@ def important_feature_counts(
         plot_settings
         ):
     '''
+    Visualize the counts of important features across replicate models from 
+    cross-validation.
+
+    This function plots horizontal bar graphs where each bar represents a 
+    feature and its count across all replicate models. The features included 
+    in the final model are highlighted in a different color.
+
+    Parameters
+    ----------
+    results_analyzer : results_analysis.ResultsAnalyzer
+        Manages the analysis of results.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
+
+    Returns
+    -------
+    None
+        The figures are saved to a dedicated directory derived from the 
+        function name.
     '''
     # Define colorblind-friendly colors
     color_filled = '#1f77b4'  # Blue

@@ -1,4 +1,12 @@
 '''
+Plotting module for visualizing model performance as part of a model 
+evaluation. 
+
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt 
@@ -33,8 +41,20 @@ def in_and_out_sample_comparisons(
     
     Parameters
     ----------
+    results_analyzer : results_analysis.ResultsAnalyzer
+        Manages the analysis of model results.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
+    function_for_metric : dict
+        Mapping of performance metrics to their corresponding functions.
     xlim : tuple, optional
         Tuple specifying the x-axis limits. Default is (0., 1.).
+
+    Returns
+    -------
+    None
+        The figures are saved to a dedicated directory derived from the 
+        function name.
     '''
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys_outer = results_analyzer.group_model_keys(
@@ -90,7 +110,8 @@ def in_sample_performance_comparison(
         function_for_metric,
         plot_settings
     ):
-    '''Generate scatterplots of in-sample performance.
+    '''
+    Generate scatterplots of in-sample performance.
     '''
     # FIXME: nrows, ncols hardcoded for now. Should be dynamic
     fig, axs = plt.subplots(

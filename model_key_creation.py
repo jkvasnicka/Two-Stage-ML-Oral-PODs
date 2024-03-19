@@ -1,6 +1,4 @@
 '''
-Module to manage model keys in a structured manner.
-
 This module contains the `ModelKeyCreator` class which facilitates the 
 creation of unique model keys based on provided modeling instructions. These 
 keys serve as unique identifiers for models and play a crucial role in 
@@ -41,23 +39,6 @@ class ModelKeyCreator:
     keys that identify specific configurations of models. Additionally, it 
     provides functionality to map these complex keys to simpler numeric 
     identifiers for easier referencing.
-
-    Attributes
-    ----------
-    instructions : list of dict
-        A list containing dictionaries with modeling instructions detailing 
-        how models should be constructed and evaluated.
-
-    Methods
-    -------
-    create_identifier_key_mapping():
-        Generate a mapping from complex model keys to simpler numeric 
-        identifiers.
-    create_model_key(instruction, estimator_name):
-        Construct a unique model key.
-    create_model_key_names():
-        Get the model key names based on the structure of the modeling 
-        instructions.
     '''
     def __init__(self, modeling_instructions):
         '''

@@ -1,4 +1,5 @@
 '''
+This module contains various utility functions for general plotting tasks.
 '''
 
 import seaborn as sns
@@ -10,6 +11,37 @@ import numpy as np
 #region: save_figure
 def save_figure(fig, function, fig_label, extension='.png', bbox_inches=None):
     '''
+    Save a matplotlib figure to a specified directory with a given label and 
+    file extension.
+
+    This function constructs the file path for the figure using the `function` 
+    and `fig_label` arguments, then saves the figure to this path. The 
+    directory in which the figure is saved is determined by the `function`'s 
+    name.
+
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        The figure object to be saved.
+    function : function
+        The function based on which the directory for saving the figure is 
+        determined.
+    fig_label : str or tuple or list
+        The label to be used for naming the saved figure file. If it is a 
+        tuple or list, elements will be joined with a dash.
+    extension : str, optional
+        The file extension for the saved figure (default is '.png').
+    bbox_inches : str, optional
+        The parameter for `matplotlib.figure.Figure.savefig` method to set 
+        bounding box in inches (default is None).
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The function prints the path to the saved figure as feedback to the user.
     '''
     output_dir = function_directory(function)
     fig_path = figure_path(output_dir, fig_label, extension=extension)
@@ -20,6 +52,34 @@ def save_figure(fig, function, fig_label, extension='.png', bbox_inches=None):
 #region: figure_path
 def figure_path(function_dir, fig_label, extension='.png'):
     '''
+    Generate a file path for saving a figure.
+
+    This function creates a filename from the `fig_label`, replacing spaces 
+    and slashes with dashes, and appends the specified file `extension`. It 
+    then constructs a full file path by joining this filename with the 
+    `function_dir`.
+
+    Parameters
+    ----------
+    function_dir : str
+        The directory where the figure file will be saved.
+    fig_label : str or tuple or list
+        The label for the figure file. If it is a tuple or list, elements will 
+        be joined with a dash. Spaces and slashes in the label are replaced 
+        with dashes.
+    extension : str, optional
+        The file extension for the figure (default is '.png').
+
+    Returns
+    -------
+    str
+        The full file path for the figure.
+
+    Notes
+    -----
+    This function ensures that the file name is safe for the file system by 
+    avoiding certain characters like slashes that could be interpreted as 
+    directory separators.
     '''
     if isinstance(fig_label, (tuple, list)):
         fig_label = '-'.join(map(str, fig_label))
@@ -40,7 +100,9 @@ def function_directory(function):
 
 #region: ensure_directory_exists
 def ensure_directory_exists(path):
-    '''Check if the directory at `path` exists and if not, create it.'''
+    '''
+    Check if the directory at `path` exists and if not, create it.
+    '''
     if not os.path.exists(path):
         os.makedirs(path)
 #endregion

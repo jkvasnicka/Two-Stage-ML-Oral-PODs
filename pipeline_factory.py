@@ -1,11 +1,7 @@
 '''
-This module provides a class to build pipelines including estimators and
-preprocessors for different modeling workflows.
-
-Classes
--------
-- PipelineBuilder : A class to build pipelines for different modeling 
-                    workflows.
+This module contains the `PipelineBuilder` class, which is used to build 
+pipelines including estimators and preprocessors for different modeling 
+workflows.
 
 Example
 -------

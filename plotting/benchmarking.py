@@ -1,4 +1,11 @@
 '''
+Plotting module for the model performance benchmarking.
+
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt
@@ -20,15 +27,20 @@ def benchmarking_scatterplots(
 
     Parameters
     ----------
+    results_analyzer : instance of results_analysis.ResultsAnalyzer
+        Manages the analysis of results. 
+    function_for_metric : dict
+        Mapping of performance metrics to their corresponding functions.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
     figsize : tuple, optional
         Figure size. If None, a default size is used.
 
     Returns
     -------
-    figs : list
-        List of generated figures.
-    axs : list
-        List of axes corresponding to the figures.
+    None
+        The figures are saved to a dedicated directory derived from the 
+        function name.
     '''
     y_auth_df = results_analyzer.load_authoritative_pods()
     y_toxcast = results_analyzer.load_oral_equivalent_doses()

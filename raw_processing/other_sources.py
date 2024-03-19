@@ -1,4 +1,6 @@
-'''This module contains various functions for loading/parsing raw data.
+'''
+This module contains various functions for loading and processing raw data 
+from various sources.
 '''
 
 import pandas as pd
@@ -18,7 +20,8 @@ def surrogate_toxicity_values_from_excel(
         effect_mapper=None, 
         write_path=None
         ):
-    '''Load the surrogate toxicity values.
+    '''
+    Load the surrogate toxicity values.
 
     Parameters
     ----------
@@ -94,7 +97,8 @@ def toxicity_data_and_study_counts_from_excel(
         index_col, 
         tox_data_kwargs
         ):
-    '''Helper function to load the toxicity data and study counts from the
+    '''
+    Helper function to load the toxicity data and study counts from the
     source Excel file.
 
     Returns
@@ -137,16 +141,8 @@ def authoritative_toxicity_values_from_excel(
         id_name=None, 
         write_path=None
         ):
-    '''Load and parse the authoritative toxicity values from CSV file.
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-
-    Reference
-    ---------
+    '''
+    Load and process the authoritative toxicity values from a CSV file.
     '''
     fig_s5_data = (
         pd.read_excel(fig_s5_path, **auth_data_kwargs)
@@ -184,7 +180,8 @@ def experimental_ld50s_from_excel(
         inverse_transform=True,
         write_path=None
     ):
-    '''Load and parse the experimental LD50 values from an Excel file.
+    '''
+    Load and process the experimental LD50 values from an Excel file.
 
     Parameters
     ----------

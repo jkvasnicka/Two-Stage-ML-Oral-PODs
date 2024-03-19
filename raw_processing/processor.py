@@ -1,15 +1,8 @@
 '''
-This module processes raw datasets to extract, clean, and structure relevant 
-features and targets for the LCIA-QSAR modeling workflow.
-
-This module contains the RawDataProcessor class, which provides various 
+This module contains the `RawDataProcessor` class, which centralizes various 
 methods to handle raw input files, convert them to a structured format, 
 and save the resulting data to disk. The processed data are suitable for 
-subsequent modeling processes in the LCIA-QSAR workflow.
-
-The raw data processing involves several tasks including extraction of 
-chemical identifiers, parsing and cleaning of data files for feature 
-and target variable extraction, and saving them in a structured format.
+subsequent modeling workflows.
 
 Example
 -------
@@ -17,9 +10,8 @@ Example
     processor = RawDataProcessor(
         raw_data_settings, data_settings, path_settings
         )
-    processor._surrogate_pods_from_raw()
-    processor._comptox_features_from_raw()
-    ... (and other processing methods)
+    processor.process_from_raw('surrogate_pods')
+    processor.process_from_raw('opera')
 '''
 
 import pandas as pd
@@ -35,7 +27,7 @@ from . import utilities
 class RawDataProcessor:
     '''
     Process raw datasets to extract and structure relevant features and 
-    targets for the LCIA-QSAR modeling workflow.
+    targets for the modeling workflow.
 
     The RawDataProcessor class provides methods to handle raw input files, 
     process the raw data, and save the resulting structured data to disk 
@@ -77,6 +69,10 @@ class RawDataProcessor:
     #region: process_from_raw
     def process_from_raw(self, data_type):
         '''
+        This method provides a user interface to access the corresponding
+        function for a specified data type. 
+
+        The data_type must correspond to a key in self.dispatcher.
         '''
         return self.dispatcher[data_type]()
     #endregion

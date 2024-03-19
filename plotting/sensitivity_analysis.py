@@ -1,4 +1,14 @@
 '''
+Plotting module for visualizing model performance across all models as part of
+a sensitivity analysis.
+
+NOTE: This module may be obsolete.
+
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt 

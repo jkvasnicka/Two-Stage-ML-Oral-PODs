@@ -1,8 +1,9 @@
-'''This module contains functions for loading/parsing raw data from the 
+'''
+This module contains functions for loading and processing raw data from the 
 U.S. EPA CompTox Chemistry Dashboard. 
 
 These data were batch downloaded and stored as either .CSV or .XLSX files 
-from https://comptox.epa.gov/dashboard/
+from the following source: https://comptox.epa.gov/dashboard/
 '''
 import pandas as pd 
 
@@ -92,7 +93,8 @@ def opera_test_predictions_from_csv(
 
 #region: strip_model_name
 def strip_model_name(string, model_name):
-    '''Helper function to strip the model name from the column name.
+    '''
+    Helper function to strip the model name from the column name.
 
     See Also
     --------

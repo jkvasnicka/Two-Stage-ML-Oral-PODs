@@ -4,11 +4,11 @@ Plotting module for Margin of Exposure (MOE) data.
 This module contains functions for plotting cumulative distribution functions
 (CDFs) of POD and MOE data across various models and datasets.
 
-Notes
------
-This module is part of a larger plotting sub-package focused on the 
-visualization of results from the main package. It relies on external classes 
-such as ResultsAnalyzer and PlotSetting for data processing and configuration.
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt 
@@ -50,14 +50,14 @@ def margins_of_exposure_cumulative(results_analyzer, plot_settings):
     ----------
     results_analyzer : ResultsAnalyzer
         An instance of ResultsAnalyzer used to retrieve and process MOE data.
-    plot_settings : PlotSettings
-        An instance of PlotSettings containing label and color configurations.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
 
     Returns
     -------
     None
-        The function creates and saves the subplots based on the provided
-        results_analyzer and plot_settings.
+        The figures are saved to a dedicated directory derived from the 
+        function name.
     '''
     # Get x-axis truncation limit if present
     right_truncation = plot_settings.__dict__.get('moe_right_truncation', None)
@@ -152,8 +152,8 @@ def single_model_moes(
         The key representing the model to plot.
     results_analyzer : ResultsAnalyzer
         An instance of ResultsAnalyzer used to retrieve and process MOE data.
-    plot_settings : PlotSettings
-        An instance of PlotSettings containing label and color configurations.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
     title : str, optional
         Title for the plot. If None, no title is set.
 
@@ -257,8 +257,8 @@ def plot_model_moe_data(
         The key representing the model to plot.
     results_analyzer : ResultsAnalyzer
         An instance of ResultsAnalyzer used to retrieve MOE data.
-    plot_settings : PlotSettings
-        An instance of PlotSettings containing label and color configurations.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
     global_xlim : list, optional
         The current global limits as a list [min, max].
 

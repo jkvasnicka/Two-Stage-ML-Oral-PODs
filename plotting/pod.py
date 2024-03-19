@@ -4,11 +4,11 @@ Plotting module for Point of Departure (POD) data.
 This module contains functions for plotting cumulative distribution functions
 (CDFs) of POD data across various models and datasets.
 
-Notes
------
-This module is part of a larger plotting sub-package focused on the 
-visualization of results from the main package. It relies on external classes 
-such as ResultsAnalyzer and PlotSetting for data processing and configuration.
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt 
@@ -33,15 +33,14 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
     results_analyzer : ResultsAnalyzer
         An instance of the ResultsAnalyzer class, which provides methods for
         data analysis and manipulation.
-    plot_settings : PlotSettings
-        An instance of the PlotSettings class, which contains various settings
-        and configurations for the plot.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
 
     Returns
     -------
     None
-        The function creates and saves the subplots based on the provided
-        results_analyzer and plot_settings.
+        The figures are saved to a dedicated directory derived from the 
+        function name.
     '''
     colors, linestyles = get_plot_styles()
 

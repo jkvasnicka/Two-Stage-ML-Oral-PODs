@@ -1,4 +1,12 @@
 '''
+Plotting module for visualizing the coverage of training set chemicals within
+the broader set of application chemicals.
+
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt 
@@ -20,6 +28,18 @@ def pairwise_scatters_and_kde_subplots(
 
     Parameters
     ----------
+    features_file : str
+        Path to the features DataFrame.
+    targets_file : str
+        Path to the targets file.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
+
+    Returns
+    -------
+    None
+        The figure is saved to a dedicated directory derived from the 
+        function name.
     '''
     label_for_category = {
         False : plot_settings.label_for_sample_type['out'],

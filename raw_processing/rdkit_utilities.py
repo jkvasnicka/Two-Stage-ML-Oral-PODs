@@ -65,7 +65,8 @@ def get_2d_descriptors(
         discrete_suffix=None,
         write_path=None
         ):
-    '''Get all two-dimensional molecular descriptors from RDKit.
+    '''
+    Get all two-dimensional molecular descriptors from RDKit.
 
     Parameters
     ----------

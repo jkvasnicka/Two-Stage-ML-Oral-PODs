@@ -1,4 +1,11 @@
 '''
+Plotting module for visualizing feature importance scores. 
+
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt 
@@ -9,6 +16,14 @@ from . import utilities
 #region: importances_boxplots
 def importances_boxplots(results_analyzer, plot_settings):
     '''
+    Generate boxplots for feature importances across all models.
+
+    Parameters
+    ----------
+    results_analyzer : ResultsAnalyzer
+        An object to analyze and retrieve data for plotting.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
     '''
     _feature_importances_subplot(
         results_analyzer, 
@@ -21,6 +36,14 @@ def importances_boxplots(results_analyzer, plot_settings):
 #region: importances_replicates_boxplots
 def importances_replicates_boxplots(results_analyzer, plot_settings):
     '''
+    Generate boxplots for feature importances across replicates within each model.
+
+    Parameters
+    ----------
+    results_analyzer : ResultsAnalyzer
+        An object to analyze and retrieve data for plotting.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
     '''
     _feature_importances_subplot(
         results_analyzer, 
@@ -39,6 +62,29 @@ def _feature_importances_subplot(
         figsize=(8, 10)
         ):
     '''
+    Helper function to generate a subplot for feature importances or replicates.
+
+    This function is not meant to be called directly but through the
+    `importances_boxplots` and `importances_replicates_boxplots` functions.
+
+    Parameters
+    ----------
+    results_analyzer : ResultsAnalyzer
+        An object to analyze and retrieve data for plotting.
+    result_type : str
+        The type of result to plot ('importances' or 'importances_replicates').
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
+    function : function
+        The calling function, used to generate appropriate file names for saving.
+    figsize : tuple, optional
+        The size of the figure to be created. Default is (8, 10).
+
+    Returns
+    -------
+    None
+        The figures are saved to a dedicated directory derived from the 
+        function name.
     '''
     model_keys = results_analyzer.read_model_keys(exclusion_string='false')
 

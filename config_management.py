@@ -1,13 +1,9 @@
 '''
-This module provides a class to manage and access configuration settings 
-related to different categories such as paths, models, and plotting. By 
-unifying the configuration into a single object, it allows for a more 
-streamlined access to settings throughout the code.
-
-Classes
--------
-- UnifiedConfiguration : A unified configuration object to manage various 
-  settings.
+This module contains the `UnifiedConfiguration` class, which centralizes the 
+management and access of configuration settings related to different categories,
+such as paths, models, and plotting. By unifying the configuration into a 
+single object, it allows for a more streamlined access to settings throughout 
+the code.
 
 Example
 -------
@@ -30,26 +26,6 @@ class UnifiedConfiguration:
     related to different categories such as paths, models, and plotting. The 
     configuration files for each category are loaded and made accessible as 
     attributes.
-
-    Attributes
-    ----------
-    path : SimpleNamespace (optional)
-        Configuration settings related to paths.
-    model : SimpleNamespace (optional)
-        Configuration settings related to models.
-    plot : SimpleNamespace (optional)
-        Configuration settings related to plotting.
-    etc.
-
-    Example
-    -------
-        config_files_dict = {
-            'path': 'path-configuration.json',
-            'model': 'model-configuration.json',
-            'plot': 'plot-configuration.json'
-        }
-        config = UnifiedConfiguration(config_files_dict)
-        model_settings = config.model
     '''
     VALID_CATEGORIES = {
         'path',

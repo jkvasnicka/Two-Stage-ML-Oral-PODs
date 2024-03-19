@@ -1,4 +1,12 @@
 '''
+Plotting module for visualizing the completeness of features in terms of the
+percentage of missing values.
+
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt
@@ -17,13 +25,29 @@ def proportions_incomplete_subplots(
         threshold=None
     ):
     '''
+    Generate a visualization of the proportions of incomplete samples for each 
+    feature.
 
     Parameters
     ----------
+    features_file : str
+        Path to the features file. 
+    AD_file : str
+        Path to the applicability domain file.
+    targets_file : str
+        Path to the targets file.
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
     threshold : float, optional
         Expressed as a proportion between 0., 1. Features with a proportion of 
         missing values at or above this treshold would have been dropped from 
         the Pipeline.
+
+    Returns
+    -------
+    None
+        The figures are saved to a dedicated directory derived from the 
+        function name.
     '''
     X = pd.read_parquet(features_file)
     AD_flags = pd.read_parquet(AD_file)

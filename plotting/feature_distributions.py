@@ -1,4 +1,11 @@
 '''
+Plotting module for visualizing the distributions of features as histograms.
+
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt
@@ -13,6 +20,20 @@ def feature_distributions(
         color='cornflowerblue'
         ):
     '''
+    Visualize the distributions of features as histograms.
+
+    Paramters
+    ---------
+    features_file : str
+        Path to the features file. 
+    color : str, optional
+        Color for the histogram bars.
+
+    Returns
+    -------
+    None
+        The figures are saved to a dedicated directory derived from the 
+        function name.
     '''
     X = pd.read_parquet(features_file)
 

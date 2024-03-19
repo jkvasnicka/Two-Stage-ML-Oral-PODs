@@ -1,14 +1,9 @@
 '''
-This module defines the ModelEvaluator class, responsible for evaluating 
+This module defines the `ModelEvaluator` class, responsible for evaluating 
 machine learning models using repeated k-fold cross-validation. The class 
 provides the flexibility to evaluate models both with and without feature 
 selection, using a set of predefined metrics. It leverages parallel processing 
 to efficiently handle large datasets.
-
-Note
-----
-This class should be used in conjunction with pre-configured model settings, 
-metrics manager, and an optional feature selector.
 '''
 
 import pandas as pd
@@ -20,16 +15,6 @@ class ModelEvaluator:
     '''
     Class responsible for evaluating machine learning models using different 
     evaluation criteria, possibly with or without feature selection.
-
-    Attributes
-    ----------
-    evaluation_settings : SimpleNamespace
-        The configuration settings for the model evaluation.
-    metrics_manager : object
-        The manager that handles different evaluation metrics.
-    feature_selector : FeatureSelector, optional
-        An instance of a FeatureSelector to handle feature selection (default 
-        is None).
     '''
     def __init__(
             self, evaluation_settings, metrics_manager, feature_selector=None, 

@@ -1,4 +1,11 @@
 '''
+Plotting module for visualizing the predictions stratified by missing features.
+
+See Also
+--------
+plot.py
+    The main plotting module where this sub-module is implemented as part of 
+    the main package.
 '''
 
 import matplotlib.pyplot as plt 
@@ -12,14 +19,23 @@ def predictions_by_missing_feature(
         plot_settings
     ):
     '''
-    Generate and plot in-sample and out-of-sample predictions.
+    Visualize the impact of missing features on model predictions.
+
+    This function generates a series of boxplots to compare the distributions 
+    of model predictions stratified by missing features.
 
     Parameters
     ----------
+    results_analyzer : ResultsAnalyzer
+        An object to analyze and retrieve data for plotting. 
+    plot_settings : SimpleNamespace
+        Configuration settings for plotting.
 
     Returns
     -------
     None
+        The figures are saved to a dedicated directory derived from the 
+        function name.
     '''
     with sns.axes_style('whitegrid'):
 

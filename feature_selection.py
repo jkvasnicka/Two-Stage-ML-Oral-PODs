@@ -24,25 +24,6 @@ class FeatureSelector:
     '''
     A class to select important features using permutation importances and 
     repeated k-fold cross-validation.
-
-    Attributes
-    ----------
-    feature_selection_settings : SimpleNamespace
-        Configuration settings for feature selection.
-
-    Methods
-    -------
-    nested_feature_selection(estimator, X_train, y_train)
-        Perform feature selection using nested cross-validation.
-    permutation_importances(estimator, X_train, y_train)
-        Compute permutation importances for feature evaluation using repeated 
-        k-fold cross-validation.
-    permutation_importance_wrapper(
-        estimator, X_train, y_train, train_ix, test_ix
-        )
-        Execute the permutation_importance algorithm for one fold.
-    select_features(importances, criterion_metric, n_features)
-        Get important features based on a single criterion and metric.
     '''
     def __init__(self, feature_selection_settings, n_jobs=None):
         '''

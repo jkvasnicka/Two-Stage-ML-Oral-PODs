@@ -1,13 +1,8 @@
 '''
-This module is responsible for analyzing the results of machine learning 
-models. It includes functionalities for in-sample and out-of-sample 
-predictions, feature importance analysis, and other result-related tasks.
-
-Classes
--------
-ResultsAnalyzer 
-    Analyzes the results of machine learning models and provides methods for 
-    predictions, feature importance, and more.
+This module contains the `ResultsAnalyzer` class, which is responsible for 
+analyzing the results of the modeling workflows. It includes functionalities 
+for in-sample and out-of-sample predictions, feature importance analysis, and 
+other result-related tasks.
 '''
 
 import pandas as pd 
@@ -26,25 +21,6 @@ class ResultsAnalyzer:
     This class provides methods to obtain in-sample and out-of-sample 
     predictions, determine important features, and perform other 
     result-related analyses.
-
-    Attributes
-    ----------
-    results_manager : A `ResultsManager` instance for managing results data.
-    data_manager : A `DataManager` instance for managing data.
-    config : UnifiedConfiguration object
-
-    Methods
-    -------
-    get_in_sample_prediction(model_key, inverse_transform=False) 
-        Get in-sample predictions.
-    predict(model_key, inverse_transform=False) 
-        Predict out-of-sample data.
-    get_important_features(model_key) 
-        Get important features for the model.
-    get_important_features_replicates(model_key) 
-        Get important features for each replicate.
-    split_replicates(dataframe, stride) 
-        Split a replicates DataFrame into individual DataFrames.
     '''
     def __init__(self, results_manager, data_manager, plot_settings):
         '''
@@ -54,6 +30,8 @@ class ResultsAnalyzer:
         ----------
         results_manager : A `ResultsManager` instance
         data_manager : A `DataManager` instance
+        plot_settings : SimpleNamespace
+            Configuration settings related to plotting.
         '''
         self.results_manager = results_manager
         self.data_manager = data_manager

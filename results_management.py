@@ -5,10 +5,6 @@ and fitted estimators. It includes methods for saving and retrieving results
 in Parquet format, handling fitted estimator objects with Joblib, managing 
 metadata such as headers, and providing utility functions for listing and 
 accessing model keys.
-
-Classes:
-    ResultsManager: Manages the reading and writing of results and fitted 
-    estimators.
 '''
 
 import os
@@ -27,29 +23,10 @@ class ResultsManager:
     importances, fitted estimators, and metadata such as headers and model key 
     names. It supports reading and writing files for results and estimators.
 
-    Parameters
-    ----------
-    output_dir : str
-        Path to the directory where results and estimators will be saved.
-
     Attributes
     ----------
     output_dir : str
         Path to the directory where results and estimators are saved.
-    _metadata_path : str
-        Path to the metadata JSON file within the output directory.
-
-    Methods
-    -------
-    write_estimator(estimator, model_key)
-        Write the fitted estimator to a Joblib file.
-    read_estimator(model_key)
-        Read the fitted estimator from a Joblib file.
-    write_result(result_df, model_key, result_type)
-        Write the result DataFrame to the specified file.
-    read_result(model_key, result_type)
-        Read the result file and returns a DataFrame.
-    ... (other methods)
     '''
     def __init__(
             self, 

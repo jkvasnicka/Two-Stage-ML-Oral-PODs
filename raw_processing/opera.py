@@ -1,12 +1,13 @@
-'''This module contains functions for loading/parsing raw data from OPERA 2.9.
+'''
+This module contains functions for loading and processing raw data from the
+OPERA 2.9 suite of models by Kamel Mansouri et al.
 
-The OPERA model was run with the following output options:
-    - Separate files
-    - Experimental values
-    - Nearest neighbors
-    - INclude descriptor values
+This module was designed to process batches of OPERA outputs where each batch
+corresponds to a unique subdirectory of separate CSV files.
 
-Source: https://github.com/NIEHS/OPERA/releases/tag/v2.9.1
+References
+----------
+https://github.com/NIEHS/OPERA/releases/tag/v2.9.1
 '''
 
 import pandas as pd 
@@ -16,7 +17,7 @@ import logging
 
 from . import utilities
 
-# FIXME: 
+# NOTE: For backwards compatibility
 def get_original_columns(columns_for_model):
     '''
     Return features columns in original order as manuscript submission. 
@@ -41,15 +42,12 @@ def process_all_batches(
     Process all directories in the given main directory, where each directory 
     represents a batch of samples/chemicals.
 
-    Parameters
-    ----------
-    main_dir : str
-        The path to the main directory.
+    The results are concatenated across batches.
 
     Returns
     -------
-    pd.DataFrame
-        A DataFrame with combined data from all processed directories.
+    - Applicability domain flags (pandas.DataFrame)
+    - Predictions (pandas.DataFrame)
     '''
     logging.basicConfig(
         filename=os.path.join(main_dir, log_file_name), 
@@ -107,6 +105,12 @@ def extract_predictions_and_app_domains(
         flags_write_path=None
         ):
     '''
+    Process a single batch of chemicals/samples.
+
+    Returns
+    -------
+    - Applicability domain flags (pandas.DataFrame)
+    - Predictions (pandas.DataFrame)
     '''
     AD_flags = extract_app_domains_from_csv_files(
         data_dir, 
@@ -146,7 +150,8 @@ def extract_predictions_from_csv_files(
         flags=None, 
         write_path=None
         ):
-    '''Load and extract the outputs as separate CSV file from OPERA 2.9.
+    '''
+    Load and extract the outputs as separate CSV file from OPERA 2.9.
 
     Parameters
     ----------
@@ -249,7 +254,8 @@ def _model_data_from_csv(data_dir, file_name):
 
 #region: set_unreliable_values
 def set_unreliable_values(predictions, AD_flags):
-    '''Helper function which sets unreliable values in 'predictions' as NaN.
+    '''
+    Helper function which sets unreliable values in 'predictions' as NaN.
 
     For safety, the columns of 'AD_flags' must be in 'predictions'.
 
@@ -285,7 +291,8 @@ def extract_app_domains_from_csv_files(
         log10_pat=None, 
         write_path=None
         ):
-    '''Flag any features outside the respective model applicability domains.
+    '''
+    Flag any features outside the respective model applicability domains.
 
     Returns a DataFrame corresponding to common.opera.data_from_csv_files().
     Each column (feature) is a boolean mask where True denotes that a given
@@ -354,7 +361,8 @@ def extract_app_domains_from_csv_files(
 
 #region: is_outside_applicability_domain
 def is_outside_applicability_domain(global_local_ADs):
-    '''Find chemicals that may be unreliable.
+    '''
+    Find chemicals that may be unreliable.
 
     A chemical may be unreliable if,
         1. outside the model's global applicability domain
@@ -423,7 +431,8 @@ def split_applicability_domain_columns(global_local_ADs):
 #region: chemicals_to_exclude_from_qsar
 def chemicals_to_exclude_from_qsar(
         chemical_id_file, chemical_structures_file):
-    '''Return a list of chemicals that did not pass the QSAR Standardization 
+    '''
+    Return a list of chemicals that did not pass the QSAR Standardization 
     Workflow.
     '''
     raw_chemical_ids = set(pd.read_csv(chemical_id_file).squeeze())

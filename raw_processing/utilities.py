@@ -1,4 +1,5 @@
-'''Module for shared utility functions for preprocessing raw data.
+'''
+This module contains general utility functions for processing raw data.
 '''
 
 import os 
@@ -102,7 +103,9 @@ def remove_suffix_from_columns(data, suffix):
 # FIXME: There may be multiple copies of this function throughout the package
 #region: ensure_directory_exists
 def ensure_directory_exists(file_path):
-    '''Check if the directory at `path` exists and if not, create it.'''
+    '''
+    Check if the directory at `path` exists and if not, create it.
+    '''
     # Extract the directory path from the file_path
     directory_path = os.path.dirname(file_path)
     

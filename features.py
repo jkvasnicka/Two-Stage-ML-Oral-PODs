@@ -1,4 +1,10 @@
-'''Functions for feature processing.
+'''
+This module contains various functions for feature preprocessing and 
+transformation.
+
+See Also
+--------
+transform.py
 '''
 
 import pandas as pd
