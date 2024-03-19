@@ -638,6 +638,64 @@ class ResultsAnalyzer:
             )
     #endregion
 
+    #region: describe
+    def describe(self, model_key, result_type, percentiles=None):
+        '''
+        Describe model performances by generating a summary of selected 
+        metrics.
+
+        Parameters
+        ----------
+        model_key : str
+            Identifier for the model to summarize.
+        result_type : str
+            Specifies the type of results to describe.
+        percentiles : list of float, optional
+            The percentiles to include in the output. Uses pandas default.
+
+        Returns
+        -------
+        pandas.DataFrame
+        '''
+        if 'importances' in result_type:
+            metrics = list(self.plot_settings.label_for_scoring)
+        else: 
+            metrics = list(self.plot_settings.label_for_metric)
+
+        performances = self.read_result(model_key, result_type)
+
+        if 'root_mean_squared_error' in metrics:
+            metrics.append('gsd')
+            metrics.append('gsd_squared')
+            rmse = performances['root_mean_squared_error']
+            gsd, gsd_squared = self._calculate_gsd_with_confidence(rmse)
+            performances['gsd'] = gsd
+            performances['gsd_squared'] = gsd_squared
+
+        return performances.describe(percentiles=percentiles)[metrics]
+    #endregion
+
+    #region: _calculate_gsd_with_confidence
+    @staticmethod
+    def _calculate_gsd_with_confidence(rmse, z_score=1.96):
+        '''
+        Calculate the geometric standard deviation (GSD) and its 
+        confidence-adjusted value.
+
+        Parameters
+        ----------
+        rmse : float
+            The root mean squared error from which the GSD is derived.
+        z_score : float, optional
+            The z-score corresponding to the desired confidence interval. 
+            Defaults to 1.96, which corresponds to approximately a 95% 
+            confidence interval.
+        '''
+        gsd = 10 ** rmse  # in natural units
+        gsd_adjusted = gsd ** z_score
+        return gsd, gsd_adjusted
+    #endregion
+    
     #region: group_model_keys
     def group_model_keys(
             self, 
