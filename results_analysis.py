@@ -15,6 +15,9 @@ import numpy as np
 
 from feature_selection import FeatureSelector
 
+# NOTE: For backwards compatibility
+from plotting import sensitivity_analysis  
+
 #region: ResultsAnalyzer.__init__
 class ResultsAnalyzer:
     '''
@@ -625,17 +628,69 @@ class ResultsAnalyzer:
         return list_of_df
     #endregion
 
-    #region: read_model_keys
-    def read_model_keys(
-            self, 
-            inclusion_string=None, 
-            exclusion_string=None
-            ):
-        '''Refer to `ResultsManager.read_model_keys` for documentation'''
-        return self.results_manager.read_model_keys(
-            inclusion_string, 
-            exclusion_string
+    #region: summarize_model_performances
+    def summarize_model_performances(self, model_keys=None, quantiles=None):
+        '''
+        Generate a statistical summary table comparing performance scores of each 
+        model.
+
+        Parameters
+        ----------
+        model_keys : list of tuple, optional
+            List of model keys for which to retrieve the results. If None, 
+            then all model keys will be used.
+        quantiles : float or array-like, optional
+            Value between 0 <= q <= 1, the quantile(s) to compute. Defaults to 90%
+            and 95% confidence intervals.
+            
+        Returns
+        -------
+        pandas.DataFrame
+            The index has three levels: effect, model_name, metric. The columns are
+            the quantiles.
+        '''
+        if not quantiles:
+            quantiles = [0.025, 0.05, 0.5, 0.95, 0.975]  # by default
+
+        performances = self.results_manager.combine_results(
+            'performances', 
+            model_keys=model_keys
+        )
+        # Get the results for the metrics of interest
+        metrics = list(self.plot_settings.label_for_metric)
+        performances = performances.loc[
+            :, performances.columns.get_level_values('metric').isin(metrics)
+        ]
+        # Use the nice labels in the config file
+        performances = performances.rename(
+            self.plot_settings.label_for_metric, 
+            level='metric', 
+            axis=1
+        )
+
+        model_key_names = self.results_manager.read_model_key_names()
+
+        performances_for = {}  # initialize
+
+        for effect, effect_label in self.plot_settings.label_for_effect.items():
+            performances_for[effect_label] = sensitivity_analysis.prepare_data_for_plotting(
+                performances, 
+                effect, 
+                self.data_manager, 
+                model_key_names, 
+                self.plot_settings
             )
+
+        # Create a statistical summary table
+        performance_summary = (
+            pd.concat(performances_for, axis=1)
+            .quantile(quantiles)
+            .T
+        )
+        # Name the first index level
+        performance_summary.index.names = ['effect'] + performance_summary.index.names[1:]
+
+        return performance_summary
     #endregion
 
     #region: describe
@@ -695,7 +750,20 @@ class ResultsAnalyzer:
         gsd_adjusted = gsd ** z_score
         return gsd, gsd_adjusted
     #endregion
-    
+
+    #region: read_model_keys
+    def read_model_keys(
+            self, 
+            inclusion_string=None, 
+            exclusion_string=None
+            ):
+        '''Refer to `ResultsManager.read_model_keys` for documentation'''
+        return self.results_manager.read_model_keys(
+            inclusion_string, 
+            exclusion_string
+            )
+    #endregion
+
     #region: group_model_keys
     def group_model_keys(
             self, 
