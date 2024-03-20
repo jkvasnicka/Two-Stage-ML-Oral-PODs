@@ -1,9 +1,0 @@
-{
-
-    "n_splits_cv": 5,
-
-    "n_repeats_cv": 30,
-  
-    "random_state_cv": 1
-
-}
