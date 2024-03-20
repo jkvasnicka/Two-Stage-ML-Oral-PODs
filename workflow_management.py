@@ -33,14 +33,14 @@ from metrics_management import MetricsManager
 from model_evaluation import ModelEvaluator
 from model_key_creation import ModelKeyCreator
 from results_management import ResultsManager
+from config_management import UnifiedConfiguration
 
 #region: WorkflowManager.__init__
 class WorkflowManager:
     '''
     This class serves as the main orchestrator of the modeling workflows. It 
     integrates various components like data management, pipeline building, 
-    feature selection, model evaluation, and results storage to ensure the 
-    entire process from data loading to results storage is seamless.
+    feature selection, model evaluation, and results storage.
 
     Attributes
     ----------
@@ -117,6 +117,8 @@ class WorkflowManager:
         Returns
         -------
         None
+            The results are written to a dedicated directory as specified by 
+            the configuration file.
         '''
         # For reproducibility,
         self.results_manager.write_configuration(self._config)
@@ -198,3 +200,10 @@ class WorkflowManager:
         
         return {**evaluation_results, **build_results}
     #endregion
+
+if __name__ == '__main__':
+    config = UnifiedConfiguration()
+    workflow_manager = WorkflowManager(config)
+    print('Running WorkflowManager...')
+    workflow_manager.run()
+    print('Run completed.')

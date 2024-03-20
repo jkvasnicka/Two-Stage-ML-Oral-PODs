@@ -5,10 +5,6 @@ and fitted estimators. It includes methods for saving and retrieving results
 in Parquet format, handling fitted estimator objects with Joblib, managing 
 metadata such as headers, and providing utility functions for listing and 
 accessing model keys.
-
-Classes:
-    ResultsManager: Manages the reading and writing of results and fitted 
-    estimators.
 '''
 
 import os
@@ -27,31 +23,17 @@ class ResultsManager:
     importances, fitted estimators, and metadata such as headers and model key 
     names. It supports reading and writing files for results and estimators.
 
-    Parameters
-    ----------
-    output_dir : str
-        Path to the directory where results and estimators will be saved.
-
     Attributes
     ----------
     output_dir : str
         Path to the directory where results and estimators are saved.
-    _metadata_path : str
-        Path to the metadata JSON file within the output directory.
-
-    Methods
-    -------
-    write_estimator(estimator, model_key)
-        Write the fitted estimator to a Joblib file.
-    read_estimator(model_key)
-        Read the fitted estimator from a Joblib file.
-    write_result(result_df, model_key, result_type)
-        Write the result DataFrame to the specified file.
-    read_result(model_key, result_type)
-        Read the result file and returns a DataFrame.
-    ... (other methods)
     '''
-    def __init__(self, output_dir, results_file_type='csv', model_key_creator=None):
+    def __init__(
+            self, 
+            output_dir='Results', 
+            results_file_type='csv', 
+            model_key_creator=None
+            ):
         '''
         Initialize the ResultsManager with the specified output directory.
 
@@ -61,8 +43,9 @@ class ResultsManager:
 
         Parameters
         ----------
-        output_dir : str
+        output_dir : str, optional
             Path to the directory where results and estimators will be saved.
+            Default is 'Results'.
         results_file_type : str, optional
             Must be 'csv' or 'parquet'. Default 'csv'.
         model_key_creator : ModelKeyCreator, optional
@@ -667,6 +650,7 @@ class ResultsManager:
             exclusion_key_names , 
             string_to_exclude=None,
             model_keys=None,
+            filter_single_key=True
         ):
         '''
         Group model keys by grouping keys. A grouping key is formed by taking a model 
@@ -684,6 +668,9 @@ class ResultsManager:
         model_keys : list of tuples, optional
             Model keys to be grouped. Each tuple represents a model key. If None, 
             all model keys available in the ResultsManager object will be used.
+        filter_single_key : bool, optional
+            If True, groups with only one model key will be excluded from the final output.
+
 
         Returns
         -------
@@ -727,6 +714,14 @@ class ResultsManager:
             for grouping_key, group in itertools.groupby(
             sorted_model_keys, key=create_grouping_key)
         ]
+
+        if filter_single_key:
+            # Filter out groups with only one model key
+            grouped_model_keys = [
+                (grouping_key, group)
+                for grouping_key, group in grouped_model_keys
+                if len(group) > 1
+            ]
 
         return grouped_model_keys
     #endregion

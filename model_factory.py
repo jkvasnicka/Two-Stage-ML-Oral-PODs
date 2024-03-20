@@ -1,14 +1,8 @@
 '''
-This module contains the ModelBuilder class, which is responsible for building 
+This module contains the `ModelBuilder` class which is responsible for building 
 machine learning models with or without feature selection. These models can be 
 used for out-of-sample prediction and generalization error evaluation through 
 cross-validation.
-
-Example
--------
-feature_selector = FeatureSelector(model_settings)
-model_builder = ModelBuilder(feature_selector)
-result = model_builder.build(estimator, X, y, select_features=True)
 '''
 
 #region: ModelBuilder.__init__

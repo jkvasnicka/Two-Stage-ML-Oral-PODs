@@ -81,6 +81,8 @@ class MedianScaler(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
         '''
         self.center_ = X.quantile(0.5)
         self.scale_ = features.median_absolute_deviation(X)
+
+        self.where_scale_ = self.scale_ > 0.
         
         self.n_features_in_ = X.shape[1]
         self.feature_names_in_ = np.array(X.columns, dtype=object)
@@ -91,10 +93,21 @@ class MedianScaler(OneToOneFeatureMixin, TransformerMixin, BaseEstimator):
         '''Center and scale the continuous features and return a copy.
         '''
         check_is_fitted(self)
+
         assert self.n_features_in_ == X.shape[1]
         assert (self.center_.index == self.scale_.index).all()
+
+        X_transformed = X.copy()  # to avoid altering the original DataFrame
+
+        # Scale only features identified during fitting
+        for feature in self.where_scale_[self.where_scale_].index:
+            X_transformed[feature] = features.center_scale(
+                X[feature],
+                self.center_[feature], 
+                self.scale_[feature]
+                )
         
-        return features.center_scale(X, self.center_, self.scale_)
+        return X_transformed
 #endregion
 
 # TODO: May no longer be used.

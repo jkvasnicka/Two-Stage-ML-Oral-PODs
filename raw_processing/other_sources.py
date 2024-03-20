@@ -1,18 +1,27 @@
-'''This module contains various functions for loading/parsing raw data.
+'''
+This module contains various functions for loading and processing raw data 
+from various sources.
 '''
 
 import pandas as pd
 import numpy as np
 import re 
 
-from . import pattern
+from . import pattern, utilities
 
 #region: surrogate_toxicity_values_from_excel
 def surrogate_toxicity_values_from_excel(
-        tox_data_path, sheet_name, tox_metric, index_col, log10=False,
-        study_count_thres=3, chemicals_to_exclude=None, effect_mapper=None, 
-        write_path=None):
-    '''Load the surrogate toxicity values.
+        tox_data_path, 
+        tox_metric, 
+        index_col, 
+        tox_data_kwargs,
+        log10=False,
+        study_count_thres=3, 
+        effect_mapper=None, 
+        write_path=None
+        ):
+    '''
+    Load the surrogate toxicity values.
 
     Parameters
     ----------
@@ -26,8 +35,6 @@ def surrogate_toxicity_values_from_excel(
         If True, apply a log10 transformation to the toxicity values.
     study_count_thres : int (optional)
         Chemicals with study counts exceeding this value will be retained.
-    chemicals_to_exclude : list of str
-        Names of chemicals to drop, which may or may not be present.
     effect_mapper : dict (optional)
         Mapping each original effect type (string) --> preferred string for
         the return.
@@ -35,18 +42,22 @@ def surrogate_toxicity_values_from_excel(
     Returns
     -------
     dict of pandas.DataFrame for each effect type
+
+    Notes
+    -----
+    The data were obtained from Table S5 of Aurisano et al. (2023).
+
+    References
+    ----------
+    https://doi.org/10.1289/EHP11524
     '''
     tox_data = toxicity_data_and_study_counts_from_excel(
-        tox_data_path, tox_metric, index_col, sheet_name=sheet_name, 
-        header=[0, 1]
+        tox_data_path, 
+        tox_metric, 
+        index_col, 
+        tox_data_kwargs
         )
-    
-    if chemicals_to_exclude is not None:
-        tox_data = tox_data.drop(
-            chemicals_to_exclude, 
-            errors='ignore'
-            )
-    
+
     # Initialize a container.
     parsed_data_for_effect = {}
 
@@ -73,6 +84,7 @@ def surrogate_toxicity_values_from_excel(
     parsed_data_for_effect = pd.DataFrame(parsed_data_for_effect)
     
     if write_path is not None:
+        utilities.ensure_directory_exists(write_path)
         parsed_data_for_effect.to_csv(write_path)
 
     return parsed_data_for_effect
@@ -80,8 +92,13 @@ def surrogate_toxicity_values_from_excel(
 
 #region: toxicity_data_and_study_counts_from_excel
 def toxicity_data_and_study_counts_from_excel(
-        tox_data_path, tox_metric, index_col, **kwargs):
-    '''Helper function to load the toxicity data and study counts from the
+        tox_data_path, 
+        tox_metric, 
+        index_col, 
+        tox_data_kwargs
+        ):
+    '''
+    Helper function to load the toxicity data and study counts from the
     source Excel file.
 
     Returns
@@ -95,7 +112,7 @@ def toxicity_data_and_study_counts_from_excel(
     filter_toxicity_data()
     '''
     tox_data = (
-        pd.read_excel(tox_data_path, **kwargs)
+        pd.read_excel(tox_data_path, **tox_data_kwargs)
         .swaplevel(axis=1)
         .set_index(index_col)
         [[tox_metric, 'count']]
@@ -115,143 +132,212 @@ def toxicity_data_and_study_counts_from_excel(
     return tox_data.loc[where_not_missing]
 #endregion
 
-#region: regulatory_toxicity_values_from_csv
-def regulatory_toxicity_values_from_csv(
-        fig_s5_path, ilocs_for_effect, chem_id_for_casrn=None, 
-        new_chem_id=None, write_path=None):
-    '''Load and parse the regulatory toxicity values from CSV file.
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-
-    Reference
-    ---------
+#region: authoritative_toxicity_values_from_excel
+def authoritative_toxicity_values_from_excel(
+        fig_s5_path, 
+        auth_data_kwargs,
+        ilocs_for_effect, 
+        id_for_casrn=None, 
+        id_name=None, 
+        write_path=None
+        ):
+    '''
+    Load and process the authoritative toxicity values from a CSV file.
     '''
     fig_s5_data = (
-        pd.read_csv(fig_s5_path, skiprows=[0], header=[0, 1])
+        pd.read_excel(fig_s5_path, **auth_data_kwargs)
         .droplevel(0, axis=1)  # allows duplicate column names
     )
 
     # Initialize a container.
-    reg_pods = {}
+    auth_pods = {}
     for effect, ilocs in ilocs_for_effect.items():
-        reg_pods[effect] = (
+        auth_pods[effect] = (
             fig_s5_data.iloc[:, ilocs]
             .drop_duplicates(subset='casrn')
             .set_index('casrn')
             .squeeze()
         )
-    reg_pods = pd.DataFrame(reg_pods).dropna(how='all')
-    reg_pods.index.name = reg_pods.index.name.upper()  # for consistency
+    auth_pods = pd.DataFrame(auth_pods).dropna(how='all')
+    auth_pods.index.name = auth_pods.index.name.upper()  # for consistency
 
-    if chem_id_for_casrn is not None:
-        # Replace the CASRN index with the new chemical identifier.
-        chem_id_for_casrn = pd.Series(chem_id_for_casrn, name=new_chem_id)
-        reg_pods = (
-            reg_pods.join(chem_id_for_casrn, how='inner')
-            .set_index(new_chem_id)
-            )
+    if id_for_casrn:
+        auth_pods = _replace_casrn_index(auth_pods, id_for_casrn, id_name)
         
     if write_path is not None:
-        reg_pods.to_csv(write_path)
+        utilities.ensure_directory_exists(write_path)
+        auth_pods.to_csv(write_path)
         
-    return reg_pods
-#endregion
-
-#region: toxcast_expocast_from_csv
-def toxcast_expocast_from_csv(
-        data_path, index_col, data_columns=None, log10=True, 
-        write_path=None):
-    '''Load and parse the combined estimates from En-hsuan Lu.
-    '''
-    exposure_data = pd.read_csv(data_path).drop_duplicates()
-
-    ## Rename columns for consistency.
-
-    column_mapper = {
-        'DTXSID.x' : 'DTXSID', 
-        'CAS' : 'CASRN'
-    }
-    exposure_data = (
-        exposure_data
-        .rename(column_mapper, axis=1)
-        .set_index(index_col)
-    )
-
-    if data_columns is not None:
-        exposure_data = exposure_data[data_columns]
-
-    if log10 is True:
-        exposure_data = np.log10(exposure_data)
-
-    exposure_data.columns = exposure_data.columns.str.replace(
-        '.', '_', regex=False)
-
-    if write_path is not None:
-        exposure_data.to_csv(write_path)
-
-    return exposure_data
+    return auth_pods
 #endregion
 
 #region: experimental_ld50s_from_excel
 def experimental_ld50s_from_excel(
-        ld50s_path, chem_identifiers, index_col, log10=False, 
-        ld50_columns=None, study_count_thres=None, write_path=None):
-    '''Load and parse the experimental LD50 values from an Excel file.
+        ld50s_path, 
+        ld50_exp_column,
+        id_for_casrn=None,
+        id_name=None,
+        inverse_transform=True,
+        write_path=None
+    ):
+    '''
+    Load and process the experimental LD50 values from an Excel file.
 
     Parameters
     ----------
     ld50s_path : str
         File path. 
-    chem_identifiers : pandas.DataFrame
-        Used to map CASRNs to the chemical identifier of interest.
-    index_col : str
-        Name of the chemical identifier in the headers of chem_identifiers to 
-        use as the index.
-    log10 : bool (optional)
-        If False, apply an inverse log10-transformation to the values.
-    ld50_columns : list of str (optional)
-        Names of columns corresponding to LD50 statistics to extract.
-    study_count_thres : int (optional)
-        Chemicals with study counts exceeding this value will be retained.
+    ld50_exp_column : str
+        Name of column corresponding to LD50 data to extract.
+    id_for_casrn : dict, optional
+        A dictionary mapping from CASRN to a new identifier.
+    id_name : str, optional
+        The name to be assigned to the new index.
+    inverse_transform : bool (optional)
+        If True, apply an inverse log10-transformation to the values.
     Write_path : str (optional)
         Path to write the return as a CSV file.
 
     Returns
     -------
-    pandas.DataFrame
+    pandas.Series
+
+    Notes
+    -----
+    These data were extracted from ToxValdDB and curated by Nicolo Aurisano. 
+    All data were extrapolated to humans. The data represent acute studies.
     '''
-    ld50s = pd.read_excel(ld50s_path)
+    # Get the LD50 values in log10-units
+    ld50s = pd.read_excel(ld50s_path, index_col='casrn')[ld50_exp_column]
 
-    if study_count_thres is not None:
-        # Apply the filter.
-        ld50s = ld50s.loc[ld50s['count_LD50'] > study_count_thres]
-    ld50s = ld50s.drop('count_LD50', axis=1)
+    if id_for_casrn:
+        ld50s = _replace_casrn_index(ld50s, id_for_casrn, id_name)
 
-    if ld50_columns is None:
-        # Use all LD50 columns in the original file.
-        ld50_columns = [c for c in ld50s if 'LD50' in c]
-
-    # Use the CASRN to get the specified identifier as the index.
-    ld50s = (
-        ld50s.merge(
-            chem_identifiers.reset_index(), 
-            left_on='casrn',
-            right_on='CASRN')
-        .set_index(index_col)
-    )
-
-    ld50s = ld50s[ld50_columns]
-
-    if log10 is False:
-        # Apply inverse transformation to get the original scale.
+    if inverse_transform:
         ld50s = 10**ld50s
 
     if write_path is not None:
+        utilities.ensure_directory_exists(write_path)
         ld50s.to_csv(write_path)
 
     return ld50s
+#endregion
+
+#region: _replace_casrn_index
+def _replace_casrn_index(data, id_for_casrn, id_name):
+    '''
+    Replace the index of a DataFrame, originally based on CASRN, with a new 
+    index.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        The DataFrame whose index is to be replaced. The current index should 
+        be CASRN.
+    id_for_casrn : dict
+        A dictionary mapping from CASRN to a new identifier.
+    id_name : str
+        The name to be assigned to the new index.
+
+    Returns
+    -------
+    pd.DataFrame
+        The DataFrame with its index replaced by the new identifiers.
+
+    Note
+    ----
+    Rows in `data` whose CASRN is not found in `id_for_casrn` will be excluded
+    from the returned DataFrame.
+    '''
+    casrn_intersection = list(data.index.intersection(set(id_for_casrn)))
+    data = data.loc[casrn_intersection]
+    data.index = [id_for_casrn[casrn] for casrn in data.index]
+    data.index.name = id_name    
+    return data
+#endregion
+
+#region: seem3_exposure_data_from_excel
+def seem3_exposure_data_from_excel(
+        exposure_file, 
+        exposure_data_kwargs,
+        index_col,
+        log10_transform=True,
+        write_path=None
+        ):
+    '''
+    Extract and process SEEM3 exposure data from raw data.
+
+    Parameters
+    ----------
+    exposure_file : str
+        Path to the Excel file containing the exposure data.
+    exposure_data_kwargs : dict
+        Key-word arguments for pandas.read_excel().
+    index_col : str
+        Column name to be used as the index.
+    log10_transform : bool, optional
+        If True, the data will be log10-transformed. Default True.
+    write_path : str, optional
+        Path to the output Parquet file. If present, the data will be written 
+        to disk.
+        
+    Returns
+    -------
+    pandas.DataFrame
+    '''
+    exposure_data = (
+        pd.read_excel(
+            exposure_file,
+            **exposure_data_kwargs
+        )
+        .set_index(index_col)
+    )
+
+    if log10_transform:
+        exposure_data = np.log10(exposure_data)
+
+    if write_path:
+        utilities.ensure_directory_exists(write_path)
+        exposure_data.to_parquet(write_path, compression='gzip')
+
+    return exposure_data
+#endregion
+
+#region: oral_equivalent_doses_from_excel
+def oral_equivalent_doses_from_excel(
+      oeds_file, 
+      oed_data_kwargs, 
+      index_col,
+      write_path=None
+    ):
+    '''
+    Extract and process the oral equivalent doses. 
+
+    Returns
+    -------
+    pandas.Series
+
+    Notes
+    -----
+    The data are extracted from Table S2 of Paul Friedman et al. (2020). The 
+    values are in log10 units of mg/(kg-d).
+
+    References
+    ----------
+    https://doi.org/10.1093/toxsci/kfz201
+    '''
+    oeds = (
+        pd.read_excel(
+            oeds_file, 
+            **oed_data_kwargs
+        )
+        .set_index(index_col)
+        .squeeze()
+    )
+
+    if write_path:
+        utilities.ensure_directory_exists(write_path)
+        oeds.to_csv(write_path)
+
+    return oeds
 #endregion

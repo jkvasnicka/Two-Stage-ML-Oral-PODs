@@ -1,43 +1,35 @@
-'''This module contains functions for loading/parsing raw data from OPERA 2.9.
+'''
+This module contains functions for loading and processing raw data from the
+OPERA 2.9 suite of models by Kamel Mansouri et al.
 
-The OPERA model was run with the following output options:
-    - Separate files
-    - Experimental values
-    - Nearest neighbors
-    - INclude descriptor values
+This module was designed to process batches of OPERA outputs where each batch
+corresponds to a unique subdirectory of separate CSV files.
 
-Source: https://github.com/NIEHS/OPERA/releases/tag/v2.9.1
+References
+----------
+https://github.com/NIEHS/OPERA/releases/tag/v2.9.1
 '''
 
 import pandas as pd 
 import numpy as np
 import os
 import logging
-import re
-import json
 
-from .utilities import inverse_log10_transform
+from . import utilities
 
-#region: chemicals_to_exclude_from_qsar
-def chemicals_to_exclude_from_qsar(
-        chemical_id_file, chemical_structures_file):
-    '''Return a list of chemicals that did not pass the QSAR Standardization 
-    Workflow.
+# NOTE: For backwards compatibility
+def get_original_columns(columns_for_model):
     '''
-    raw_chemical_ids = set(pd.read_csv(chemical_id_file).squeeze())
-    qsar_ready_ids = set(
-        extract_dtxsid_from_structures_file(chemical_structures_file)
-    )
+    Return features columns in original order as manuscript submission. 
 
-    return list(raw_chemical_ids.difference(qsar_ready_ids))
-#endregion
+    This is only a temporary fix for backwards compatibility.
+    '''
+    return [item for sublist in columns_for_model.values() for item in sublist]
 
 #region: process_all_batches
 def process_all_batches(
         main_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
-        structures_file_name, 
+        columns_for_model, 
         log_file_name, 
         index_name=None, 
         discrete_columns=None, 
@@ -50,15 +42,12 @@ def process_all_batches(
     Process all directories in the given main directory, where each directory 
     represents a batch of samples/chemicals.
 
-    Parameters
-    ----------
-    main_dir : str
-        The path to the main directory.
+    The results are concatenated across batches.
 
     Returns
     -------
-    pd.DataFrame
-        A DataFrame with combined data from all processed directories.
+    - Applicability domain flags (pandas.DataFrame)
+    - Predictions (pandas.DataFrame)
     '''
     logging.basicConfig(
         filename=os.path.join(main_dir, log_file_name), 
@@ -68,180 +57,109 @@ def process_all_batches(
         )
 
     # Initialize the containers for all batches.
-    AD_flags, opera_data = [], []
+    predictions, AD_flags = [], []
 
-    for dir_name in os.listdir(main_dir):
-        logging.info(f"Processing directory: {dir_name}")
-        data_dir = os.path.join(main_dir, dir_name)
-        structures_file = os.path.join(data_dir, structures_file_name)
+    ## Extract the data for each batch/subdirectory of chemicals
+    for entry in os.listdir(main_dir):
+        logging.info(f"Processing directory: {entry}")
+        data_dir = os.path.join(main_dir, entry)
 
         if os.path.isdir(data_dir):
             try:
-                AD_flags_df, opera_data_df = parse_data_single_batch(
-                    data_dir, 
-                    columns_mapper_path, 
-                    data_file_namer,
-                    structures_file, 
-                    index_name=index_name, 
-                    discrete_columns=discrete_columns, 
-                    discrete_suffix=discrete_suffix, 
-                    log10_pat=log10_pat
+                batch_predictions, batch_AD_flags = (
+                    extract_predictions_and_app_domains(
+                        data_dir, 
+                        columns_for_model, 
+                        index_name=index_name, 
+                        discrete_columns=discrete_columns, 
+                        discrete_suffix=discrete_suffix, 
+                        log10_pat=log10_pat
                     )
-                AD_flags.append(AD_flags_df)
-                opera_data.append(opera_data_df)
+                )
+                predictions.append(batch_predictions)
+                AD_flags.append(batch_AD_flags)
             except Exception as e:
                 logging.error(
-                    f"Skipping directory {dir_name} due to error: {str(e)}")
+                    f"Skipping directory {entry} due to error: {str(e)}")
                 continue
+    predictions = pd.concat(predictions)
     AD_flags = pd.concat(AD_flags)
-    opera_data = pd.concat(opera_data)
 
+    if data_write_path is not None:
+        predictions.to_csv(data_write_path)
     if flags_write_path is not None:
         AD_flags.to_csv(flags_write_path)
-    if data_write_path is not None:
-        opera_data.to_csv(data_write_path)
 
-    return AD_flags, opera_data
+    return predictions, AD_flags
 #endregion
-
-# TODO: Could set dtypes for discrete_columns (int).
-#region: parse_data_single_batch
-def parse_data_single_batch(
+    
+#region: extract_predictions_and_app_domains
+def extract_predictions_and_app_domains(
         data_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
-        structures_file,
-        index_name, 
-        discrete_columns=None, 
-        discrete_suffix=None, 
-        log10_pat='Log', 
-        data_write_path=None, 
-        flags_write_path=None
-        ):
-    '''
-    Handles each directory by extracting DTXSID values and calling OPERA 
-    functions.
-
-    Returns
-    -------
-    pd.DataFrame
-        A DataFrame with data from OPERA.
-    '''
-    molecule_ids = extract_dtxsid_from_structures_file(structures_file)
-    molecule_ids = pd.Series(molecule_ids, name=index_name)
-
-    # Remove duplicates, if any, and log the event
-    if molecule_ids.duplicated().any():
-        logging.warning(
-            f'Duplicate DTXSIDs found in directory {data_dir}.'
-            'Removing duplicates.')
-        molecule_ids = molecule_ids.drop_duplicates()
-
-    return parse_data_with_applicability_domains(
-        data_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
-        index_name=index_name, 
-        discrete_columns=discrete_columns, 
-        discrete_suffix=discrete_suffix, 
-        log10_pat=log10_pat, 
-        molecule_ids=molecule_ids, 
-        data_write_path=data_write_path, 
-        flags_write_path=flags_write_path
-        )
-#endregion
-
-#region: extract_dtxsid_from_structures_file
-def extract_dtxsid_from_structures_file(structures_file):
-    '''
-    Extracts DTXSID values from a SMI file.
-
-    Parameters
-    ----------
-    structures_file : str
-        The path to the SMI file.
-    index_col : str
-        The name of the index column in the output Series.
-
-    Returns
-    -------
-    pd.Series
-        A Series with the DTXSID values.
-    '''
-    with open(structures_file, 'r') as f:
-        # structure, dtxsid = line.split('\t')
-        dtxsid = [line.split('\t')[1].strip() for line in f.readlines()]
-    return dtxsid
-#endregion
-
-#region: parse_data_with_applicability_domains
-def parse_data_with_applicability_domains(
-        data_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
+        columns_for_model, 
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
         log10_pat='Log', 
-        molecule_ids=None, 
         data_write_path=None, 
         flags_write_path=None
         ):
     '''
+    Process a single batch of chemicals/samples.
+
+    Returns
+    -------
+    - Applicability domain flags (pandas.DataFrame)
+    - Predictions (pandas.DataFrame)
     '''
-    AD_flags = applicability_domain_flags(
+    AD_flags = extract_app_domains_from_csv_files(
         data_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
+        columns_for_model, 
         index_name=index_name,
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix,  
         log10_pat=log10_pat, 
-        molecule_ids=molecule_ids, 
         write_path=flags_write_path
     )
 
-    opera_data = parse_data_from_csv_files(
+    predictions = extract_predictions_from_csv_files(
         data_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
+        columns_for_model, 
         index_name=index_name, 
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix, 
         log10_pat=log10_pat, 
         flags=AD_flags,
-        molecule_ids=molecule_ids, 
         write_path=data_write_path
         )
     
-    return AD_flags, opera_data
+    if predictions.index.duplicated().any():
+        raise ValueError('Duplicate DTXSIDs found in directory. Check input data.')
+    
+    return predictions, AD_flags
 #endregion
 
-#region: parse_data_from_csv_files
-def parse_data_from_csv_files(
+#region: extract_predictions_from_csv_files
+def extract_predictions_from_csv_files(
         data_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
+        columns_for_model, 
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
         log10_pat='Log', 
         flags=None, 
-        molecule_ids=None, 
         write_path=None
         ):
-    '''Load and parse the outputs as separate CSV file from OPERA 2.9.
+    '''
+    Load and extract the outputs as separate CSV file from OPERA 2.9.
 
     Parameters
     ----------
     data_dir : str
         Path to the data directory. 
-    columns_mapper_path : str 
-        Path to a JSON file that maps model names to the desired column 
-        names in the data CSV file: mapper[model_name] --> list of str.
-    data_file_namer : function
-        Inputs each model name from the config_file keys and returns the
-        corresponding filenames.
+    columns_for_model : dict 
+        Mapping of OPERA2.9 model names (str) to the desired column names 
+        (str) in the data CSV file.
     index_name : str (optional)
         Can be used to rename the default index ('MoleculeID').
     discrete_columns : list of str (optional)
@@ -262,52 +180,84 @@ def parse_data_from_csv_files(
     pandas.DataFrame
         Axis 0 = chemical ID; Axis 1 = feature.
     '''
-    columns_for_model = json_to_dict(columns_mapper_path)
-
-    # Initialize a container.
-    data_for_model = {}
-    for model_name, data_columns in columns_for_model.items():
-        file_path = os.path.join(data_dir, data_file_namer(model_name))
-        model_data = pd.read_csv(file_path, index_col=0)
-        if molecule_ids is not None:
-            model_data = model_data.reset_index()
-            model_data.index = molecule_ids
-        data_for_model[model_name] = model_data[data_columns]
+    predictions = []  # initialize
+    for entry in os.listdir(data_dir):
+        if entry.endswith('.csv'):
+            model_name = _extract_model_name_from_file_name(entry)
+            if model_name in list(columns_for_model):
+                model_data = _model_data_from_csv(data_dir, entry)
+                predictions.append(model_data[columns_for_model[model_name]])
 
     ## Assemble the final DataFrame.
-    data_for_model = pd.concat(data_for_model.values(), axis=1)
-    if index_name is not None:
-        data_for_model.index.name = index_name
-    if log10_pat is not None:
-        data_for_model = inverse_log10_transform(data_for_model, log10_pat)
-    if discrete_columns is not None:
-        data_for_model = rename_discrete_columns(
-            data_for_model, discrete_columns, discrete_suffix)
-    if flags is not None:
-        data_for_model = set_unreliable_values(data_for_model, flags)
-    if write_path is not None:
-        data_for_model.to_csv(write_path)
 
-    return data_for_model
+    predictions = pd.concat(predictions, axis=1)
+
+    predictions = predictions[get_original_columns(columns_for_model)]
+
+    if index_name is not None:
+        # Rename the 'MoleculeID' column
+        predictions.index.name = index_name
+    if log10_pat is not None:
+        predictions = utilities.inverse_log10_transform(
+            predictions, 
+            log10_pat
+        )
+        predictions.columns = utilities.remove_pattern(
+            predictions.columns, 
+            log10_pat
+        )
+    if discrete_columns is not None:
+        predictions = utilities.tag_discrete_columns(
+            predictions, 
+            discrete_columns, 
+            discrete_suffix
+        )
+    if flags is not None:
+        predictions = set_unreliable_values(predictions, flags)
+    if write_path is not None:
+        predictions.to_csv(write_path)
+
+    return predictions
 #endregion
 
-# TODO: Add a check to ensure correct spelling.
-#region: rename_discrete_columns
-def rename_discrete_columns(
-        data_for_model, discrete_columns, suffix):
-    '''Tag discrete columns by adding a suffix.
-
-    discrete_columns must be contained in data_for_model.columns.
+#region: _extract_model_name_from_file_name
+def _extract_model_name_from_file_name(file_name):
     '''
-    mapper = {col : col+suffix for col in discrete_columns}
-    return data_for_model.rename(mapper, axis=1)
+    Helper function to extract an OPERA model name from the specified file 
+    name.
+
+    This function leverages OPERA's file name convention:
+    "<prefix>_<model_name>.csv"
+
+    Parameters
+    ----------
+    file_name : str
+
+    Returns
+    -------
+    str
+        The model name.
+    '''
+    return file_name.split('_')[-1].split('.')[0]
+#endregion
+
+#region: _model_data_from_csv
+def _model_data_from_csv(data_dir, file_name):
+    '''
+    Helper function to load OPERA model data from a CSV file.
+
+    The first column (MoleculeID) is used as the index column
+    '''
+    data_path = os.path.join(data_dir, file_name)
+    return pd.read_csv(data_path, index_col=0)
 #endregion
 
 #region: set_unreliable_values
-def set_unreliable_values(data, AD_flags):
-    '''Helper function which sets unreliable values in 'data' as NaN.
+def set_unreliable_values(predictions, AD_flags):
+    '''
+    Helper function which sets unreliable values in 'predictions' as NaN.
 
-    For safety, the columns of 'AD_flags' must be in 'data'.
+    For safety, the columns of 'AD_flags' must be in 'predictions'.
 
     See Also
     --------
@@ -316,34 +266,33 @@ def set_unreliable_values(data, AD_flags):
     Raises
     ------
     ValueError
-        If the columns of 'AD_flags' are not in 'data'.
+        If the columns of 'AD_flags' are not in 'predictions'.
     '''
-    data = data.copy()
+    predictions = predictions.copy()
 
-    shared_features = AD_flags.columns.intersection(data.columns)
+    shared_features = AD_flags.columns.intersection(predictions.columns)
     if len(shared_features) != len(AD_flags.columns):
-        raise ValueError('The columns of "AD_flags" must be in "data"')
+        raise ValueError('The columns of "AD_flags" must be in "predictions"')
         
     for feature in shared_features:
         where_unreliable = AD_flags[feature]
-        data.loc[where_unreliable, feature] = np.NaN    
+        predictions.loc[where_unreliable, feature] = np.NaN    
 
-    return data
+    return predictions
 #endregion
 
-#region: applicability_domain_flags
-def applicability_domain_flags(
+#region: extract_app_domains_from_csv_files
+def extract_app_domains_from_csv_files(
         data_dir, 
-        columns_mapper_path, 
-        data_file_namer, 
+        columns_for_model, 
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
         log10_pat=None, 
-        molecule_ids=None, 
         write_path=None
         ):
-    '''Flag any features outside the respective model applicability domains.
+    '''
+    Flag any features outside the respective model applicability domains.
 
     Returns a DataFrame corresponding to common.opera.data_from_csv_files().
     Each column (feature) is a boolean mask where True denotes that a given
@@ -353,49 +302,57 @@ def applicability_domain_flags(
     ----------
     https://doi.org/10.1186/s13321-018-0263-1
     '''
-    columns_for_model = json_to_dict(columns_mapper_path)
+    AD_flags = {}   # initialize
 
-    # Initialize a container.
-    AD_flags = {}
-
-    for model_name, feature_columns in columns_for_model.items():
+    for entry in os.listdir(data_dir):
+        if entry.endswith('.csv'):
+            model_name = _extract_model_name_from_file_name(entry)
+            if model_name in list(columns_for_model):
+                model_data = _model_data_from_csv(data_dir, entry)
         
-        file_path = os.path.join(data_dir, data_file_namer(model_name))
-        model_data = pd.read_csv(file_path, index_col=0)
-        if molecule_ids is not None:
-            model_data = model_data.reset_index()
-            model_data.index = molecule_ids
-        
-        where_ADs = model_data.columns.str.contains('^AD_')
-        ADs = model_data.loc[:, where_ADs]
-        
-        if list(ADs):
-            N_ADs = len(ADs.columns)
-            if N_ADs == 2: 
-                # All features share a pair of ADs: 'global' and 'local'.
-                for feature in feature_columns:
-                    AD_flags[feature] = (
-                        is_outside_applicability_domain(ADs)
-                        )
-            elif N_ADs//2 == len(feature_columns):
-                # Each feature has its own pair of ADs.
-                for feature in feature_columns:
-                    where_feature_ADs = ADs.columns.str.contains(
-                        feature.strip('_pred'))
-                    feature_specific_ADs = ADs.loc[:, where_feature_ADs]
-                    AD_flags[feature] = (
-                        is_outside_applicability_domain(feature_specific_ADs)
-                        )
+                where_ADs = model_data.columns.str.contains('^AD_')
+                ADs = model_data.loc[:, where_ADs]
+                
+                feature_columns = columns_for_model[model_name]
+                if list(ADs):
+                    N_ADs = len(ADs.columns)
+                    if N_ADs == 2: 
+                        # All features share a pair of ADs: 'global' and 'local'.
+                        for feature in feature_columns:
+                            AD_flags[feature] = (
+                                is_outside_applicability_domain(ADs)
+                                )
+                    elif N_ADs//2 == len(feature_columns):
+                        # Each feature has its own pair of ADs.
+                        for feature in feature_columns:
+                            where_feature_ADs = ADs.columns.str.contains(
+                                feature.strip('_pred'))
+                            feature_specific_ADs = ADs.loc[:, where_feature_ADs]
+                            AD_flags[feature] = (
+                                is_outside_applicability_domain(feature_specific_ADs)
+                                )
 
     ## Assemble the final DataFrame.
     AD_flags = pd.DataFrame(AD_flags)
+
+    original_columns = [c for c in get_original_columns(columns_for_model) if c in AD_flags]
+    AD_flags = AD_flags[original_columns]
+
     if index_name is not None:
+        # Rename the 'MoleculeID' column
         AD_flags.index.name = index_name
     if log10_pat is not None:
-        AD_flags.columns = AD_flags.columns.str.replace(log10_pat, '')
+        AD_flags.columns = utilities.remove_pattern(
+            AD_flags.columns, 
+            log10_pat
+        )
     if discrete_columns is not None:
-        AD_flags = rename_discrete_columns(
-            AD_flags, discrete_columns, discrete_suffix)
+        AD_flags = utilities.tag_discrete_columns(
+            AD_flags, 
+            discrete_columns, 
+            discrete_suffix,
+            validate_columns=False  # not all features have a defined AD
+            )
     if write_path is not None:
         AD_flags.to_csv(write_path)
 
@@ -404,7 +361,8 @@ def applicability_domain_flags(
 
 #region: is_outside_applicability_domain
 def is_outside_applicability_domain(global_local_ADs):
-    '''Find chemicals that may be unreliable.
+    '''
+    Find chemicals that may be unreliable.
 
     A chemical may be unreliable if,
         1. outside the model's global applicability domain
@@ -421,7 +379,7 @@ def is_outside_applicability_domain(global_local_ADs):
 
     See Also
     --------
-    common.opera.applicability_domain_flags()
+    extract_app_domains_from_csv_files()
     '''
     global_ADs, local_AD_indexes = (
         split_applicability_domain_columns(global_local_ADs))
@@ -470,74 +428,73 @@ def split_applicability_domain_columns(global_local_ADs):
     return global_ADs, local_AD_indexes
 #endregion
 
-#region: get_failed_directories
-def get_failed_directories(main_dir, log_file_name):
+#region: chemicals_to_exclude_from_qsar
+def chemicals_to_exclude_from_qsar(
+        chemical_id_file, chemical_structures_file):
     '''
-    Get a list of directories with failed operations from the main log file.
+    Return a list of chemicals that did not pass the QSAR Standardization 
+    Workflow.
+    '''
+    raw_chemical_ids = set(pd.read_csv(chemical_id_file).squeeze())
+    qsar_ready_ids = set(
+        extract_dtxsid_from_structures_file(chemical_structures_file)
+    )
+
+    return list(raw_chemical_ids.difference(qsar_ready_ids))
+#endregion
+
+#region: extract_dtxsid_from_structures_file
+def extract_dtxsid_from_structures_file(structures_file):
+    '''
+    Extract DTXSID values from a SMI file.
 
     Parameters
     ----------
-    main_dir : str
-        The main directory containing the main log file.
-    log_file_name : str
-        The name of the main log file.
+    structures_file : str
+        The path to the SMI file.
 
     Returns
     -------
     list
-        List of directories with failed operations.
     '''
-    failed_directories = []
-    main_log_file_path = os.path.join(main_dir, log_file_name)
-
-    try:
-        with open(main_log_file_path, 'r') as file:
-            for line in file:
-                if "Skipping directory" in line:
-                    dir_name = re.search(
-                        'Skipping directory (.*?) due to error', line).group(1)
-                    failed_directories.append(dir_name)
-    except Exception as e:
-        print(f"Could not open main log file due to error: {str(e)}")
-
-    return failed_directories
+    return extract_from_smi_file(structures_file, 1)
 #endregion
 
-#region: print_error_log_files
-def print_error_log_files(
-        main_dir, failed_directories, log_file_name="errorLogBatchRun.txt"):
+#region: extract_smiles_from_structures_file
+def extract_smiles_from_structures_file(structures_file):
     '''
-    Print the contents of the log files located at the given paths.
+    Extract "QSAR-ready" SMILES strings from a SMI file.
 
     Parameters
     ----------
-    main_dir : str
-        The main directory.
-    failed_directories : list
-        List of directories with failed operations.
-    log_file_name : str, optional
-        The name of the log file. Defaults to "errorLogBatchRun.txt".
+    structures_file : str
+        The path to the SMI file.
+
+    Returns
+    -------
+    list
     '''
-    for dir_name in failed_directories:
-        path = os.path.join(main_dir, dir_name, log_file_name)
-        try:
-            with open(path, 'r') as file:
-                print(f"Contents of log file at {path}:")
-                print(file.read())
-                print("\n----------\n")
-        except Exception as e:
-            print(f"Could not open and print the log file at {path} due to error: {str(e)}")
+    return extract_from_smi_file(structures_file, 0)
 #endregion
 
-#region: json_to_dict
-def json_to_dict(json_path):
-    '''Load a JSON file as a dictionary.
+#region: extract_from_smi_file
+def extract_from_smi_file(structures_file, index):
+    '''
+    Helper function to extract data from a SMI file based on the given index.
 
     Parameters
     ----------
-    json_path : str
-        Path to the JSON file.
+    structures_file : str
+        The path to the SMI file.
+    index : int
+        The index of the data to extract from each line (0 for SMILES, 1 for 
+        DTXSID).
+
+    Returns
+    -------
+    list
     '''
-    with open(json_path) as f:
-        return json.loads(f.read())
+    with open(structures_file, 'r') as f:
+        data = [line.split('\t')[index].strip() for line in f.readlines()]
+    return data
 #endregion

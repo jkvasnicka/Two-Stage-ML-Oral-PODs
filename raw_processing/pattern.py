@@ -1,4 +1,5 @@
-'''This module contains various regular expression patterns
+'''
+This module contains various regular expression patterns.
 
 Each pattern can be used as an argument to the re.compile() function.
 '''

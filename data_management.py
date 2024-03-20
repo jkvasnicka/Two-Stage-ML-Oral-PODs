@@ -1,8 +1,6 @@
 '''
-This module manages the loading and handling of features and target data 
-within the LCIA-QSAR modeling workflow. It includes functionalities to 
-load features and target variables, handle missing values, and align 
-data based on common indexes.
+This module contains the `DataManager` class which manages the loading and 
+handling of features and target data.
 '''
 
 import pandas as pd 
@@ -10,13 +8,7 @@ import pandas as pd
 #region: DataManager.__init__
 class DataManager:
     '''
-    Manages the loading and handling of features and target data 
-    within the LCIA-QSAR modeling workflow.
-
-    Attributes
-    ----------
-    config : UnifiedConfiguration
-        Configuration settings for data management.
+    Manages the loading and handling of features and target data.
     '''
     def __init__(self, data_settings, path_settings):
         '''
@@ -36,8 +28,14 @@ class DataManager:
 
     #region: load_features_and_target
     def load_features_and_target(
-            self, *, target_effect, features_source, ld50_type, 
-            data_condition, **kwargs):
+            self, 
+            *, 
+            target_effect, 
+            features_source, 
+            ld50_type, 
+            data_condition, 
+            **kwargs
+            ):
         '''
         Load both features (X) and target (y) based on the provided 
         parameters. Ensure that X and y share a common index.
@@ -76,7 +74,15 @@ class DataManager:
 
     #region: load_features
     def load_features(
-            self, *, features_source, ld50_type, data_condition, **kwargs):
+            self, 
+            *, 
+            features_source, 
+            ld50_type, 
+            data_condition, 
+            exclude_training=False,
+            target_effect=None,
+            **kwargs
+            ):
         '''
         Load the features (X) based on the provided parameters and 
         configuration.
@@ -89,7 +95,12 @@ class DataManager:
             Type of LD50 data to be used.
         data_condition : str
             Condition for handling data (e.g., dropping missing values).
-
+        exclude_training : bool, optional
+            If True, 'target_effect' must also be passed and chemicals used 
+            for model training will be excluded. Default is False; features 
+            are loaded for all chemicals.
+        target_effect : str, optional
+            The target effect to be considered. Needed if 'exclude_training'.
         **kwargs
             Collects any unneeded key-value pairs.
 
@@ -101,7 +112,12 @@ class DataManager:
         features_path = (
             self.path_settings.file_for_features_source[features_source]
         )
-        X = pd.read_csv(features_path, index_col=0)
+        X = pd.read_parquet(features_path)
+
+        if exclude_training:
+            y = self.load_target(target_effect=target_effect)
+            training_chemicals = set(y.index.intersection(X.index))
+            X = X.drop(training_chemicals)
 
         if self.data_settings.use_experimental_for_ld50[ld50_type]:
             ld50s_experimental = (
@@ -206,10 +222,10 @@ class DataManager:
         return common_objects
     #endregion
 
-    #region: load_regulatory_pods
-    def load_regulatory_pods(self):
+    #region: load_authoritative_pods
+    def load_authoritative_pods(self):
         '''
-        Load the regulatory points of departure (log10-units). 
+        Load the authoritative points of departure (log10-units). 
 
         Returns
         -------
@@ -217,7 +233,7 @@ class DataManager:
             One column for each target effect, and chemicals along the index.
         '''
         pods_for_effect = pd.read_csv(
-            self.path_settings.regulatory_pods_file, 
+            self.path_settings.authoritative_pods_file, 
             index_col=0
             )
         return pods_for_effect
@@ -226,17 +242,102 @@ class DataManager:
     #region: load_oral_equivalent_doses
     def load_oral_equivalent_doses(self):
         '''
-        Load the oral equivalent doses from ToxCast/httk median (log10-units).
+        Load the oral equivalent doses from a CSV file.
 
         Returns
         -------
         pandas.Series
         '''
-        dose_series = (
+        oeds = (
             pd.read_csv(
-                self.path_settings.toxcast_oeds_file, 
-                index_col=0)
-                ['tox_httk_50']
-                )
-        return dose_series    
+                self.path_settings.toxcast_oeds_file,
+                index_col=0
+            )
+            .squeeze()
+        )
+        return oeds
+    #endregion
+
+    #region: load_exposure_data
+    def load_exposure_data(self):
+        '''
+        Load the SEEEM3 exposure data from a Parquet file.
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame containing exposure predictions.
+        '''
+        return pd.read_parquet(self.path_settings.seem3_exposure_file)
+    #endregion
+
+    # TODO: This is only used to get DTXSIDs for OPERA, etc. Move upstream.
+    #region: load_application_chemicals
+    def load_application_chemicals(self):
+        '''
+        Get chemical identifiers (DTXSID) for model application.
+
+        These identifiers are derived from the intersection of the 
+        "Merged NORMAN Suspect List: SusDat" and SEEM3 chemicals, excluding
+        any chemicals used for model training.
+
+        Returns
+        -------
+        list of str
+
+        References
+        ----------
+        https://doi.org/10.5281/zenodo.6853705
+        '''
+        norman_chemicals = set(
+            pd.read_csv(self.path_settings.norman_chemicals_file)
+            .squeeze()
+            )
+        exposure_chemicals = set(self.load_exposure_data().index)
+        training_chemicals = set(self.load_training_chemicals())
+
+        return list(
+            norman_chemicals
+            .intersection(exposure_chemicals)
+            .difference(training_chemicals)
+        )
+    #endregion
+    
+    # TODO: This is only used to get DTXSIDs for OPERA, etc. Move upstream.
+    #region: load_training_chemicals
+    def load_training_chemicals(self):
+        '''
+        Helper function to get the identifiers for chemicals used for model 
+        training.
+
+        These chemicals should be excluded from "out-of-sample" predictions.
+        For all other purposes, training data should be loaded via 
+        `DataManager.load_features_and_target()`.
+        '''        
+        return list(
+            pd.read_csv(
+                self.path_settings.surrogate_pods_file, 
+                index_col=0
+            )
+            .index
+        )
+    #endregion
+
+    # TODO: This is only used to get DTXSIDs for OPERA, etc. Move upstream.
+    #region: load_all_chemicals
+    def load_all_chemicals(self):
+        '''
+        Get all chemical identifiers (DTXSID). 
+
+        "All chemicals" in this context is the union of the training set 
+        and out-of-sample chemicals.
+
+        Returns
+        -------
+        list
+        '''
+        training_chemicals = set(self.load_training_chemicals())
+        app_chemicals = set(self.load_application_chemicals())
+
+        return list(app_chemicals.union(training_chemicals))
     #endregion

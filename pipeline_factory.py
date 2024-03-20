@@ -1,11 +1,7 @@
 '''
-This module provides a class to build pipelines including estimators and
-preprocessors for different modeling workflows.
-
-Classes
--------
-- PipelineBuilder : A class to build pipelines for different modeling 
-                    workflows.
+This module contains the `PipelineBuilder` class, which is used to build 
+pipelines including estimators and preprocessors for different modeling 
+workflows.
 
 Example
 -------
@@ -39,6 +35,7 @@ from sklearn.compose import make_column_transformer
 from sklearn.pipeline import make_pipeline
 import numpy as np 
 
+# TODO: If this is the only use of transform.py, migrate it here.
 from transform import select_columns_without_pattern
 
 #region: PipelineBuilder.__init__

@@ -1,15 +1,8 @@
 '''
-This module processes raw datasets to extract, clean, and structure relevant 
-features and targets for the LCIA-QSAR modeling workflow.
-
-This module contains the RawDataProcessor class, which provides various 
+This module contains the `RawDataProcessor` class, which centralizes various 
 methods to handle raw input files, convert them to a structured format, 
 and save the resulting data to disk. The processed data are suitable for 
-subsequent modeling processes in the LCIA-QSAR workflow.
-
-The raw data processing involves several tasks including extraction of 
-chemical identifiers, parsing and cleaning of data files for feature 
-and target variable extraction, and saving them in a structured format.
+subsequent modeling workflows.
 
 Example
 -------
@@ -17,24 +10,24 @@ Example
     processor = RawDataProcessor(
         raw_data_settings, data_settings, path_settings
         )
-    processor._surrogate_pods_from_raw()
-    processor._comptox_features_from_raw()
-    ... (and other processing methods)
+    processor.process_from_raw('surrogate_pods')
+    processor.process_from_raw('opera')
 '''
 
 import pandas as pd
-import re
+import os.path
 
-from . import pattern
 from . import opera 
 from . import comptox
 from . import other_sources
+from . import rdkit_utilities
+from . import utilities
 
 #region: RawDataProcessor.__init__
 class RawDataProcessor:
     '''
-    Processe raw datasets to extract and structure relevant features and 
-    targets for the LCIA-QSAR modeling workflow.
+    Process raw datasets to extract and structure relevant features and 
+    targets for the modeling workflow.
 
     The RawDataProcessor class provides methods to handle raw input files, 
     process the raw data, and save the resulting structured data to disk 
@@ -60,111 +53,90 @@ class RawDataProcessor:
         self._index_col = 'DTXSID'
 
         # Map data types to their respective processing function
-        self._dispatcher = {
+        self.dispatcher = {
+            'dsstox_sdf_data' : self._dsstox_sdf_data_from_raw,
             'opera_features' : self._opera_features_from_raw,
             'comptox_features' : self._comptox_features_from_raw,
+            'rdkit_features' : self._rdkit_features_from_raw,
             'surrogate_pods' : self._surrogate_pods_from_raw,
-            'regulatory_pods' : self._regulatory_pods_from_raw,
+            'authoritative_pods' : self._authoritative_pods_from_raw,
             'experimental_ld50s' : self._experimental_ld50s_from_raw,
-            'oeds' : self._oral_equivalent_doses_from_raw
+            'seem3_exposure_data' : self._seem3_exposure_data_from_raw,
+            'toxcast_oeds' : self._oral_equivalent_doses_from_raw
         }
 #endregion
 
     #region: process_from_raw
     def process_from_raw(self, data_type):
         '''
+        This method provides a user interface to access the corresponding
+        function for a specified data type. 
+
+        The data_type must correspond to a key in self.dispatcher.
         '''
-        return self._dispatcher[data_type]()
+        return self.dispatcher[data_type]()
     #endregion
 
-    #region: get_labeled_identifiers
-    def get_labeled_identifiers(self, do_write=True):
+    #region: _dsstox_sdf_data_from_raw
+    def _dsstox_sdf_data_from_raw(self):
         '''
-        Extract chemical identifiers with labels for modeling.
+        Extract and process all SDF V2000 files in the DSSTox database.
 
-        Parameters
-        ----------
-        do_write : bool, optional
-            Whether to write the extracted identifiers to a TXT file. Default 
-            is True.
+        This method reads SDF files containing chemical identifiers and other
+        data from the DSSTox database. The data are distributed across 
+        multiple SDF files where each file contains several thousand unique 
+        chemicals. The resulting DataFrame is written to a Parquet file.
 
         Returns
         -------
-        pandas.Series
-            A series containing the extracted chemical identifiers.
+        pandas.DataFrame
+            SDF data for all batches of chemicals.
+
+        References
+        ----------
+        https://www.epa.gov/comptox-tools/comptox-chemicals-dashboard-release-notes#latest%20version
         '''
-        # NOTE: Only DTXSID has been verified to work
-        identifier_type = 'dtxsid'
-
-        # Define key-word arguments for pandas.read_excel().
-        kwargs = {
-            'sheet_name': self._raw_data_settings.sheet_name,
-            'header': [0, 1]
-            }
-
-        identifiers = (
-            pd.read_excel(
-                self._path_settings.raw_surrogate_pods_file, 
-                **kwargs)
-            .droplevel(axis=1, level=0)
-            [['dtxsid', 'casrn']]
-            )
-        
-        pattern_for_col = {
-            'dtxsid': re.compile(pattern.dtxsid(as_group=True)),
-            'casrn': re.compile(pattern.casrn(as_group=True))
-        }
-        for col, pat in pattern_for_col.items():
-            identifiers.loc[:, col] = (
-                identifiers[col].str.extract(pat, expand=False))
-
-        identifiers = identifiers[identifier_type].dropna()
-
-        if do_write:
-            # Write contents to TXT file for batch download in OPERA.
-            identifiers.to_csv(
-                self._path_settings.chemical_id_dev_file, 
-                header=None, 
-                index=None, 
-                sep=' '
+        sdf_data = rdkit_utilities.sdf_to_dataframe(
+            self._path_settings.dsstox_sdf_dir,
+            write_path=self._build_path_dsstox_compiled()
             )
 
-        return identifiers
+        # Write the DTXSID column to a text file for OPERA 2.9
+        dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
+        dtxsid_file = self._build_path_dsstox_identifiers()
+        utilities.ensure_directory_exists(dtxsid_file)
+        sdf_data[dtxsid_column].to_csv(dtxsid_file, header=False, index=False)
+
+        return sdf_data
     #endregion
 
-    #region: get_all_identifiers
-    def get_all_identifiers(self, do_write=True):
+    #region: _build_path_dsstox_compiled
+    def _build_path_dsstox_compiled(self):
         '''
-        Extract all chemical identifiers for modeling.
+        Helper function to build a path to the output file containing all 
+        DSSTox data.
 
-        Parameters
-        ----------
-        do_write : bool, optional
-            Whether to write the extracted identifiers to a TXT file. Default 
-            is True.
-
-        Returns
-        -------
-        pandas.Series
-            A series containing all the extracted chemical identifiers.
+        The file name is derived from the directory name and extension.
         '''
-        # NOTE: Only DTXSID has been verified to work
-        identifiers = (
-            pd.read_csv(
-                self._path_settings.seem3_exposure_file,
-                encoding='latin-1')
-            ['DTXSID']
-        )
+        sdf_directory = self._path_settings.dsstox_sdf_dir
+        directory_name = os.path.split(sdf_directory)[-1]
+        file_name = f'{directory_name}.parquet'
+        return os.path.join(sdf_directory, file_name)
+    #endregion
 
-        if do_write:
-            identifiers.to_csv(
-                self._path_settings.chemical_id_app_file,    
-                index=False, 
-                header=False,
-                sep=' '
+    #region: _build_path_dsstox_identifiers
+    def _build_path_dsstox_identifiers(self):
+        '''
+        Helper function to build a path to the output file containing the
+        DSSTox identifiers (DTXSID).
+
+        The file name is derived from the column name and extension.
+        '''
+        dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
+        return os.path.join(
+            self._path_settings.dsstox_sdf_dir, 
+            f'{dtxsid_column}.txt'
             )
-
-        return identifiers
     #endregion
 
     #region: _surrogate_pods_from_raw
@@ -184,9 +156,9 @@ class RawDataProcessor:
         '''
         surrogate_pods = other_sources.surrogate_toxicity_values_from_excel(
             self._path_settings.raw_surrogate_pods_file, 
-            self._raw_data_settings.sheet_name,
             self._raw_data_settings.tox_metric, 
             self._index_col.lower(), 
+            self._raw_data_settings.surrogate_tox_data_kwargs,
             log10=self._raw_data_settings.do_log10_target,
             effect_mapper=self._raw_data_settings.effect_mapper,
             write_path=self._path_settings.surrogate_pods_file
@@ -195,16 +167,13 @@ class RawDataProcessor:
         return surrogate_pods
     #endregion
 
-    # FIXME: For backwards compatibility, training data separate
     #region: _opera_features_from_raw
     def _opera_features_from_raw(self):
         '''
         Extract and process OPERA features from raw data batches.
 
-        This method reads and processes raw feature data from OPERA, including 
-        training and application batches. It combines the processed feature 
-        data, removes duplicates based on chemical intersections, and saves the 
-        combined data to a CSV file on disk.
+        This method reads and processes raw feature data from OPERA. It also 
+        saves the data to a Parquet file on disk.
 
         Additionally, applicability domain (AD) flags are extracted and saved.
 
@@ -214,51 +183,29 @@ class RawDataProcessor:
             A tuple containing two DataFrames:
             1. AD flags for each chemical.
             2. Processed OPERA features.
-
         '''
-        prefix = self._raw_data_settings.opera_file_prefix
-        extension = self._raw_data_settings.opera_file_extension
-        opera_file_namer = lambda name: prefix + name + extension
-
-        # Load the training data
-        AD_flags_train, opera_features_train = opera.parse_data_with_applicability_domains(
+        X_opera, AD_flags = opera.process_all_batches(
             self._path_settings.raw_opera_features_dir, 
-            self._path_settings.opera_mapper_file, 
-            opera_file_namer, 
-            index_name=self._index_col, 
-            discrete_columns=self._data_settings.discrete_columns_for_source['opera'],
-            discrete_suffix=self._data_settings.discrete_column_suffix,
-            log10_pat=self._raw_data_settings.opera_log10_pat
-        )
-
-        AD_flags_app, opera_features_app = opera.process_all_batches(
-            self._path_settings.opera_application_batches_dir, 
-            self._path_settings.opera_mapper_file,
-            opera_file_namer,
-            self._raw_data_settings.structures_file_name, 
+            self._raw_data_settings.opera_features_for_model,
             self._raw_data_settings.logging_file_name, 
             index_name=self._index_col, 
             discrete_columns=self._data_settings.discrete_columns_for_source['opera'],
             discrete_suffix=self._data_settings.discrete_column_suffix,
             log10_pat=self._raw_data_settings.opera_log10_pat
         )
+        # Drop any chemicals missing all features (e.g., inorganics)
+        X_opera = X_opera.dropna(how='all')
+        AD_flags = AD_flags.loc[X_opera.index]
 
-        # Drop duplicates. 
-        chem_intersection = list(
-            opera_features_train.index.intersection(opera_features_app.index))
-        AD_flags_app = AD_flags_app.drop(chem_intersection)
-        opera_features_app = opera_features_app.drop(chem_intersection)
+        features_write_path=self._path_settings.file_for_features_source['opera']
+        utilities.ensure_directory_exists(features_write_path)
+        X_opera.to_parquet(features_write_path, compression='gzip')
 
-        data_write_path=self._path_settings.file_for_features_source['opera']
         flags_write_path=self._path_settings.opera_AD_file
+        utilities.ensure_directory_exists(flags_write_path)
+        AD_flags.to_parquet(flags_write_path, compression='gzip')
 
-        opera_features = pd.concat([opera_features_train, opera_features_app])
-        opera_features.to_csv(data_write_path)
-
-        AD_flags = pd.concat([AD_flags_train, AD_flags_app])
-        AD_flags.to_csv(flags_write_path)
-
-        return AD_flags, opera_features
+        return X_opera, AD_flags
     #endregion
 
     #region: _comptox_features_from_raw
@@ -268,16 +215,17 @@ class RawDataProcessor:
 
         This method reads raw feature data from CompTox and processes them by 
         excluding certain chemicals based on OPERA data. The processed data 
-        are then saved to a CSV file on disk.
+        are then saved to a parquet file on disk.
 
         Returns
         -------
         pandas.DataFrame
             The processed CompTox features.
         '''
+        # TODO: Is there a better way to identify these chemicals?
         chemicals_to_exclude = opera.chemicals_to_exclude_from_qsar(
-            self._path_settings.chemical_id_dev_file, 
-            self._path_settings.chemical_structures_dev_file
+            self._path_settings.chemical_identifiers_file, 
+            self._path_settings.opera_structures_file
         )
 
         return comptox.opera_test_predictions_from_csv(
@@ -287,6 +235,33 @@ class RawDataProcessor:
             columns_to_exclude=self._raw_data_settings.comptox_columns_to_exclude,
             log10_pat=self._raw_data_settings.comptox_log10_pat, 
             write_path=self._path_settings.file_for_features_source['comptox']
+        )
+    #endregion
+
+    #region: _rdkit_features_from_raw
+    def _rdkit_features_from_raw(self):
+        '''
+        # Extract and process two-dimensional molecular descriptors from the
+        RDKit library.
+
+        The processed data are saved to a parquet file on disk.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The processed RDKit features.
+        '''
+        # Get the QSAR-ready SMILES from OPERA
+        smi_file = self._path_settings.opera_structures_file
+        smiless = opera.extract_smiles_from_structures_file(smi_file)
+        dtxsids = opera.extract_dtxsid_from_structures_file(smi_file)
+        smiles_for_chem = dict(zip(dtxsids, smiless))
+
+        return rdkit_utilities.get_2d_descriptors(
+            smiles_for_chem,
+            self._index_col,
+            discrete_suffix=self._data_settings.discrete_column_suffix,
+            write_path=self._path_settings.file_for_features_source['rdkit']
         )
     #endregion
 
@@ -304,92 +279,91 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed experimental LD50 values.
         '''
-        chem_identifiers = self.load_comptox_identifiers()
-
         return other_sources.experimental_ld50s_from_excel(
             self._path_settings.raw_ld50_experimental_file, 
-            chem_identifiers, 
-            self._index_col, 
-            ld50_columns=self._raw_data_settings.ld50_columns, 
+            self._raw_data_settings.ld50_exp_column, 
+            id_for_casrn=self._map_casrn_to_dtxsid(), 
+            id_name=self._index_col,
             write_path=self._path_settings.ld50_experimental_file
         )
     #endregion
-
-    #region: _regulatory_pods_from_raw
-    def _regulatory_pods_from_raw(self):
+        
+    #region: _authoritative_pods_from_raw
+    def _authoritative_pods_from_raw(self):
         '''
-        Extract and process regulatory Points of Departure from raw data.
+        Extract and process authoritative Points of Departure from raw data.
 
-        This method reads raw regulatory PODs and processes them by mapping 
+        This method reads raw authoritative PODs and processes them by mapping 
         CASRN to the specified chemical identifier. The processed data are then 
         saved to a CSV file on disk.
 
         Returns
         -------
         pandas.DataFrame
-            The processed regulatory Points of Departure values.
-
+            The processed authoritative Points of Departure values.
         '''
-        chem_identifiers = self.load_comptox_identifiers()
-
-        # FIXME: For backwards compatibility
-        # Map CASRN to index_col for replacing the original index.
-        chem_id_for_casrn = (
-            chem_identifiers
-            .reset_index()
-            .set_index('CASRN')[self._index_col]
-            .to_dict()
-        )
-
-        return other_sources.regulatory_toxicity_values_from_csv(
-            self._path_settings.raw_regulatory_pods_file, 
-            self._raw_data_settings.reg_file_ilocs_for_effect, 
-            chem_id_for_casrn=chem_id_for_casrn, 
-            new_chem_id=self._index_col, 
-            write_path=self._path_settings.regulatory_pods_file
+        return other_sources.authoritative_toxicity_values_from_excel(
+            self._path_settings.raw_authoritative_pods_file, 
+            self._raw_data_settings.auth_data_kwargs,
+            self._raw_data_settings.auth_file_ilocs_for_effect, 
+            id_for_casrn=self._map_casrn_to_dtxsid(), 
+            id_name=self._index_col, 
+            write_path=self._path_settings.authoritative_pods_file
         )
     #endregion
 
-    # FIXME: For backwards compatibility.
-    #region: load_comptox_identifiers
-    def load_comptox_identifiers(self):
+    #region: _map_casrn_to_dtxsid
+    def _map_casrn_to_dtxsid(self):
         '''
-        Load chemical identifiers from the CompTox database.
+        Map CASRN to DTXSID using the DSSTox dataset.
 
-        This method retrieves the stored chemical identifiers from a CSV file 
-        on disk.
+        Returns
+        -------
+        dict
+            A dictionary mapping CASRN to DTXSID.
+        '''
+        casrn_column = self._raw_data_settings.dsstox_sdf_casrn_column
+        dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
+
+        return (
+            pd.read_parquet(self._build_path_dsstox_compiled())
+            .set_index(casrn_column)
+            [dtxsid_column]
+            .to_dict()
+        )
+    #endregion
+
+    #region: _seem3_exposure_data_from_raw
+    def _seem3_exposure_data_from_raw(self):
+        '''
+        Extract and process SEEM3 exposure data from raw data.
 
         Returns
         -------
         pandas.DataFrame
-            A DataFrame containing chemical identifiers.
-
+            DataFrame containing exposure predictions.
         '''
-        return pd.read_csv(
-            self._path_settings.comptox_identifiers_file, 
-            index_col=self._index_col
+        return other_sources.seem3_exposure_data_from_excel(
+            self._path_settings.raw_seem3_exposure_file,
+            self._raw_data_settings.seem3_data_kwargs,
+            self._index_col,
+            write_path=self._path_settings.seem3_exposure_file
         )
     #endregion
 
     #region: _oral_equivalent_doses_from_raw
     def _oral_equivalent_doses_from_raw(self):
         '''
-        Extract and process oral equivalent doses from raw ToxCast data.
-
-        This method retrieves oral equivalent doses (OEDs) from the raw ToxCast
-        dataset, performs necessary transformations (e.g., taking the logarithm), 
-        and then writes a CSV file to disk.
+        Extract and process oral equivalent doses from raw data.
 
         Returns
         -------
-        pandas.DataFrame
-            A DataFrame containing processed oral equivalent doses.
+        pandas.Series
         '''
-        return other_sources.toxcast_expocast_from_csv(
-            self._path_settings.raw_toxcast_oeds_file, 
-            self._index_col, 
-            data_columns=self._raw_data_settings.oed_columns,
-            log10=self._raw_data_settings.do_log10_target,
+        return other_sources.oral_equivalent_doses_from_excel(
+            self._path_settings.raw_toxcast_oeds_file,
+            self._raw_data_settings.oed_data_kwargs,
+            self._index_col,
             write_path=self._path_settings.toxcast_oeds_file
-        )            
+        )
     #endregion

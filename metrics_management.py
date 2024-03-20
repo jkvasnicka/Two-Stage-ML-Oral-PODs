@@ -1,7 +1,7 @@
 '''
-This module provides a MetricsManager class to manage and evaluate various 
+This module provides a `MetricsManager` class to manage and evaluate various 
 metrics according to the configuration settings. It also includes a 
-MetricWrapper class to handle metrics that require additional parameters 
+`MetricWrapper` class to handle metrics that require additional parameters 
 beyond the true and predicted values.
 
 Classes
@@ -19,17 +19,6 @@ class MetricsManager:
     This class takes a dictionary of metric settings, loads the corresponding
     metric functions, and provides a method to score predictions according 
     to these metrics.
-
-    Attributes
-    ----------
-    function_for_metric : dict
-        Dictionary mapping metric names to corresponding MetricWrapper 
-        instances.
-
-    Methods
-    -------
-    score(y_true, y_pred) : dict
-        Score the predicted values for each metric.
 
     Example
     -------
@@ -81,14 +70,6 @@ class MetricsManager:
         ----------
         dict
             Mapping names of metrics to scores as floats.
-
-        Example
-        -------
-        >>> metrics_manager = MetricsManager(metrics_settings)
-        >>> y_true = [1, 2, 3]
-        >>> y_pred = [1, 2, 2]
-        >>> metrics_manager.score(y_true, y_pred)
-        {'mean_squared_error': 0.3333, 'r2_score': 0.5}
         '''
         return {metric : score(y_true, y_pred) 
                 for metric, score in self.function_for_metric.items()}
