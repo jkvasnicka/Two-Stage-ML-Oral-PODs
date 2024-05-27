@@ -43,6 +43,7 @@ def plot_main():
     data_manager = DataManager(config.data, config.path)
     metrics_manager = MetricsManager(config.category_to_dict('metric'))
     results_manager = ResultsManager(
+        output_dir=config.path.results_dir,
         results_file_type=config.data.file_type
         )
     results_analyzer = ResultsAnalyzer(
