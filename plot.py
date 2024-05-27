@@ -108,7 +108,8 @@ class ResultsPlotter:
         '''
         '''
         feature_distributions.feature_distributions(
-                self._path_settings.file_for_features_source['opera']
+                self._path_settings.file_for_features_source['opera'],
+                output_dir=self._path_settings.figures_dir
                 )
 #endregion
 
@@ -119,7 +120,8 @@ class ResultsPlotter:
         chemical_coverage.pairwise_scatters_and_kde_subplots(
             self._path_settings.file_for_features_source['opera'], 
             self._path_settings.surrogate_pods_file,
-            self._plot_settings
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 
@@ -132,7 +134,8 @@ class ResultsPlotter:
             self._path_settings.opera_AD_file, 
             self._path_settings.surrogate_pods_file,
             self._plot_settings,
-            threshold=self._threshold
+            threshold=self._threshold,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 
@@ -142,7 +145,8 @@ class ResultsPlotter:
         '''
         important_features.important_feature_counts(
             self._results_analyzer, 
-            self._plot_settings
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 
@@ -152,7 +156,8 @@ class ResultsPlotter:
         '''
         importance_scores.importances_boxplots(
             self._results_analyzer, 
-            self._plot_settings
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 
@@ -162,7 +167,8 @@ class ResultsPlotter:
         '''
         importance_scores.importances_replicates_boxplots(
             self._results_analyzer, 
-            self._plot_settings
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 
@@ -173,7 +179,8 @@ class ResultsPlotter:
         model_performance.in_and_out_sample_comparisons(
             self._results_analyzer, 
             self._plot_settings, 
-            self._function_for_metric
+            self._function_for_metric,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 
@@ -184,7 +191,8 @@ class ResultsPlotter:
         benchmarking.benchmarking_scatterplots(
             self._results_analyzer,
             self._function_for_metric,
-            self._plot_settings
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 
@@ -194,7 +202,8 @@ class ResultsPlotter:
         '''
         moe.margins_of_exposure_cumulative(
             self._results_analyzer, 
-            self._plot_settings
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 
@@ -204,7 +213,8 @@ class ResultsPlotter:
         '''
         pod.cumulative_pod_distributions(
             self._results_analyzer, 
-            self._plot_settings
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 
@@ -214,7 +224,8 @@ class ResultsPlotter:
         '''
         missing_features.predictions_by_missing_feature(
             self._results_analyzer, 
-            self._plot_settings
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
             )
 #endregion
 

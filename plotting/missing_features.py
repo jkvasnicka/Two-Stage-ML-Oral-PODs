@@ -16,7 +16,8 @@ from . import utilities
 #region: predictions_by_missing_feature
 def predictions_by_missing_feature(
         results_analyzer, 
-        plot_settings
+        plot_settings,
+        output_dir=None
     ):
     '''
     Visualize the impact of missing features on model predictions.
@@ -114,7 +115,12 @@ def predictions_by_missing_feature(
                 axs[i, 1].set_xlim(x_limits)
 
             fig.tight_layout()
-            utilities.save_figure(fig, predictions_by_missing_feature, grouping_key)
+            utilities.save_figure(
+                fig, 
+                predictions_by_missing_feature, 
+                grouping_key,
+                output_dir=output_dir
+                )
 #endregion
 
 #region: _boxplot_by_missing_feature

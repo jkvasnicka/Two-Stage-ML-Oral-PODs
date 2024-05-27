@@ -34,7 +34,10 @@ MOE_CATEGORY_KWARGS = {
 }
 
 #region: margins_of_exposure_cumulative
-def margins_of_exposure_cumulative(results_analyzer, plot_settings):
+def margins_of_exposure_cumulative(
+        results_analyzer, 
+        plot_settings,
+        output_dir=None):
     '''
     Plot distributions of margin of exposure (MOE), with uncertainty, across
     chemicals.
@@ -132,7 +135,8 @@ def margins_of_exposure_cumulative(results_analyzer, plot_settings):
         utilities.save_figure(
             fig,
             margins_of_exposure_cumulative,
-            grouping_key
+            grouping_key,
+            output_dir=output_dir
         )
 #endregion
 

@@ -9,7 +9,14 @@ import pandas as pd
 import numpy as np
 
 #region: save_figure
-def save_figure(fig, function, fig_label, extension='.png', bbox_inches=None):
+def save_figure(
+        fig, 
+        function, 
+        fig_label, 
+        extension='.png', 
+        bbox_inches=None,
+        output_dir=None
+        ):
     '''
     Save a matplotlib figure to a specified directory with a given label and 
     file extension.
@@ -34,7 +41,9 @@ def save_figure(fig, function, fig_label, extension='.png', bbox_inches=None):
     bbox_inches : str, optional
         The parameter for `matplotlib.figure.Figure.savefig` method to set 
         bounding box in inches (default is None).
-
+    output_dir : str, optional
+        Name of the main directory to save the figure. Default is 'Figures'.
+        
     Returns
     -------
     None
@@ -43,7 +52,10 @@ def save_figure(fig, function, fig_label, extension='.png', bbox_inches=None):
     -----
     The function prints the path to the saved figure as feedback to the user.
     '''
-    output_dir = function_directory(function)
+    if not output_dir:
+        output_dir = 'Figures'  # default
+        
+    output_dir = append_function_to_path(output_dir, function)
     fig_path = figure_path(output_dir, fig_label, extension=extension)
     print(f'Saving figure --> "{fig_path}"')
     fig.savefig(fig_path, bbox_inches=bbox_inches)
@@ -87,13 +99,14 @@ def figure_path(function_dir, fig_label, extension='.png'):
     return os.path.join(function_dir, filename)
 #endregion
 
-#region: function_directory
-def function_directory(function):
+#region: append_function_to_path
+def append_function_to_path(output_dir, function):
     '''
     Get the name of the function and create a directory in the output 
     directory for it
     '''
-    output_dir = os.path.join('Figures', function.__name__)
+    # Append the function name to the output path
+    output_dir = os.path.join(output_dir, function.__name__)
     ensure_directory_exists(output_dir)
     return output_dir
 #endregion

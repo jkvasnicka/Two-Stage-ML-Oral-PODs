@@ -23,7 +23,8 @@ def sensitivity_analysis_boxplots(
         data_manager,
         plot_settings, 
         xlim=(0., 1.),
-        figsize=(7, 5)
+        figsize=(7, 5),
+        output_dir=None
         ):
     '''
     Generate boxplots for sensitivity analysis from performance data.
@@ -98,7 +99,8 @@ def sensitivity_analysis_boxplots(
         fig, 
         sensitivity_analysis_boxplots, 
         'performances-without-selection',
-        bbox_inches='tight'
+        bbox_inches='tight',
+        output_dir=output_dir
         )
 #endregion
 

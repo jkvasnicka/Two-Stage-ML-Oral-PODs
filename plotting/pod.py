@@ -19,7 +19,11 @@ import itertools
 from . import utilities
 
 #region: cumulative_pod_distributions
-def cumulative_pod_distributions(results_analyzer, plot_settings):
+def cumulative_pod_distributions(
+        results_analyzer, 
+        plot_settings,
+        output_dir=None
+        ):
     '''
     Generate a subplot with multiple Axes, each representing the cumulative
     distribution functions (CDFs) for different models and samples.
@@ -100,7 +104,8 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
         utilities.save_figure(
             fig, 
             cumulative_pod_distributions, 
-            grouping_key
+            grouping_key,
+            output_dir=output_dir
         )
 #endregion
 

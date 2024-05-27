@@ -14,7 +14,11 @@ from matplotlib.ticker import MaxNLocator
 from . import utilities
 
 #region: importances_boxplots
-def importances_boxplots(results_analyzer, plot_settings):
+def importances_boxplots(
+        results_analyzer, 
+        plot_settings,
+        output_dir=None
+        ):
     '''
     Generate boxplots for feature importances across all models.
 
@@ -29,12 +33,17 @@ def importances_boxplots(results_analyzer, plot_settings):
         results_analyzer, 
         'importances',
         plot_settings,
-        importances_boxplots
+        importances_boxplots,
+        output_dir=output_dir
     )
 #endregion
 
 #region: importances_replicates_boxplots
-def importances_replicates_boxplots(results_analyzer, plot_settings):
+def importances_replicates_boxplots(
+        results_analyzer, 
+        plot_settings,
+        output_dir=None
+        ):
     '''
     Generate boxplots for feature importances across replicates within each model.
 
@@ -49,7 +58,8 @@ def importances_replicates_boxplots(results_analyzer, plot_settings):
         results_analyzer, 
         'importances_replicates',
         plot_settings,
-        importances_replicates_boxplots
+        importances_replicates_boxplots,
+        output_dir=output_dir
     )
 #endregion
 
@@ -59,7 +69,8 @@ def _feature_importances_subplot(
         result_type,
         plot_settings,
         function,
-        figsize=(8, 10)
+        figsize=(8, 10),
+        output_dir=None
         ):
     '''
     Helper function to generate a subplot for feature importances or replicates.
@@ -121,6 +132,7 @@ def _feature_importances_subplot(
         utilities.save_figure(
             fig, 
             function, 
-            model_key
+            model_key,
+            output_dir=output_dir
             )
 #endregion

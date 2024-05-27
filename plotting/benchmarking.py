@@ -18,7 +18,8 @@ def benchmarking_scatterplots(
         results_analyzer,
         function_for_metric,
         plot_settings,
-        figsize=(6, 9)
+        figsize=(6, 9),
+        output_dir=None
         ):
     '''
     Generate scatterplots for each unique combination of the evaluation and
@@ -109,6 +110,7 @@ def benchmarking_scatterplots(
         utilities.save_figure(
             fig, 
             benchmarking_scatterplots, 
-            grouping_key
+            grouping_key,
+            output_dir=output_dir
             )
 #endregion
