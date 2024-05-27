@@ -64,6 +64,11 @@ class RawDataProcessor:
             'seem3_exposure_data' : self._seem3_exposure_data_from_raw,
             'toxcast_oeds' : self._oral_equivalent_doses_from_raw
         }
+
+        process_to_exclude = self._raw_data_settings.__dict__.get('processes_to_exclude', [])
+        for exclusion_process in process_to_exclude:
+            # The processing will be excluded
+            del self.dispatcher[exclusion_process]
 #endregion
 
     #region: process_from_raw
