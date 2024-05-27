@@ -68,6 +68,11 @@ def plot_main():
 #region: ResultsPlotter.__init__
 class ResultsPlotter:
     '''
+    Generate figures from the modeling results.
+
+    This class provides methods to generate individual figures which are saved
+    to disk in dedicated subdirectories. Individual figures can be bypassed by
+    defining "plots_to_exclude" in the plot configuration settings.
     '''
     def __init__(
             self, 
@@ -77,6 +82,23 @@ class ResultsPlotter:
             function_for_metric=None, 
             threshold=None
             ):
+        '''
+        Initialize the ResultsPlotter with configuration settings.
+
+        Set a dispatcher attribute which maps individual plot names to 
+        corresponding functions.
+
+        Parameters
+        ----------
+        results_analyzer : ResultsAnalyzer
+            Class for handling results analysis.
+        plot_settings : SimpleNamespace
+            Configuration settings for plotting.
+        path_settings : SimpleNamespace
+            Configuration settings for file path management.
+        ...
+            Keyword arguments for individual plotting functions.
+        '''
         self._results_analyzer = results_analyzer
         self._plot_settings = plot_settings 
         self._path_settings = path_settings 
@@ -107,6 +129,7 @@ class ResultsPlotter:
 #region: _feature_distributions
     def _feature_distributions(self):
         '''
+        Call feature_distributions.feature_distributions with parameters.
         '''
         feature_distributions.feature_distributions(
                 self._path_settings.file_for_features_source['opera'],
@@ -117,6 +140,8 @@ class ResultsPlotter:
 #region:  _pairwise_scatters_and_kde_subplots
     def _pairwise_scatters_and_kde_subplots(self):
         '''
+        Call chemical_coverage.pairwise_scatters_and_kde_subplots with 
+        parameters.
         '''
         chemical_coverage.pairwise_scatters_and_kde_subplots(
             self._path_settings.file_for_features_source['opera'], 
@@ -129,6 +154,8 @@ class ResultsPlotter:
 #region: _proportions_incomplete_subplots
     def _proportions_incomplete_subplots(self):
         '''
+        Call feature_completeness.proportions_incomplete_subplots with 
+        parameters.
         '''
         feature_completeness.proportions_incomplete_subplots(
             self._path_settings.file_for_features_source['opera'], 
@@ -143,6 +170,7 @@ class ResultsPlotter:
 #region: _important_feature_counts
     def _important_feature_counts(self):
         '''
+        Call important_features.important_feature_counts with parameters.
         '''
         important_features.important_feature_counts(
             self._results_analyzer, 
@@ -154,6 +182,7 @@ class ResultsPlotter:
 #region: _importances_boxplots
     def _importances_boxplots(self):
         '''
+        Call importance_scores.importances_boxplots with parameters.
         '''
         importance_scores.importances_boxplots(
             self._results_analyzer, 
@@ -165,6 +194,8 @@ class ResultsPlotter:
 #region: _importances_replicates_boxplots
     def _importances_replicates_boxplots(self):
         '''
+        Call importance_scores.importances_replicates_boxplots with 
+        parameters.
         '''
         importance_scores.importances_replicates_boxplots(
             self._results_analyzer, 
@@ -176,6 +207,7 @@ class ResultsPlotter:
 #region: _in_and_out_sample_comparisons
     def _in_and_out_sample_comparisons(self):
         '''
+        Call model_performance.in_and_out_sample_comparisons with parameters.
         '''
         model_performance.in_and_out_sample_comparisons(
             self._results_analyzer, 
@@ -188,6 +220,7 @@ class ResultsPlotter:
 #region: _benchmarking_scatterplots
     def _benchmarking_scatterplots(self):
         '''
+        Call benchmarking.benchmarking_scatterplots with parameters.
         '''
         benchmarking.benchmarking_scatterplots(
             self._results_analyzer,
@@ -200,6 +233,7 @@ class ResultsPlotter:
 #region: _margins_of_exposure_cumulative
     def _margins_of_exposure_cumulative(self):
         '''
+        Call moe.margins_of_exposure_cumulative with parameters.
         '''
         moe.margins_of_exposure_cumulative(
             self._results_analyzer, 
@@ -211,6 +245,7 @@ class ResultsPlotter:
 #region: _cumulative_pod_distributions
     def _cumulative_pod_distributions(self):
         '''
+        Call pod.cumulative_pod_distributions with parameters.
         '''
         pod.cumulative_pod_distributions(
             self._results_analyzer, 
@@ -222,6 +257,8 @@ class ResultsPlotter:
 #region: _predictions_by_missing_feature
     def _predictions_by_missing_feature(self):
         '''
+        Call missing_features.predictions_by_missing_feature with 
+        parameters.
         '''
         missing_features.predictions_by_missing_feature(
             self._results_analyzer, 
