@@ -235,16 +235,9 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed CompTox features.
         '''
-        # TODO: Is there a better way to identify these chemicals?
-        chemicals_to_exclude = opera.chemicals_to_exclude_from_qsar(
-            self._path_settings.chemical_identifiers_file, 
-            self._path_settings.opera_structures_file
-        )
-
         return comptox.opera_test_predictions_from_csv(
             self._path_settings.raw_comptox_features_file, 
             self._index_col, 
-            chemicals_to_exclude=chemicals_to_exclude,
             columns_to_exclude=self._raw_data_settings.comptox_columns_to_exclude,
             log10_pat=self._raw_data_settings.comptox_log10_pat, 
             write_path=self._path_settings.file_for_features_source['comptox']

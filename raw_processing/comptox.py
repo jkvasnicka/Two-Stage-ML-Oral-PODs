@@ -13,7 +13,6 @@ from . import utilities
 def opera_test_predictions_from_csv(
         predictions_path, 
         index_col, 
-        chemicals_to_exclude=None, 
         columns_to_exclude=None, 
         log10_pat=None, 
         write_path=None
@@ -30,8 +29,6 @@ def opera_test_predictions_from_csv(
         File path to the raw data.    
     index_col : str
         Name of the chemical identifier in the headers to use as index.
-    chemicals_to_exclude : list of str (optional)
-        List of chemical identifiers to exclude from the return.
     columns_to_exclude :  list of str (optional)
         Names of columns to exclude from the return.
     log10_pat : str (optional)
@@ -43,17 +40,21 @@ def opera_test_predictions_from_csv(
     Returns
     -------
     pandas.DataFrame
+
+    Notes
+    -----
+    CAUTION: This function does not filter out any chemicals (e.g., metals) and 
+    therefore it is important to ensure data integrity before this function is
+    used.
     '''
     predictions = pd.read_csv(
         predictions_path, 
-        index_col=index_col)
+        index_col=index_col
+        )
 
     if columns_to_exclude is not None:
         predictions = predictions.drop(
             columns_to_exclude, axis=1, errors='ignore')
-    if chemicals_to_exclude is not None:
-        predictions = predictions.drop(
-            chemicals_to_exclude, errors='ignore')
 
     # Initialize a mapping {original key --> stripped key}.
     column_mapper_for = {}

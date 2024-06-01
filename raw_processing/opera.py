@@ -428,21 +428,6 @@ def split_applicability_domain_columns(global_local_ADs):
     return global_ADs, local_AD_indexes
 #endregion
 
-#region: chemicals_to_exclude_from_qsar
-def chemicals_to_exclude_from_qsar(
-        chemical_id_file, chemical_structures_file):
-    '''
-    Return a list of chemicals that did not pass the QSAR Standardization 
-    Workflow.
-    '''
-    raw_chemical_ids = set(pd.read_csv(chemical_id_file).squeeze())
-    qsar_ready_ids = set(
-        extract_dtxsid_from_structures_file(chemical_structures_file)
-    )
-
-    return list(raw_chemical_ids.difference(qsar_ready_ids))
-#endregion
-
 #region: extract_dtxsid_from_structures_file
 def extract_dtxsid_from_structures_file(structures_file):
     '''
