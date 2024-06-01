@@ -1,5 +1,10 @@
 {
 
+    "processes_to_exclude" : [
+        "dsstox_sdf_data",
+        "rdkit_features"
+    ],
+
     "do_log10_target" : true,
 
     "surrogate_tox_data_kwargs" : {

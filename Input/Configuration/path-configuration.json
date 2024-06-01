@@ -23,17 +23,17 @@
     
     "opera_AD_file" : "Input/Processed/Features/OPERA/OPERA-2.9-AD-flags.parquet",
     
-    "raw_ld50_experimental_file" : "Input/Raw/Aurisano/DF_LD50_curated_DB.xlsx",
+    "raw_ld50_experimental_file" : "Input/Raw/Aurisano/Oral/DF_LD50_curated_DB.xlsx",
     
-    "ld50_experimental_file" : "Input/Processed/Features/Aurisano/experimental-LD50s.csv",
+    "ld50_experimental_file" : "Input/Processed/Features/Aurisano/Oral/experimental-LD50s.csv",
         
-    "raw_surrogate_pods_file" : "Input/Raw/Aurisano/Supplemental-Excel-File-EHP11524-revised.xlsx",
+    "raw_surrogate_pods_file" : "Input/Raw/Aurisano/Oral/Supplemental-Excel-File-EHP11524-revised.xlsx",
     
-    "surrogate_pods_file" : "Input/Processed/Targets/Aurisano/surrogate-points-of-departure.csv",
+    "surrogate_pods_file" : "Input/Processed/Targets/Aurisano/Oral/surrogate-points-of-departure.csv",
         
-    "raw_authoritative_pods_file" : "Input/Raw/Aurisano/Numeric-data-for-Figures-EHP11524.xlsx",
+    "raw_authoritative_pods_file" : "Input/Raw/Aurisano/Oral/Numeric-data-for-Figures-EHP11524.xlsx",
     
-    "authoritative_pods_file" : "Input/Processed/Analysis/Aurisano/authoritative-points-of-departure.csv",
+    "authoritative_pods_file" : "Input/Processed/Analysis/Aurisano/Oral/authoritative-points-of-departure.csv",
     
     "raw_toxcast_oeds_file" : "Input/Raw/Paul-Friedman/Paul_Friedman_2020_Table_S2.xlsx",
 
@@ -45,6 +45,8 @@
 
     "norman_chemicals_file" : "Input/Raw/NORMAN/SusDat_DTXSIDs_20220118.txt",
 
-    "results_dir" : "Results"
+    "results_dir" : "Results/Oral",
+
+    "figures_dir" : "Figures/Oral"
     
 }
