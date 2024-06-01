@@ -51,8 +51,16 @@ class RawDataProcessor:
         self._path_settings = path_settings 
         # NOTE: Only DTXSID identifier has been tested
         self._index_col = 'DTXSID'
+        self._initialize_dispatcher()
+#endregion
 
-        # Map data types to their respective processing function
+    #region: _initialize_dispatcher
+    def _initialize_dispatcher(self):
+        '''
+        Map data types to their respective processing function.
+
+        Excludes any processes defined in the configuration file.
+        '''
         self.dispatcher = {
             'dsstox_sdf_data' : self._dsstox_sdf_data_from_raw,
             'opera_features' : self._opera_features_from_raw,
@@ -69,7 +77,7 @@ class RawDataProcessor:
         for exclusion_process in process_to_exclude:
             # The processing will be excluded
             del self.dispatcher[exclusion_process]
-#endregion
+    #endregion
 
     #region: process_from_raw
     def process_from_raw(self, data_type):

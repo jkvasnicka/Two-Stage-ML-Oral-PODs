@@ -104,8 +104,16 @@ class ResultsPlotter:
         self._path_settings = path_settings 
         self._function_for_metric = function_for_metric 
         self._threshold = threshold
+        self._initialize_dispatcher()
+#endregion
 
-        # Map plot names to their respective plotting functions
+#region: _initialize_dispatcher
+    def _initialize_dispatcher(self):
+        '''
+        Map plot names to their respective plotting functions.
+
+        Excludes any plots defined in the configuration file.
+        '''
         self.dispatcher = {
             'feature_distributions' : self._feature_distributions, 
             'pairwise_scatters_and_kde_subplots' : self._pairwise_scatters_and_kde_subplots, 
