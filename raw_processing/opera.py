@@ -96,6 +96,24 @@ def process_all_batches(
 #region: _perform_final_cleaning
 def _perform_final_cleaning(predictions, AD_flags):
     '''
+    Perform final cleaning on the combined predictions.
+
+    This includes any dropping rows with all missing values and removing any 
+    duplicate index values.
+
+    Parameters
+    ----------
+    predictions : pandas.DataFrame
+        The DataFrame containing the combined predictions.
+    AD_flags : pandas.DataFrame
+        The DataFrame containing the corresponding applicability domain flags.
+
+    Returns
+    -------
+    predictions : pandas.DataFrame
+        The cleaned predictions DataFrame.
+    AD_flags : pandas.DataFrame
+        The updated applicability domain flags DataFrame.
     '''
     where_all_missing = predictions.isna().all(axis=1)
     if any(where_all_missing):
@@ -103,6 +121,13 @@ def _perform_final_cleaning(predictions, AD_flags):
         predictions = predictions.loc[~where_all_missing]
         logging.info(f'Dropped {sum(where_all_missing)} rows with all missing predictions')
 
+    where_duplicated_idx = predictions.index.duplicated()
+    if any(where_duplicated_idx):
+        # Drop duplicate chemicals
+        predictions = predictions.loc[~where_duplicated_idx]
+        logging.info(f'Dropped {sum(where_duplicated_idx)} duplicated rows')
+
+    # Update the applicability domain flags
     AD_flags = AD_flags.loc[predictions.index]
 
     return predictions, AD_flags
