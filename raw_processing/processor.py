@@ -204,19 +204,10 @@ class RawDataProcessor:
             index_name=self._index_col, 
             discrete_columns=self._data_settings.discrete_columns_for_source['opera'],
             discrete_suffix=self._data_settings.discrete_column_suffix,
-            log10_pat=self._raw_data_settings.opera_log10_pat
+            log10_pat=self._raw_data_settings.opera_log10_pat,
+            data_write_path=self._path_settings.file_for_features_source['opera'], 
+            flags_write_path=self._path_settings.opera_AD_file
         )
-        # Drop any chemicals missing all features (e.g., inorganics)
-        X_opera = X_opera.dropna(how='all')
-        AD_flags = AD_flags.loc[X_opera.index]
-
-        features_write_path=self._path_settings.file_for_features_source['opera']
-        utilities.ensure_directory_exists(features_write_path)
-        X_opera.to_parquet(features_write_path, compression='gzip')
-
-        flags_write_path=self._path_settings.opera_AD_file
-        utilities.ensure_directory_exists(flags_write_path)
-        AD_flags.to_parquet(flags_write_path, compression='gzip')
 
         return X_opera, AD_flags
     #endregion

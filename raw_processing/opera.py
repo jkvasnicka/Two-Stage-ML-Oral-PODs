@@ -85,12 +85,49 @@ def process_all_batches(
     predictions = pd.concat(predictions)
     AD_flags = pd.concat(AD_flags)
 
-    if data_write_path is not None:
-        predictions.to_csv(data_write_path)
-    if flags_write_path is not None:
-        AD_flags.to_csv(flags_write_path)
+    predictions, AD_flags = _perform_final_cleaning(predictions, AD_flags)
+
+    _write_data(predictions, data_write_path)
+    _write_data(AD_flags, flags_write_path)
 
     return predictions, AD_flags
+#endregion
+
+#region: _perform_final_cleaning
+def _perform_final_cleaning(predictions, AD_flags):
+    '''
+    '''
+    where_all_missing = predictions.isna().all(axis=1)
+    if any(where_all_missing):
+        # Drop chemicals missing all predictions (e.g., inorganics)
+        predictions = predictions.loc[~where_all_missing]
+        logging.info(f'Dropped {sum(where_all_missing)} rows with all missing predictions')
+
+    AD_flags = AD_flags.loc[predictions.index]
+
+    return predictions, AD_flags
+#endregion
+
+#region: _write_data
+def _write_data(df, write_path):
+    '''
+    Write DataFrame to a Parquet file with gzip compression.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to be written to disk.
+    write_path : str
+        The file path where the DataFrame will be saved. If `write_path` is 
+        None or an empty string, the function does nothing.
+
+    Returns
+    -------
+    None
+    '''
+    if write_path:
+        utilities.ensure_directory_exists(write_path)
+        df.to_parquet(write_path, compression='gzip')
 #endregion
     
 #region: extract_predictions_and_app_domains
@@ -100,9 +137,7 @@ def extract_predictions_and_app_domains(
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
-        log10_pat='Log', 
-        data_write_path=None, 
-        flags_write_path=None
+        log10_pat='Log'
         ):
     '''
     Process a single batch of chemicals/samples.
@@ -118,8 +153,7 @@ def extract_predictions_and_app_domains(
         index_name=index_name,
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix,  
-        log10_pat=log10_pat, 
-        write_path=flags_write_path
+        log10_pat=log10_pat
     )
 
     predictions = extract_predictions_from_csv_files(
@@ -129,9 +163,8 @@ def extract_predictions_and_app_domains(
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix, 
         log10_pat=log10_pat, 
-        flags=AD_flags,
-        write_path=data_write_path
-        )
+        flags=AD_flags
+    )
     
     if predictions.index.duplicated().any():
         raise ValueError('Duplicate DTXSIDs found in directory. Check input data.')
@@ -147,8 +180,7 @@ def extract_predictions_from_csv_files(
         discrete_columns=None, 
         discrete_suffix=None, 
         log10_pat='Log', 
-        flags=None, 
-        write_path=None
+        flags=None
         ):
     '''
     Load and extract the outputs as separate CSV file from OPERA 2.9.
@@ -172,8 +204,6 @@ def extract_predictions_from_csv_files(
     flags : pandas.DataFrame (optional)
         Maps each feature-chemical combination to a boolean. Values which 
         are 'True' denote unreliable and will be considered as missing (NaN).
-    write_path str (optional)
-        Path to write the return as a CSV file.
     
     Returns
     -------
@@ -214,8 +244,6 @@ def extract_predictions_from_csv_files(
         )
     if flags is not None:
         predictions = set_unreliable_values(predictions, flags)
-    if write_path is not None:
-        predictions.to_csv(write_path)
 
     return predictions
 #endregion
@@ -288,8 +316,7 @@ def extract_app_domains_from_csv_files(
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
-        log10_pat=None, 
-        write_path=None
+        log10_pat=None
         ):
     '''
     Flag any features outside the respective model applicability domains.
@@ -353,8 +380,6 @@ def extract_app_domains_from_csv_files(
             discrete_suffix,
             validate_columns=False  # not all features have a defined AD
             )
-    if write_path is not None:
-        AD_flags.to_csv(write_path)
 
     return AD_flags
 #endregion
