@@ -1,8 +1,14 @@
 {
 
-    "processes_to_exclude" : [
-        "dsstox_sdf_data",
-        "rdkit_features"
+    "datasets_to_process" : [
+        "opera_features",
+        "comptox_features",
+        "rdkit_features",
+        "surrogate_pods",
+        "authoritative_pods",
+        "experimental_ld50s",
+        "seem3_exposure_data",
+        "toxcast_oeds"
     ],
 
     "do_log10_target" : true,

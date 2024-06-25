@@ -61,7 +61,8 @@ class RawDataProcessor:
 
         Excludes any processes defined in the configuration file.
         '''
-        self.dispatcher = {
+        # Initialize the full dispatcher
+        _dispatcher = {
             'dsstox_sdf_data' : self._dsstox_sdf_data_from_raw,
             'opera_features' : self._opera_features_from_raw,
             'comptox_features' : self._comptox_features_from_raw,
@@ -73,10 +74,12 @@ class RawDataProcessor:
             'toxcast_oeds' : self._oral_equivalent_doses_from_raw
         }
 
-        process_to_exclude = self._raw_data_settings.__dict__.get('processes_to_exclude', [])
-        for exclusion_process in process_to_exclude:
-            # The processing will be excluded
-            del self.dispatcher[exclusion_process]
+        # Filter out any processing functions not defined in the config file
+        datasets_to_process = self._raw_data_settings.__dict__.get('datasets_to_process', [])
+        self.dispatcher = {
+            k : v for k, v in _dispatcher.items() 
+            if k in datasets_to_process
+            }
     #endregion
 
     #region: process_from_raw

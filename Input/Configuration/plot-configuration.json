@@ -1,5 +1,19 @@
 {
     
+  "plots_to_include" : [
+      "feature_distributions",
+      "pairwise_scatters_and_kde_subplots",
+      "proportions_incomplete_subplots",
+      "important_feature_counts",
+      "importances_boxplots",
+      "importances_replicates_boxplots",
+      "in_and_out_sample_comparisons",
+      "benchmarking_scatterplots",
+      "margins_of_exposure_cumulative",
+      "cumulative_pod_distributions",
+      "predictions_by_missing_feature"
+    ],
+
     "label_for_metric": {
       "root_mean_squared_error": "RMSE",
       "median_absolute_error": "MedAE",

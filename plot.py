@@ -72,7 +72,7 @@ class ResultsPlotter:
 
     This class provides methods to generate individual figures which are saved
     to disk in dedicated subdirectories. Individual figures can be bypassed by
-    defining "plots_to_exclude" in the plot configuration settings.
+    defining "plots_to_include" in the plot configuration settings.
     '''
     def __init__(
             self, 
@@ -114,7 +114,8 @@ class ResultsPlotter:
 
         Excludes any plots defined in the configuration file.
         '''
-        self.dispatcher = {
+        # Initialize the full dispatcher
+        _dispatcher = {
             'feature_distributions' : self._feature_distributions, 
             'pairwise_scatters_and_kde_subplots' : self._pairwise_scatters_and_kde_subplots, 
             'proportions_incomplete_subplots' : self._proportions_incomplete_subplots,
@@ -128,10 +129,12 @@ class ResultsPlotter:
             'predictions_by_missing_feature' : self._predictions_by_missing_feature
         }
 
-        plots_to_exclude = self._plot_settings.__dict__.get('plots_to_exclude', [])
-        for exclusion_plot in plots_to_exclude:
-            # The plot will be exclude from plot_main()
-            del self.dispatcher[exclusion_plot]
+        # Filter out any plotting functions not defined in the config file
+        plots_to_include = self._plot_settings.__dict__.get('plots_to_include', [])
+        self.dispatcher = {
+            k : v for k, v in _dispatcher.items() 
+            if k in plots_to_include
+            }
 #endregion
 
 #region: _feature_distributions
