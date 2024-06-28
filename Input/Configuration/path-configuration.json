@@ -39,8 +39,6 @@
 
     "seem3_exposure_file" : "Input/Processed/Analysis/SEEM3/Exposure_download_v1.parquet",
 
-    "norman_chemicals_file" : "Input/Raw/NORMAN/SusDat_DTXSIDs_20220118.txt",
-
     "results_dir" : "Results/Oral",
 
     "figures_dir" : "Figures/Oral"

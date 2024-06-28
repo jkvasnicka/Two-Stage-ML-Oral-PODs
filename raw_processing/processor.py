@@ -367,3 +367,22 @@ class RawDataProcessor:
             write_path=self._path_settings.toxcast_oeds_file
         )
     #endregion
+
+    #region: load_training_chemicals
+    def load_training_chemicals(self):
+        '''
+        Return a list of identifiers for all chemicals with surrogate PODs. 
+
+        This is a helper function which can be used to get identifiers for 
+        input to external data APIs to get features. For all other purposes, 
+        training data should be loaded via 
+        `DataManager.load_features_and_target()`.
+        '''        
+        return list(
+            pd.read_csv(
+                self._path_settings.surrogate_pods_file, 
+                index_col=0
+            )
+            .index
+        )
+    #endregion
