@@ -14,6 +14,11 @@
       "predictions_by_missing_feature"
     ],
 
+    "final_model_keys": [
+      ["general", "opera", "predicted", "missing", "true", "RandomForestRegressor"],
+      ["repro_dev", "opera", "predicted", "missing", "true", "RandomForestRegressor"]
+  ],  
+
     "label_for_metric": {
       "root_mean_squared_error": "RMSE",
       "median_absolute_error": "MedAE",

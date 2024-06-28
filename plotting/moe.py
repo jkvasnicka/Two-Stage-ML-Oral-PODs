@@ -65,8 +65,13 @@ def margins_of_exposure_cumulative(
     # Get x-axis truncation limit if present
     right_truncation = plot_settings.__dict__.get('moe_right_truncation', None)
 
-    # TODO: Create a method of ResultsAnalyzer and reuse?
-    model_key_names, grouped_keys = group_model_keys(results_analyzer)
+    # TODO: Make this a utility function and reuse.
+    # Restrict plotting to the final models
+    model_keys = [tuple(k) for k in plot_settings.final_model_keys]
+    model_key_names, grouped_keys = group_model_keys(
+        results_analyzer, 
+        model_keys
+        )
 
     for grouping_key, model_keys in grouped_keys:
 
@@ -621,7 +626,7 @@ def get_data_limits(ax, axis_type='x', data_type='line'):
 #endregion
 
 #region: group_model_keys
-def group_model_keys(results_analyzer):
+def group_model_keys(results_analyzer, model_keys):
     '''
     Group model keys based on the target effect.
 
@@ -629,6 +634,9 @@ def group_model_keys(results_analyzer):
     ----------
     results_analyzer : ResultsAnalyzer
         An instance of ResultsAnalyzer used to read and group model keys.
+    model_keys : list of tuples
+        Model keys to be grouped. Each tuple represents a model key. This 
+        parameter allows restriction to certain models like the final ones.
 
     Returns
     -------
@@ -636,6 +644,9 @@ def group_model_keys(results_analyzer):
         model_key_names, grouped_keys
     '''
     model_key_names = results_analyzer.read_model_key_names()
-    grouped_keys = results_analyzer.group_model_keys('target_effect')
+    grouped_keys = results_analyzer.group_model_keys(
+        'target_effect',
+        model_keys=model_keys
+        )
     return model_key_names, grouped_keys
 #endregion

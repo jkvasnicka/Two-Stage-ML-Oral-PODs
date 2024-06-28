@@ -48,7 +48,12 @@ def cumulative_pod_distributions(
     '''
     colors, linestyles = get_plot_styles()
 
-    grouped_keys = results_analyzer.group_model_keys('target_effect')
+    # Restrict plotting to the final models
+    model_keys = [tuple(k) for k in plot_settings.final_model_keys]
+    grouped_keys = results_analyzer.group_model_keys(
+        'target_effect',
+        model_keys=model_keys
+        )
 
     for grouping_key, model_keys in grouped_keys:
 

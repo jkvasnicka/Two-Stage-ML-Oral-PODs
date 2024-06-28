@@ -43,8 +43,13 @@ def predictions_by_missing_feature(
         all_samples_color = '#00008b'
         remaining_color = '#ffff99'
 
+        # Restrict plotting to the final models
+        model_keys = [tuple(k) for k in plot_settings.final_model_keys]
         model_key_names = results_analyzer.read_model_key_names()
-        grouped_keys = results_analyzer.group_model_keys('target_effect')
+        grouped_keys = results_analyzer.group_model_keys(
+            'target_effect',
+            model_keys=model_keys
+            )
         
         for grouping_key, model_keys in grouped_keys:
 
