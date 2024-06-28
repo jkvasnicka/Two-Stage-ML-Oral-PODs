@@ -1,7 +1,7 @@
 {
     "dsstox_sdf_dir" : "Input/Raw/DSSTox/DSSToxSDF_01262023_V2000",
         
-    "opera_structures_file" :  "Input/Raw/OPERA/OPERA2.9-Predictions/2023-12-11/chemical-identifiers.smi",
+    "opera_structures_file" :  "Input/Raw/OPERA/oral_training_structures.smi",
     
     "raw_comptox_features_file" : "Input/Raw/CompTox/CCD-OPERA-TEST-predictions.csv",
     
