@@ -65,12 +65,9 @@ def margins_of_exposure_cumulative(
     # Get x-axis truncation limit if present
     right_truncation = plot_settings.__dict__.get('moe_right_truncation', None)
 
-    # TODO: Make this a utility function and reuse.
-    # Restrict plotting to the final models
-    model_keys = [tuple(k) for k in plot_settings.final_model_keys]
     model_key_names, grouped_keys = group_model_keys(
         results_analyzer, 
-        model_keys
+        model_keys=plot_settings.final_model_keys
         )
 
     for grouping_key, model_keys in grouped_keys:

@@ -781,8 +781,10 @@ class ResultsAnalyzer:
         ResultsManager object.
         '''
         if model_keys is None:
-            # Use all model keys.
+            # Use all model keys by default
             model_keys = self.read_model_keys()
+
+        model_keys = ResultsAnalyzer.validate_model_keys(model_keys)
 
         if isinstance(exclusion_key_names , str):
             exclusion_key_names  = [exclusion_key_names]
@@ -822,6 +824,30 @@ class ResultsAnalyzer:
             ]
 
         return grouped_model_keys
+    #endregion
+
+    #region: validate_model_keys
+    @staticmethod
+    def validate_model_keys(model_keys):
+        '''
+        Validate and convert model_keys to a list of tuples if necessary. 
+
+        This function allows model keys to be stored in JSON files as lists and 
+        converted into tuples post-loading.
+
+        Parameters
+        ----------
+        model_keys : list of tuples or list of lists
+            If the model keys are provided as lists, they will be converted to 
+            tuples.
+
+        Returns
+        -------
+        model_keys : list of tuples
+        '''
+        if all(isinstance(model_key, list) for model_key in model_keys):
+            model_keys = [tuple(model_key) for model_key in model_keys]
+        return model_keys
     #endregion
 
     #region: read_model_key_names
