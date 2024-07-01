@@ -41,8 +41,6 @@
 
     "results_dir" : "Results/Oral",
 
-    "figures_dir" : "Figures/Oral",
-
-    "norman_chemicals_file" : "Input/Raw/NORMAN/SusDat_DTXSIDs_20220118.txt"
+    "figures_dir" : "Figures/Oral"
     
 }
