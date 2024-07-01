@@ -746,77 +746,76 @@ class ResultsAnalyzer:
     #region: group_model_keys
     def group_model_keys(
             self,
-            exclusion_key_names , 
-            string_to_exclude=None,
+            ignore_components,
+            exclusion_string=None,
             model_keys=None,
-            filter_single_key=True
+            filter_single_key_groups=True
         ):
         '''
-        Group model keys by grouping keys. A grouping key is formed by taking a model 
-        key and excluding one or more of its elements.
+        Group model keys by forming a new grouping key for each model key,
+        achieved by ignoring specified components. This groups model keys 
+        that share the same modified grouping key, enabling analysis based on 
+        grouped similarities.
 
         Parameters
         ----------
-        exclusion_key_names : str or list of str
-            Names of keys (which should be in the model key names stored in the class) to 
-            exclude when forming the grouping key.
-        string_to_exclude : str, optional
-            String to exclude model keys containing it. If a model key contains this 
-            string, it will be excluded from the final output. If None, no model keys 
-            are excluded based on this criterion.
+        ignore_components : str or list of str
+            The component name or names of the model keys to be ignored when 
+            forming the grouping key.
+        exclusion_string : str, optional
+            Specifies a substring to filter out keys containing it. If None, 
+            no filtering is performed.
         model_keys : list of tuples, optional
-            Model keys to be grouped. Each tuple represents a model key. If None, 
-            all model keys available in the ResultsManager object will be used.
-        filter_single_key : bool, optional
-            If True, groups with only one model key will be excluded from the final output.
+            The set of model keys to be grouped. Each tuple represents a 
+            complete model key. If None, keys are fetched from the 
+            ResultsManager object.
+        filter_single_key_groups : bool, optional
+            If True, groups with only one model key are excluded from the 
+            output.
 
         Returns
         -------
         grouped_model_keys : list of tuples
-            Contains each grouping key and its corresponding group of model keys.
-
-        Note
-        ----
-        This method assumes that the model keys and key names are stored within the
-        ResultsManager object.
+            Each tuple consists of a grouping key and a list of model keys 
+            sharing this grouping key.
         '''
         if model_keys is None:
-            # Use all model keys by default
+            # Use all available model keys.
             model_keys = self.read_model_keys()
 
         model_keys = ResultsAnalyzer.validate_model_keys(model_keys)
 
-        if isinstance(exclusion_key_names , str):
-            exclusion_key_names  = [exclusion_key_names]
+        if isinstance(ignore_components, str):
+            ignore_components = [ignore_components]
 
-        if string_to_exclude:
-            # Exclude model keys that contain string_to_exclude
-            model_keys = [k for k in model_keys if string_to_exclude not in k]
+        if exclusion_string:
+            # Filter out model keys containing the specified substring
+            model_keys = [
+                k for k in model_keys if exclusion_string not in k
+                ]
 
-        # Get the indices of the keys to exclude in the key names
+        # Get indices of components to ignore based on their names
         exclusion_key_indices = [
-            self.read_model_key_names().index(key) 
-            for key in exclusion_key_names
+            self.read_model_key_names().index(key)
+            for key in ignore_components
             ]
 
         def create_grouping_key(model_key):
-            return tuple(item for idx, item in enumerate(model_key) 
+            return tuple(item for idx, item in enumerate(model_key)
                         if idx not in exclusion_key_indices)
 
-        # Sort model keys by grouping key
-        # This is necessary because itertools.groupby() groups only consecutive 
-        # elements with the same key
+        # Sort model keys by their new grouping keys
         sorted_model_keys = sorted(model_keys, key=create_grouping_key)
 
-        # Group the sorted keys by grouping key
+        # Group the sorted model keys by their new grouping keys
         grouped_model_keys = [
             (grouping_key, list(group))
             for grouping_key, group in itertools.groupby(
             sorted_model_keys, key=create_grouping_key)
         ]
 
-        if filter_single_key:
-            # Filter out groups with only one model key
+        if filter_single_key_groups:
+            # Remove groups containing only one model key
             grouped_model_keys = [
                 (grouping_key, group)
                 for grouping_key, group in grouped_model_keys

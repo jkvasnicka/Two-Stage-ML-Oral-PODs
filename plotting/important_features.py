@@ -49,7 +49,7 @@ def important_feature_counts(
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys = results_analyzer.group_model_keys(
         'target_effect', 
-        string_to_exclude='false'
+        exclusion_string='false'
     )
 
     for grouping_key, model_keys in grouped_keys:
