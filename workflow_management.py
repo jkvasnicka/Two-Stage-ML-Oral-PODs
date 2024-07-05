@@ -33,7 +33,7 @@ from metrics_management import MetricsManager
 from model_evaluation import ModelEvaluator
 from model_key_creation import ModelKeyCreator
 from results_management import ResultsManager
-from config_management import UnifiedConfiguration
+from config_management import config_from_cli_args
 
 #region: WorkflowManager.__init__
 class WorkflowManager:
@@ -202,7 +202,7 @@ class WorkflowManager:
     #endregion
 
 if __name__ == '__main__':
-    config = UnifiedConfiguration()
+    config = config_from_cli_args()
     workflow_manager = WorkflowManager(config)
     print('Running WorkflowManager...')
     workflow_manager.run()

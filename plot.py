@@ -16,7 +16,7 @@ from plotting import (
     pod
 )
 
-from config_management import UnifiedConfiguration
+from config_management import config_from_cli_args
 from data_management import DataManager
 from metrics_management import MetricsManager
 from results_management import ResultsManager
@@ -39,7 +39,7 @@ def plot_main():
         by the configuration file.
     '''
     ## Setup
-    config = UnifiedConfiguration()
+    config = config_from_cli_args()
     data_manager = DataManager(config.data, config.path)
     metrics_manager = MetricsManager(config.category_to_dict('metric'))
     results_manager = ResultsManager(

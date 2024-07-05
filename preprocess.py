@@ -5,7 +5,7 @@ configuration settings are used to identify and process each raw data source
 through the RawDataProcessor's specified methods.
 '''
 
-from config_management import UnifiedConfiguration
+from config_management import config_from_cli_args
 from raw_processing.processor import RawDataProcessor
 
 def main():
@@ -18,7 +18,7 @@ def main():
     None
         The processed data are written to a dedicated directory.
     '''
-    config = UnifiedConfiguration()
+    config = config_from_cli_args()
 
     raw_processor = RawDataProcessor(config.raw_data, config.data, config.path)
 

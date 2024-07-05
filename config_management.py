@@ -18,6 +18,7 @@ model_settings = config.model
 
 import json
 from types import SimpleNamespace
+import argparse
 
 #region: UnifiedConfiguration.__init__
 class UnifiedConfiguration:
@@ -40,20 +41,26 @@ class UnifiedConfiguration:
         'plot'
         }
 
-    def __init__(self, config_mapping_path='config.json', encoding='utf-8'):
+    def __init__(self, config_file=None, encoding=None):
         '''
         Initialize the UnifiedConfiguration object.
 
         Parameters
         ----------
-        config_mapping_path : str, optional
+        config_file : str, optional
             Path to the JSON file mapping categories to configuration file 
             paths. By default, will look for 'config.json' in the working 
             directory.
         encoding : str, optional
             Default is 'utf-8'.
         '''
-        with open(config_mapping_path, 'r', encoding=encoding) as mapping_file:
+        # Set defaults
+        if config_file is None:
+            config_file = 'config.json'  
+        if encoding is None:
+            encoding = 'utf-8'
+
+        with open(config_file, 'r', encoding=encoding) as mapping_file:
             config_files_dict = json.load(mapping_file)
 
         # Validate the input categories
@@ -106,7 +113,6 @@ class UnifiedConfiguration:
         return getattr(self, category).__dict__
     #endregion
 
-    # TODO:
     # region: validate
     def validate(self):
         '''
@@ -119,7 +125,6 @@ class UnifiedConfiguration:
         pass
     #endregion
 
-    # TODO: 
     #region: set_defaults
     def set_defaults(self):
         '''
@@ -131,3 +136,49 @@ class UnifiedConfiguration:
         '''
         pass
     #endregion
+
+#region: parse_args
+def parse_args():
+    '''
+    Parse optional command-line arguments for configuration loading
+
+    Returns
+    -------
+    argparse.Namespace
+        Parsed command-line arguments.
+    '''
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-c', 
+        '--config_file', 
+        type=str, 
+        help='Path to the main configuration file',
+        default=None
+        )
+    parser.add_argument(
+        '-e', 
+        '--encoding',
+        type=str, 
+        help='Encoding of the configuration files',
+        default=None
+    )
+    return parser.parse_args()
+#endregion
+
+#region: config_from_cli_args
+def config_from_cli_args():
+    '''
+    Load the configuration using command-line interface arguments.
+
+    Returns
+    -------
+    UnifiedConfiguration
+        An instance of UnifiedConfiguration initialized with the parsed 
+        command-line arguments.
+    '''
+    args = parse_args()
+    return UnifiedConfiguration(
+        config_file=args.config_file, 
+        encoding=args.encoding
+        )
+#endregion
