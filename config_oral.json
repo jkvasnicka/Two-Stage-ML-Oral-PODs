@@ -1,0 +1,23 @@
+{
+
+    "path" : "Input/Configuration/Oral/path-configuration.json",
+
+    "preprocessor" : "Input/Configuration/Shared/preprocessor-configuration.json",
+
+    "raw_data" : "Input/Configuration/Oral/raw-data-configuration.json",
+    
+    "data" : "Input/Configuration/Shared/data-configuration.json",
+
+    "feature_selection" : "Input/Configuration/Shared/feature-selection-configuration.json",
+
+    "estimator" : "Input/Configuration/Shared/estimator-configuration.json",
+
+    "metric" : "Input/Configuration/Shared/metric-configuration.json",
+
+    "model" : "Input/Configuration/Oral/model-configuration.json",
+
+    "evaluation" : "Input/Configuration/Shared/evaluation-configuration.json",
+
+    "plot" : "Input/Configuration/Oral/plot-configuration.json"
+
+}
