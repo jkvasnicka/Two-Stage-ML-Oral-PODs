@@ -140,7 +140,13 @@ class UnifiedConfiguration:
 #region: parse_args
 def parse_args():
     '''
-    Parse optional command-line arguments for configuration loading
+    Parse command-line arguments for configuration loading
+
+    The function defines and parses two command-line arguments:
+    - `config_file`: A mandatory positional argument specifying the path to 
+        the main configuration file.
+    - `encoding`: An optional argument specifying the encoding of the 
+        configuration file.
 
     Returns
     -------
@@ -149,8 +155,7 @@ def parse_args():
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-c', 
-        '--config_file', 
+        'config_file',
         type=str, 
         help='Path to the main configuration file',
         default=None
