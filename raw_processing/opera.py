@@ -302,7 +302,11 @@ def _model_data_from_csv(data_dir, file_name):
     The first column (MoleculeID) is used as the index column
     '''
     data_path = os.path.join(data_dir, file_name)
-    return pd.read_csv(data_path, index_col=0)
+    return pd.read_csv(
+        data_path, 
+        index_col=0, 
+        low_memory=False  # silences warnings about mixed dtypes
+        )
 #endregion
 
 #region: set_unreliable_values
