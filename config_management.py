@@ -16,6 +16,7 @@ config = UnifiedConfiguration(config_files_dict)
 model_settings = config.model
 '''
 
+import os
 import json
 from types import SimpleNamespace
 import argparse
@@ -59,6 +60,11 @@ class UnifiedConfiguration:
             config_file = 'config.json'  
         if encoding is None:
             encoding = 'utf-8'
+
+        if not os.path.exists(config_file):
+            raise FileNotFoundError(
+                f"The specified configuration file '{config_file}' does not",
+                "exist. Please provide a valid config file path.")
 
         with open(config_file, 'r', encoding=encoding) as mapping_file:
             config_files_dict = json.load(mapping_file)
@@ -143,7 +149,7 @@ def parse_args():
     Parse command-line arguments for configuration loading
 
     The function defines and parses two command-line arguments:
-    - `config_file`: A mandatory positional argument specifying the path to 
+    - `config_file`: An optional positional argument specifying the path to 
         the main configuration file.
     - `encoding`: An optional argument specifying the encoding of the 
         configuration file.
@@ -155,7 +161,8 @@ def parse_args():
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        'config_file',
+        '-c',
+        '--config_file',
         type=str, 
         help='Path to the main configuration file',
         default=None
