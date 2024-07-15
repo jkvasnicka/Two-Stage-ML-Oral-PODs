@@ -5,7 +5,7 @@
     
     "raw_comptox_features_file" : "Input/Raw/CompTox/CCD-OPERA-TEST-predictions.csv",
     
-    "raw_opera_features_dir" : "Input/Raw/OPERA/20231227_OPERA_Batches",
+    "raw_opera_features_dir" : "Input/Raw/OPERA/Original_ToxValDB_NORMAN",
 
     "file_for_features_source" : {
 
