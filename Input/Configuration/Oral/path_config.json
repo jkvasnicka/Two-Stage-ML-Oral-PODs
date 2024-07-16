@@ -1,0 +1,44 @@
+{
+    "dsstox_sdf_dir" : "Input/Raw/DSSTox/DSSToxSDF_01262023_V2000",
+            
+    "raw_comptox_features_file" : "Input/Raw/CompTox/CCD_OPERA_TEST_predictions.csv",
+    
+    "raw_opera_features_dir" : "Input/Raw/OPERA/Original_ToxValDB_NORMAN",
+
+    "file_for_features_source" : {
+
+        "comptox" : "Input/Processed/Features/CompTox/CompTox_predictions.parquet", 
+
+        "opera" : "Input/Processed/Features/OPERA/OPERA_2.9_predictions.parquet",
+
+        "rdkit" : "Input/Processed/Features/RDKit/RDKit_2D_descriptors.parquet"
+        
+    },
+    
+    "opera_AD_file" : "Input/Processed/Features/OPERA/OPERA_2.9_AD_flags.parquet",
+    
+    "raw_ld50_experimental_file" : "Input/Raw/Aurisano/Oral/DF_LD50_curated_DB.xlsx",
+    
+    "ld50_experimental_file" : "Input/Processed/Features/Aurisano/Oral/experimental_LD50s.csv",
+        
+    "raw_surrogate_pods_file" : "Input/Raw/Aurisano/Oral/Supplemental-Excel-File-EHP11524-revised.xlsx",
+    
+    "surrogate_pods_file" : "Input/Processed/Targets/Aurisano/Oral/surrogate_points_of_departure.csv",
+        
+    "raw_authoritative_pods_file" : "Input/Raw/Aurisano/Oral/Numeric-data-for-Figures-EHP11524.xlsx",
+    
+    "authoritative_pods_file" : "Input/Processed/Analysis/Aurisano/Oral/authoritative_points_of_departure.csv",
+    
+    "raw_toxcast_oeds_file" : "Input/Raw/Paul_Friedman/Paul_Friedman_2020_Table_S2.xlsx",
+
+    "toxcast_oeds_file" : "Input/Processed/Analysis/Paul_Friedman/toxcast_oral_equivalent_doses.csv",
+    
+    "raw_seem3_exposure_file" :  "Input/Raw/SEEM3/Exposure_download_v1.xlsx",
+
+    "seem3_exposure_file" : "Input/Processed/Analysis/SEEM3/Exposure_download_v1.parquet",
+
+    "results_dir" : "Results/Oral",
+
+    "figures_dir" : "Figures/Oral"
+    
+}

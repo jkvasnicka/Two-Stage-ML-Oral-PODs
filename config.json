@@ -1,23 +1,23 @@
 {
 
-    "path" : "Input/Configuration/Oral/path-configuration.json",
+    "path" : "Input/Configuration/Oral/path_config.json",
 
-    "preprocessor" : "Input/Configuration/Shared/preprocessor-configuration.json",
+    "preprocessor" : "Input/Configuration/Shared/preprocessor_config.json",
 
-    "raw_data" : "Input/Configuration/Oral/raw-data-configuration.json",
+    "raw_data" : "Input/Configuration/Oral/raw_data_config.json",
     
-    "data" : "Input/Configuration/Shared/data-configuration.json",
+    "data" : "Input/Configuration/Shared/data_config.json",
 
-    "feature_selection" : "Input/Configuration/Shared/feature-selection-configuration.json",
+    "feature_selection" : "Input/Configuration/Shared/feature_selection_config.json",
 
-    "estimator" : "Input/Configuration/Shared/estimator-configuration.json",
+    "estimator" : "Input/Configuration/Shared/estimator_config.json",
 
-    "metric" : "Input/Configuration/Shared/metric-configuration.json",
+    "metric" : "Input/Configuration/Shared/metric_config.json",
 
-    "model" : "Input/Configuration/Oral/model-configuration.json",
+    "model" : "Input/Configuration/Oral/model_config.json",
 
-    "evaluation" : "Input/Configuration/Shared/evaluation-configuration.json",
+    "evaluation" : "Input/Configuration/Shared/evaluation_config.json",
 
-    "plot" : "Input/Configuration/Oral/plot-configuration.json"
+    "plot" : "Input/Configuration/Oral/plot_config.json"
 
 }

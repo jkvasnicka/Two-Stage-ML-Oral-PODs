@@ -30,7 +30,7 @@
 
     "opera_log10_pat" : "Log",
 
-    "logging_file_name" : "preprocessing-log-file.txt",
+    "logging_file_name" : "preprocessing_log_file.txt",
 
     "comptox_log10_pat" : "LOG",
 
