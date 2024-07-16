@@ -176,6 +176,7 @@ class RawDataProcessor:
             self._index_col.lower(), 
             self._raw_data_settings.surrogate_tox_data_kwargs,
             log10=self._raw_data_settings.do_log10_target,
+            study_count_thres=self._raw_data_settings.study_count_thres,
             effect_mapper=self._raw_data_settings.effect_mapper,
             write_path=self._path_settings.surrogate_pods_file
         )

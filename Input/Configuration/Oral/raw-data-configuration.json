@@ -13,6 +13,8 @@
 
     "do_log10_target" : true,
 
+    "study_count_thres" : 3,
+
     "surrogate_tox_data_kwargs" : {
         "sheet_name" : "Excel Table S5",
         "header": [0, 1],
