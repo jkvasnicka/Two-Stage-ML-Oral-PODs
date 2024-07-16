@@ -482,48 +482,110 @@ def split_applicability_domain_columns(global_local_ADs):
     return global_ADs, local_AD_indexes
 #endregion
 
-#region: extract_dtxsid_from_structures_file
-def extract_dtxsid_from_structures_file(structures_file):
+#region: extract_smiles_for_chem
+def extract_smiles_for_chem(main_dir, subset_chem_ids=None):
     '''
-    Extract DTXSID values from a SMI file.
+    Extract chemical IDs and their corresponding SMILES strings from .smi 
+    files in subdirectories.
 
     Parameters
     ----------
-    structures_file : str
+    main_dir : str
+        The main directory containing subdirectories with .smi files.
+    subset_chem_ids : list of str, optional
+        A list of chemical IDs to include in the result. If None, include all.
+
+    Returns
+    -------
+    dict
+        A dictionary with chemical IDs as keys and SMILES strings as values.
+
+    See Also
+    --------
+    raw_processing.rdkit_utilities.get_2d_descriptors()
+        Function that loads RDKit features using smiles_for_chem
+    '''
+    smiles_for_chem = {}  # initialize
+    for entry in os.listdir(main_dir):
+        data_dir = os.path.join(main_dir, entry)
+        if os.path.isdir(data_dir):
+            smi_file = get_smi_file(data_dir)
+            chem_ids = extract_chem_ids_from_smi(smi_file)
+            smiles = extract_smiles_from_smi(smi_file)
+            for chem_id, smiles_str in zip(chem_ids, smiles):
+                if subset_chem_ids is None or chem_id in subset_chem_ids:
+                    smiles_for_chem[chem_id] = smiles_str
+    return smiles_for_chem    
+#endregion
+
+#region: get_smi_file
+def get_smi_file(data_dir):
+    '''
+    Identify the .smi file in the given directory.
+
+    Parameters
+    ----------
+    data_dir : str
+        The directory to search for .smi files.
+
+    Returns
+    -------
+    str
+        The path to the .smi file in the directory.
+    '''
+    smi_files = [
+        file for file in os.listdir(data_dir) if file.endswith('.smi')
+        ]
+    if len(smi_files) == 1:
+        return os.path.join(data_dir, smi_files[0])
+    else:
+        raise ValueError(
+            f'Expected exactly one .smi file in {data_dir}, but found ',
+            f'{len(smi_files)}')
+#endregion
+
+#region: extract_chem_ids_from_smi
+def extract_chem_ids_from_smi(smi_file):
+    '''
+    Extract chemical identifier (DTXSID) values from an SMI file.
+
+    Parameters
+    ----------
+    smi_file : str
         The path to the SMI file.
 
     Returns
     -------
     list
     '''
-    return extract_from_smi_file(structures_file, 1)
+    return extract_from_smi(smi_file, 1)
 #endregion
 
-#region: extract_smiles_from_structures_file
-def extract_smiles_from_structures_file(structures_file):
+#region: extract_smiles_from_smi
+def extract_smiles_from_smi(smi_file):
     '''
-    Extract "QSAR-ready" SMILES strings from a SMI file.
+    Extract "QSAR-ready" SMILES strings from an SMI file.
 
     Parameters
     ----------
-    structures_file : str
+    smi_file : str
         The path to the SMI file.
 
     Returns
     -------
     list
     '''
-    return extract_from_smi_file(structures_file, 0)
+    return extract_from_smi(smi_file, 0)
 #endregion
 
-#region: extract_from_smi_file
-def extract_from_smi_file(structures_file, index):
+#region: extract_from_smi
+def extract_from_smi(smi_file, index):
     '''
     Helper function to extract data from a SMI file based on the given index.
 
     Parameters
     ----------
-    structures_file : str
+    smi_file : str
         The path to the SMI file.
     index : int
         The index of the data to extract from each line (0 for SMILES, 1 for 
@@ -533,7 +595,7 @@ def extract_from_smi_file(structures_file, index):
     -------
     list
     '''
-    with open(structures_file, 'r') as f:
+    with open(smi_file, 'r') as f:
         data = [line.split('\t')[index].strip() for line in f.readlines()]
     return data
 #endregion

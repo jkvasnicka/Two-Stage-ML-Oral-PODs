@@ -251,11 +251,10 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed RDKit features.
         '''
-        # Get the QSAR-ready SMILES from OPERA
-        smi_file = self._path_settings.opera_structures_file
-        smiless = opera.extract_smiles_from_structures_file(smi_file)
-        dtxsids = opera.extract_dtxsid_from_structures_file(smi_file)
-        smiles_for_chem = dict(zip(dtxsids, smiless))
+        smiles_for_chem = opera.extract_smiles_for_chem(
+            self._path_settings.raw_opera_features_dir,
+            subset_chem_ids=self.load_training_chemicals()
+            )
 
         return rdkit_utilities.get_2d_descriptors(
             smiles_for_chem,
