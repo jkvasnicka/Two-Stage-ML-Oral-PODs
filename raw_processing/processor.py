@@ -239,10 +239,12 @@ class RawDataProcessor:
         )
     #endregion
 
+    # FIXME: Requires processed surrogate PODs prior to usage
+    # Should propagate changes if surrogate PODs change
     #region: _rdkit_features_from_raw
     def _rdkit_features_from_raw(self):
         '''
-        # Extract and process two-dimensional molecular descriptors from the
+        Extract and process two-dimensional molecular descriptors from the
         RDKit library.
 
         The processed data are saved to a parquet file on disk.
