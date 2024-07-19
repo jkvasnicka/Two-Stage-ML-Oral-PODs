@@ -13,7 +13,8 @@ from plotting import (
     missing_features,
     model_performance,
     moe,
-    pod
+    pod,
+    sensitivity_analysis
 )
 
 from config_management import config_from_cli_args
@@ -126,7 +127,8 @@ class ResultsPlotter:
             'benchmarking_scatterplots' : self._benchmarking_scatterplots,
             'margins_of_exposure_cumulative' : self._margins_of_exposure_cumulative,
             'cumulative_pod_distributions' : self._cumulative_pod_distributions, 
-            'predictions_by_missing_feature' : self._predictions_by_missing_feature
+            'predictions_by_missing_feature' : self._predictions_by_missing_feature,
+            'sensitivity_analysis_boxplots' : self._sensitivity_analysis_boxplots
         }
 
         # Filter out any plotting functions not defined in the config file
@@ -277,6 +279,18 @@ class ResultsPlotter:
             output_dir=self._path_settings.figures_dir
             )
 #endregion
+
+#region: _sensitivity_analysis_boxplots
+    def _sensitivity_analysis_boxplots(self):
+        '''
+        Call sensitivity_analysis.sensitivity_analysis_boxplots with
+        parameters.
+        '''
+        sensitivity_analysis.sensitivity_analysis_boxplots(
+            self._results_analyzer, 
+            self._plot_settings
+        )
+#endregion:
 
 if __name__ == '__main__':
     print('Plotting results...')
