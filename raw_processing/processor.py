@@ -281,10 +281,15 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed experimental LD50 values.
         '''
+        dtxsid_for_casrn = other_sources.get_casrn_dtxsid_mapping(
+            self._path_settings.raw_surrogate_pods_file, 
+            self._raw_data_settings.surrogate_tox_data_kwargs,
+        )
+
         return other_sources.experimental_ld50s_from_excel(
             self._path_settings.raw_ld50_experimental_file, 
             self._raw_data_settings.ld50_exp_column, 
-            id_for_casrn=self._map_casrn_to_dtxsid(), 
+            id_for_casrn=dtxsid_for_casrn, 
             id_name=self._index_col,
             write_path=self._path_settings.ld50_experimental_file
         )
@@ -304,34 +309,18 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed authoritative Points of Departure values.
         '''
+        dtxsid_for_casrn = other_sources.get_casrn_dtxsid_mapping(
+            self._path_settings.raw_surrogate_pods_file, 
+            self._raw_data_settings.surrogate_tox_data_kwargs,
+        )
+
         return other_sources.authoritative_toxicity_values_from_excel(
             self._path_settings.raw_authoritative_pods_file, 
             self._raw_data_settings.auth_data_kwargs,
             self._raw_data_settings.auth_file_ilocs_for_effect, 
-            id_for_casrn=self._map_casrn_to_dtxsid(), 
+            id_for_casrn=dtxsid_for_casrn,
             id_name=self._index_col, 
             write_path=self._path_settings.authoritative_pods_file
-        )
-    #endregion
-
-    #region: _map_casrn_to_dtxsid
-    def _map_casrn_to_dtxsid(self):
-        '''
-        Map CASRN to DTXSID using the DSSTox dataset.
-
-        Returns
-        -------
-        dict
-            A dictionary mapping CASRN to DTXSID.
-        '''
-        casrn_column = self._raw_data_settings.dsstox_sdf_casrn_column
-        dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
-
-        return (
-            pd.read_parquet(self._build_path_dsstox_compiled())
-            .set_index(casrn_column)
-            [dtxsid_column]
-            .to_dict()
         )
     #endregion
 

@@ -26,11 +26,13 @@ def surrogate_toxicity_values_from_excel(
     Parameters
     ----------
     tox_data_path : str
-        File path to the raw data.
+        The file path to the Excel source file.
     tox_metric : str
-        Name of the target variable in the headers.
+        The target variable column name in the DataFrame.
     index_col : str
-        Name of the chemical identifier in the headers to use as index.
+        The column name to be set as the DataFrame index.
+    tox_data_kwargs : dict
+        Additional keyword arguments to pass to `pd.read_excel()`.
     log10 : bool (optional)
         If True, apply a log10 transformation to the toxicity values.
     study_count_thres : int (optional)
@@ -98,18 +100,28 @@ def toxicity_data_and_study_counts_from_excel(
         tox_data_kwargs
         ):
     '''
-    Helper function to load the toxicity data and study counts from the
-    source Excel file.
+    Load toxicity data from an Excel file, reformatting the index and columns.
+
+    The index is cleaned to remove any missing identifiers, standardized in 
+    uppercase, and filtered based on regex patterns.
+
+    Parameters
+    ----------
+    tox_data_path : str
+        The file path to the Excel source file.
+    tox_metric : str
+        The target variable column name in the DataFrame.
+    index_col : str
+        The column name to be set as the DataFrame index.
+    tox_data_kwargs : dict
+        Additional keyword arguments to pass to `pd.read_excel()`.
 
     Returns
     -------
-    pandas.DataFrame with MultiIndex columns
-        Index = chemicals, columns = (effect_type, variable) where variable
-        includes the target variable and study count.
-
-    See Also
-    --------
-    filter_toxicity_data()
+    pandas.DataFrame
+        A DataFrame with MultiIndex columns. The index represents chemical
+        identifiers and the columns are structured as (effect_type, variable), 
+        where 'variable' includes the target variable and study count.
     '''
     tox_data = (
         pd.read_excel(tox_data_path, **tox_data_kwargs)
@@ -132,6 +144,31 @@ def toxicity_data_and_study_counts_from_excel(
     return tox_data.loc[where_not_missing]
 #endregion
 
+#region: get_casrn_dtxsid_mapping
+def get_casrn_dtxsid_mapping(tox_data_path, tox_data_kwargs):
+    '''
+    Retrieve a mapping between CASRN and DTXSID from the Aurisano dataset.
+
+    Parameters
+    ----------
+    tox_data_path : str
+        The file path to the Excel source file.
+    tox_data_kwargs : dict
+        Additional keyword arguments to pass to `pd.read_excel()`.
+
+    Returns
+    -------
+    dict
+        Keys are CASRN and values are DTXSID.
+    '''
+    return (
+        pd.read_excel(tox_data_path, **tox_data_kwargs)
+        .droplevel(0, axis=1)
+        .set_index('casrn')['dtxsid']
+        .to_dict()
+    )
+#endregion
+
 #region: authoritative_toxicity_values_from_excel
 def authoritative_toxicity_values_from_excel(
         fig_s5_path, 
@@ -142,7 +179,29 @@ def authoritative_toxicity_values_from_excel(
         write_path=None
         ):
     '''
-    Load and process the authoritative toxicity values from a CSV file.
+    Load and process authoritative toxicity values from an Excel file, 
+    potentially writing to CSV.
+
+    Parameters
+    ----------
+    fig_s5_path : str
+        Path to the Excel file containing toxicity data.
+    auth_data_kwargs : dict
+        Keyword arguments for `pd.read_excel()`.
+    ilocs_for_effect : dict
+        Dictionary mapping effect categories to column indices for processing.
+    id_for_casrn : function, optional
+        Function to replace CASRN indices with other identifiers.
+    id_name : str, optional
+        New identifier name to replace 'casrn' if `id_for_casrn` is used.
+    write_path : str, optional
+        Path to save the processed DataFrame as a CSV file.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with chemical identifiers as the index and effect categories
+        as columns.   
     '''
     fig_s5_data = (
         pd.read_excel(fig_s5_path, **auth_data_kwargs)
@@ -195,8 +254,8 @@ def experimental_ld50s_from_excel(
         The name to be assigned to the new index.
     inverse_transform : bool (optional)
         If True, apply an inverse log10-transformation to the values.
-    Write_path : str (optional)
-        Path to write the return as a CSV file.
+    write_path : str (optional)
+        Path to write the LD50 data to a CSV file.
 
     Returns
     -------
