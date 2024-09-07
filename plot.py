@@ -288,7 +288,8 @@ class ResultsPlotter:
         '''
         sensitivity_analysis.sensitivity_analysis_boxplots(
             self._results_analyzer, 
-            self._plot_settings
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
         )
 #endregion:
 
