@@ -1,0 +1,23 @@
+{
+
+    "path" : "Input/Configuration/Inhalation/path_config.json",
+
+    "preprocessor" : "Input/Configuration/Shared/preprocessor_config.json",
+
+    "raw_data" : "Input/Configuration/Inhalation/raw_data_config.json",
+    
+    "data" : "Input/Configuration/Shared/data_config.json",
+
+    "feature_selection" : "Input/Configuration/Shared/feature_selection_config.json",
+
+    "estimator" : "Input/Configuration/Shared/estimator_config.json",
+
+    "metric" : "Input/Configuration/Shared/metric_config.json",
+
+    "model" : "Input/Configuration/Inhalation/model_config.json",
+
+    "evaluation" : "Input/Configuration/Shared/evaluation_config.json",
+
+    "plot" : "Input/Configuration/Inhalation/plot_config.json"
+
+}

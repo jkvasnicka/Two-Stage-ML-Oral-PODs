@@ -1,0 +1,23 @@
+{
+            
+    "raw_opera_features_dir" : "Input/Raw/OPERA/All_Predictions",
+
+    "file_for_features_source" : {
+
+        "opera" : "Input/Processed/Features/OPERA/Inhalation/All_Predictions.parquet",
+
+        "rdkit" : "Input/Processed/Features/RDKit/Inhalation/RDKit_2D_descriptors.parquet"
+        
+    },
+    
+    "opera_AD_file" : "Input/Processed/Features/OPERA/Inhalation/All_Predictions_AD_flags.parquet",
+        
+    "raw_surrogate_pods_file" : "Input/Raw/Aurisano/Inhalation/es4c00207_si_002.xlsx",
+    
+    "surrogate_pods_file" : "Input/Processed/Targets/Aurisano/Inhalation/surrogate_points_of_departure.csv",
+
+    "results_dir" : "Results/Inhalation",
+
+    "figures_dir" : "Figures/Inhalation"
+    
+}
