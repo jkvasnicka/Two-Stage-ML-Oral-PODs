@@ -18,6 +18,8 @@
 
     "results_dir" : "Results/Inhalation",
 
+    "pod_predictions_file" : "Predictions/Inhalation/inhalation_pod_predictions",
+
     "figures_dir" : "Figures/Inhalation"
     
 }
