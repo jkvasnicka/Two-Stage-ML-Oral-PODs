@@ -7,6 +7,7 @@ other result-related tasks.
 
 import pandas as pd 
 import numpy as np
+import itertools
 
 from feature_selection import FeatureSelector
 
@@ -744,19 +745,108 @@ class ResultsAnalyzer:
 
     #region: group_model_keys
     def group_model_keys(
-            self, 
-            exclusion_key_names, 
-            string_to_exclude=None, 
+            self,
+            ignore_components,
+            exclusion_string=None,
             model_keys=None,
-            filter_single_key=True
-            ):
-        '''Refer to `ResultsManager.group_model_keys` for documentation'''
-        return self.results_manager.group_model_keys(
-            exclusion_key_names, 
-            string_to_exclude, 
-            model_keys,
-            filter_single_key
-            )
+            filter_single_key_groups=True
+        ):
+        '''
+        Group model keys by forming a new grouping key for each model key,
+        achieved by ignoring specified components. This groups model keys 
+        that share the same modified grouping key, enabling analysis based on 
+        grouped similarities.
+
+        Parameters
+        ----------
+        ignore_components : str or list of str
+            The component name or names of the model keys to be ignored when 
+            forming the grouping key.
+        exclusion_string : str, optional
+            Specifies a substring to filter out keys containing it. If None, 
+            no filtering is performed.
+        model_keys : list of tuples, optional
+            The set of model keys to be grouped. Each tuple represents a 
+            complete model key. If None, keys are fetched from the 
+            ResultsManager object.
+        filter_single_key_groups : bool, optional
+            If True, groups with only one model key are excluded from the 
+            output.
+
+        Returns
+        -------
+        grouped_model_keys : list of tuples
+            Each tuple consists of a grouping key and a list of model keys 
+            sharing this grouping key.
+        '''
+        if model_keys is None:
+            # Use all available model keys.
+            model_keys = self.read_model_keys()
+
+        model_keys = ResultsAnalyzer.validate_model_keys(model_keys)
+
+        if isinstance(ignore_components, str):
+            ignore_components = [ignore_components]
+
+        if exclusion_string:
+            # Filter out model keys containing the specified substring
+            model_keys = [
+                k for k in model_keys if exclusion_string not in k
+                ]
+
+        # Get indices of components to ignore based on their names
+        exclusion_key_indices = [
+            self.read_model_key_names().index(key)
+            for key in ignore_components
+            ]
+
+        def create_grouping_key(model_key):
+            return tuple(item for idx, item in enumerate(model_key)
+                        if idx not in exclusion_key_indices)
+
+        # Sort model keys by their new grouping keys
+        sorted_model_keys = sorted(model_keys, key=create_grouping_key)
+
+        # Group the sorted model keys by their new grouping keys
+        grouped_model_keys = [
+            (grouping_key, list(group))
+            for grouping_key, group in itertools.groupby(
+            sorted_model_keys, key=create_grouping_key)
+        ]
+
+        if filter_single_key_groups:
+            # Remove groups containing only one model key
+            grouped_model_keys = [
+                (grouping_key, group)
+                for grouping_key, group in grouped_model_keys
+                if len(group) > 1
+            ]
+
+        return grouped_model_keys
+    #endregion
+
+    #region: validate_model_keys
+    @staticmethod
+    def validate_model_keys(model_keys):
+        '''
+        Validate and convert model_keys to a list of tuples if necessary. 
+
+        This function allows model keys to be stored in JSON files as lists and 
+        converted into tuples post-loading.
+
+        Parameters
+        ----------
+        model_keys : list of tuples or list of lists
+            If the model keys are provided as lists, they will be converted to 
+            tuples.
+
+        Returns
+        -------
+        model_keys : list of tuples
+        '''
+        if all(isinstance(model_key, list) for model_key in model_keys):
+            model_keys = [tuple(model_key) for model_key in model_keys]
+        return model_keys
     #endregion
 
     #region: read_model_key_names
@@ -771,7 +861,7 @@ class ResultsAnalyzer:
         return self.results_manager.read_result(model_key, result_type)
 #endregion
 
-    #region: combine_results   
+    #region: combine_results
     def combine_results(self, result_type, model_keys=None):
         '''Refer to `ResultsManager.combine_results` for documentation'''
         return self.results_manager.combine_results(
@@ -780,7 +870,7 @@ class ResultsAnalyzer:
             )
     #endregion
 
-    #region: load_features_and_target    
+    #region: load_features_and_target
     def load_features_and_target(self, *args, **kwargs):
         '''
         Refer to `DataManager.load_features_and_target` for documentation

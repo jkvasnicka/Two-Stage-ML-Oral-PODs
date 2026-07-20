@@ -30,7 +30,8 @@ def in_and_out_sample_comparisons(
         results_analyzer, 
         plot_settings, 
         function_for_metric, 
-        xlim=(0., 1.)
+        xlim=(0., 1.),
+        output_dir=None
         ):
     '''
     Generate in-sample performance comparisons and out-of-sample prediction 
@@ -78,7 +79,8 @@ def in_and_out_sample_comparisons(
             model_key_names,
             grouping_key_outer,
             function_for_metric,
-            plot_settings
+            plot_settings,
+            output_dir=output_dir
             )
 
         out_sample_performance_comparisons(
@@ -88,7 +90,8 @@ def in_and_out_sample_comparisons(
             grouping_key_outer,
             function_for_metric,
             plot_settings,
-            xlim=xlim
+            xlim=xlim,
+            output_dir=output_dir
         )
 
         scatter_with_vs_without_selection(
@@ -97,7 +100,8 @@ def in_and_out_sample_comparisons(
             grouping_key_outer, 
             model_key_names, 
             function_for_metric,
-            plot_settings
+            plot_settings,
+            output_dir=output_dir
     )
 #endregion
 
@@ -108,7 +112,8 @@ def in_sample_performance_comparison(
         model_key_names,
         grouping_key_outer,
         function_for_metric,
-        plot_settings
+        plot_settings,
+        output_dir=None
     ):
     '''
     Generate scatterplots of in-sample performance.
@@ -136,7 +141,8 @@ def in_sample_performance_comparison(
     utilities.save_figure(
         fig, 
         in_sample_performance_comparison, 
-        grouping_key_outer
+        grouping_key_outer,
+        output_dir=output_dir
         )
 #endregion
         
@@ -148,7 +154,8 @@ def out_sample_performance_comparisons(
         grouping_key_outer,
         function_for_metric,
         plot_settings,
-        xlim=(0., 1.)
+        xlim=(0., 1.),
+        output_dir=None
     ):
     '''
     Generate out-of-sample performance comparisons plots using scatterplots 
@@ -188,7 +195,8 @@ def out_sample_performance_comparisons(
     utilities.save_figure(
         fig, 
         out_sample_performance_comparisons, 
-        grouping_key_outer
+        grouping_key_outer,
+        output_dir=output_dir
         )
 #endregion
 
@@ -370,7 +378,8 @@ def scatter_with_vs_without_selection(
         grouping_key_outer, 
         model_key_names, 
         function_for_metric,
-        plot_settings
+        plot_settings,
+        output_dir=None
     ):
     '''
     Generate and plot scatterplots for out-of-sample predictions.
@@ -443,6 +452,7 @@ def scatter_with_vs_without_selection(
     utilities.save_figure(
         fig, 
         scatter_with_vs_without_selection, 
-        grouping_key_outer
+        grouping_key_outer,
+        output_dir=output_dir
         )
 #endregion

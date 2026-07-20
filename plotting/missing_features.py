@@ -16,7 +16,8 @@ from . import utilities
 #region: predictions_by_missing_feature
 def predictions_by_missing_feature(
         results_analyzer, 
-        plot_settings
+        plot_settings,
+        output_dir=None
     ):
     '''
     Visualize the impact of missing features on model predictions.
@@ -43,7 +44,10 @@ def predictions_by_missing_feature(
         remaining_color = '#ffff99'
 
         model_key_names = results_analyzer.read_model_key_names()
-        grouped_keys = results_analyzer.group_model_keys('target_effect')
+        grouped_keys = results_analyzer.group_model_keys(
+            'target_effect',
+            model_keys=plot_settings.final_model_keys
+            )
         
         for grouping_key, model_keys in grouped_keys:
 
@@ -114,7 +118,12 @@ def predictions_by_missing_feature(
                 axs[i, 1].set_xlim(x_limits)
 
             fig.tight_layout()
-            utilities.save_figure(fig, predictions_by_missing_feature, grouping_key)
+            utilities.save_figure(
+                fig, 
+                predictions_by_missing_feature, 
+                grouping_key,
+                output_dir=output_dir
+                )
 #endregion
 
 #region: _boxplot_by_missing_feature

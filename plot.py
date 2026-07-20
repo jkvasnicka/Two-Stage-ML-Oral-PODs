@@ -13,15 +13,17 @@ from plotting import (
     missing_features,
     model_performance,
     moe,
-    pod
+    pod,
+    sensitivity_analysis
 )
 
-from config_management import UnifiedConfiguration
+from config_management import config_from_cli_args
 from data_management import DataManager
 from metrics_management import MetricsManager
 from results_management import ResultsManager
 from results_analysis import ResultsAnalyzer
 
+#region: plot_main()
 def plot_main():
     '''
     Generate a series of plots as specified by the configuration files.
@@ -37,11 +39,12 @@ def plot_main():
         The resulting figures are saved to a dedicated directory as specified
         by the configuration file.
     '''
-    config = UnifiedConfiguration()
-
+    ## Setup
+    config = config_from_cli_args()
     data_manager = DataManager(config.data, config.path)
     metrics_manager = MetricsManager(config.category_to_dict('metric'))
     results_manager = ResultsManager(
+        output_dir=config.path.results_dir,
         results_file_type=config.data.file_type
         )
     results_analyzer = ResultsAnalyzer(
@@ -49,58 +52,247 @@ def plot_main():
         data_manager,
         config.plot
         )
-
-    feature_distributions.feature_distributions(
-        config.path.file_for_features_source['opera']
-        )
-
-    chemical_coverage.pairwise_scatters_and_kde_subplots(
-        config.path.file_for_features_source['opera'], 
-        config.path.surrogate_pods_file,
-        config.plot
-        )
-
-    feature_completeness.proportions_incomplete_subplots(
-        config.path.file_for_features_source['opera'], 
-        config.path.opera_AD_file, 
-        config.path.surrogate_pods_file,
-        config.plot,
-        threshold=config.preprocessor.settings['MissingValuesSelector']['kwargs']['threshold']
-        )
-
-    important_features.important_feature_counts(results_analyzer, config.plot)
-
-    importance_scores.importances_boxplots(results_analyzer, config.plot)
-
-    importance_scores.importances_replicates_boxplots(
-        results_analyzer, 
-        config.plot
-        )
-
-    model_performance.in_and_out_sample_comparisons(
-        results_analyzer, 
-        config.plot, 
-        metrics_manager.function_for_metric
-        )
-
-    benchmarking.benchmarking_scatterplots(
-        results_analyzer,
-        metrics_manager.function_for_metric,
-        config.plot
-        )
-
-    moe.margins_of_exposure_cumulative(
-        results_analyzer, 
-        config.plot
-        )
-
-    pod.cumulative_pod_distributions(results_analyzer, config.plot)
-
-    missing_features.predictions_by_missing_feature(
-        results_analyzer, 
-        config.plot
-        )
     
+    ## Plot generation
+    results_plotter = ResultsPlotter(
+        results_analyzer,
+        config.plot, 
+        config.path,
+        function_for_metric=metrics_manager.function_for_metric,
+        threshold=config.preprocessor.settings['MissingValuesSelector']['kwargs']['threshold']
+    )
+    for k, plot_results in results_plotter.dispatcher.items():
+        print(f'\t{k}...')
+        plot_results()
+#endregion
+
+#region: ResultsPlotter.__init__
+class ResultsPlotter:
+    '''
+    Generate figures from the modeling results.
+
+    This class provides methods to generate individual figures which are saved
+    to disk in dedicated subdirectories. Individual figures can be bypassed by
+    defining "plots_to_include" in the plot configuration settings.
+    '''
+    def __init__(
+            self, 
+            results_analyzer, 
+            plot_settings, 
+            path_settings, 
+            function_for_metric=None, 
+            threshold=None
+            ):
+        '''
+        Initialize the ResultsPlotter with configuration settings.
+
+        Set a dispatcher attribute which maps individual plot names to 
+        corresponding functions.
+
+        Parameters
+        ----------
+        results_analyzer : ResultsAnalyzer
+            Class for handling results analysis.
+        plot_settings : SimpleNamespace
+            Configuration settings for plotting.
+        path_settings : SimpleNamespace
+            Configuration settings for file path management.
+        ...
+            Keyword arguments for individual plotting functions.
+        '''
+        self._results_analyzer = results_analyzer
+        self._plot_settings = plot_settings 
+        self._path_settings = path_settings 
+        self._function_for_metric = function_for_metric 
+        self._threshold = threshold
+        self._initialize_dispatcher()
+#endregion
+
+#region: _initialize_dispatcher
+    def _initialize_dispatcher(self):
+        '''
+        Map plot names to their respective plotting functions.
+
+        Excludes any plots defined in the configuration file.
+        '''
+        # Initialize the full dispatcher
+        _dispatcher = {
+            'feature_distributions' : self._feature_distributions, 
+            'pairwise_scatters_and_kde_subplots' : self._pairwise_scatters_and_kde_subplots, 
+            'proportions_incomplete_subplots' : self._proportions_incomplete_subplots,
+            'important_feature_counts' : self._important_feature_counts,
+            'importances_boxplots' : self._importances_boxplots,
+            'importances_replicates_boxplots' : self._importances_replicates_boxplots, 
+            'in_and_out_sample_comparisons' : self._in_and_out_sample_comparisons,
+            'benchmarking_scatterplots' : self._benchmarking_scatterplots,
+            'margins_of_exposure_cumulative' : self._margins_of_exposure_cumulative,
+            'cumulative_pod_distributions' : self._cumulative_pod_distributions, 
+            'predictions_by_missing_feature' : self._predictions_by_missing_feature,
+            'sensitivity_analysis_boxplots' : self._sensitivity_analysis_boxplots
+        }
+
+        # Filter out any plotting functions not defined in the config file
+        plots_to_include = self._plot_settings.__dict__.get('plots_to_include', [])
+        self.dispatcher = {
+            k : v for k, v in _dispatcher.items() 
+            if k in plots_to_include
+            }
+#endregion
+
+#region: _feature_distributions
+    def _feature_distributions(self):
+        '''
+        Call feature_distributions.feature_distributions with parameters.
+        '''
+        feature_distributions.feature_distributions(
+                self._path_settings.file_for_features_source['opera'],
+                output_dir=self._path_settings.figures_dir
+                )
+#endregion
+
+#region:  _pairwise_scatters_and_kde_subplots
+    def _pairwise_scatters_and_kde_subplots(self):
+        '''
+        Call chemical_coverage.pairwise_scatters_and_kde_subplots with 
+        parameters.
+        '''
+        chemical_coverage.pairwise_scatters_and_kde_subplots(
+            self._path_settings.file_for_features_source['opera'], 
+            self._path_settings.surrogate_pods_file,
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _proportions_incomplete_subplots
+    def _proportions_incomplete_subplots(self):
+        '''
+        Call feature_completeness.proportions_incomplete_subplots with 
+        parameters.
+        '''
+        feature_completeness.proportions_incomplete_subplots(
+            self._path_settings.file_for_features_source['opera'], 
+            self._path_settings.opera_AD_file, 
+            self._path_settings.surrogate_pods_file,
+            self._plot_settings,
+            threshold=self._threshold,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _important_feature_counts
+    def _important_feature_counts(self):
+        '''
+        Call important_features.important_feature_counts with parameters.
+        '''
+        important_features.important_feature_counts(
+            self._results_analyzer, 
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _importances_boxplots
+    def _importances_boxplots(self):
+        '''
+        Call importance_scores.importances_boxplots with parameters.
+        '''
+        importance_scores.importances_boxplots(
+            self._results_analyzer, 
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _importances_replicates_boxplots
+    def _importances_replicates_boxplots(self):
+        '''
+        Call importance_scores.importances_replicates_boxplots with 
+        parameters.
+        '''
+        importance_scores.importances_replicates_boxplots(
+            self._results_analyzer, 
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _in_and_out_sample_comparisons
+    def _in_and_out_sample_comparisons(self):
+        '''
+        Call model_performance.in_and_out_sample_comparisons with parameters.
+        '''
+        model_performance.in_and_out_sample_comparisons(
+            self._results_analyzer, 
+            self._plot_settings, 
+            self._function_for_metric,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _benchmarking_scatterplots
+    def _benchmarking_scatterplots(self):
+        '''
+        Call benchmarking.benchmarking_scatterplots with parameters.
+        '''
+        benchmarking.benchmarking_scatterplots(
+            self._results_analyzer,
+            self._function_for_metric,
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _margins_of_exposure_cumulative
+    def _margins_of_exposure_cumulative(self):
+        '''
+        Call moe.margins_of_exposure_cumulative with parameters.
+        '''
+        moe.margins_of_exposure_cumulative(
+            self._results_analyzer, 
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _cumulative_pod_distributions
+    def _cumulative_pod_distributions(self):
+        '''
+        Call pod.cumulative_pod_distributions with parameters.
+        '''
+        pod.cumulative_pod_distributions(
+            self._results_analyzer, 
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _predictions_by_missing_feature
+    def _predictions_by_missing_feature(self):
+        '''
+        Call missing_features.predictions_by_missing_feature with 
+        parameters.
+        '''
+        missing_features.predictions_by_missing_feature(
+            self._results_analyzer, 
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
+            )
+#endregion
+
+#region: _sensitivity_analysis_boxplots
+    def _sensitivity_analysis_boxplots(self):
+        '''
+        Call sensitivity_analysis.sensitivity_analysis_boxplots with
+        parameters.
+        '''
+        sensitivity_analysis.sensitivity_analysis_boxplots(
+            self._results_analyzer, 
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir
+        )
+#endregion:
+
 if __name__ == '__main__':
     print('Plotting results...')
     plot_main()

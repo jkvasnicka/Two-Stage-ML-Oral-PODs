@@ -18,7 +18,8 @@ from . import utilities
 #region: important_feature_counts
 def important_feature_counts(
         results_analyzer, 
-        plot_settings
+        plot_settings,
+        output_dir=None
         ):
     '''
     Visualize the counts of important features across replicate models from 
@@ -48,7 +49,7 @@ def important_feature_counts(
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys = results_analyzer.group_model_keys(
         'target_effect', 
-        string_to_exclude='false'
+        exclusion_string='false'
     )
 
     for grouping_key, model_keys in grouped_keys:
@@ -125,6 +126,7 @@ def important_feature_counts(
         utilities.save_figure(
             fig, 
             important_feature_counts, 
-            grouping_key
+            grouping_key,
+            output_dir=output_dir
             )
 #endregion

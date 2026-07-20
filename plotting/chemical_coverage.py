@@ -21,7 +21,8 @@ def pairwise_scatters_and_kde_subplots(
         features_file, 
         targets_file, 
         plot_settings, 
-        figsize=(10, 10)
+        figsize=(10, 10),
+        output_dir=None
         ):
     '''
     Create a grid of scatter and KDE plots for combinations of features.
@@ -101,7 +102,8 @@ def pairwise_scatters_and_kde_subplots(
         fig, 
         pairwise_scatters_and_kde_subplots, 
         'all-opera-features-and-target-union',
-        bbox_inches='tight'
+        bbox_inches='tight',
+        output_dir=output_dir
         )
 #endregion
 

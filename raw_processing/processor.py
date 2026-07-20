@@ -51,20 +51,36 @@ class RawDataProcessor:
         self._path_settings = path_settings 
         # NOTE: Only DTXSID identifier has been tested
         self._index_col = 'DTXSID'
+        self._initialize_dispatcher()
+#endregion
 
-        # Map data types to their respective processing function
-        self.dispatcher = {
+    #region: _initialize_dispatcher
+    def _initialize_dispatcher(self):
+        '''
+        Map data types to their respective processing function.
+
+        Excludes any processes defined in the configuration file.
+        '''
+        # Initialize the full dispatcher
+        _dispatcher = {
             'dsstox_sdf_data' : self._dsstox_sdf_data_from_raw,
             'opera_features' : self._opera_features_from_raw,
             'comptox_features' : self._comptox_features_from_raw,
-            'rdkit_features' : self._rdkit_features_from_raw,
             'surrogate_pods' : self._surrogate_pods_from_raw,
+            'rdkit_features' : self._rdkit_features_from_raw,
             'authoritative_pods' : self._authoritative_pods_from_raw,
             'experimental_ld50s' : self._experimental_ld50s_from_raw,
             'seem3_exposure_data' : self._seem3_exposure_data_from_raw,
             'toxcast_oeds' : self._oral_equivalent_doses_from_raw
         }
-#endregion
+
+        # Filter out any processing functions not defined in the config file
+        datasets_to_process = self._raw_data_settings.__dict__.get('datasets_to_process', [])
+        self.dispatcher = {
+            k : v for k, v in _dispatcher.items() 
+            if k in datasets_to_process
+            }
+    #endregion
 
     #region: process_from_raw
     def process_from_raw(self, data_type):
@@ -160,6 +176,7 @@ class RawDataProcessor:
             self._index_col.lower(), 
             self._raw_data_settings.surrogate_tox_data_kwargs,
             log10=self._raw_data_settings.do_log10_target,
+            study_count_thres=self._raw_data_settings.study_count_thres,
             effect_mapper=self._raw_data_settings.effect_mapper,
             write_path=self._path_settings.surrogate_pods_file
         )
@@ -191,19 +208,10 @@ class RawDataProcessor:
             index_name=self._index_col, 
             discrete_columns=self._data_settings.discrete_columns_for_source['opera'],
             discrete_suffix=self._data_settings.discrete_column_suffix,
-            log10_pat=self._raw_data_settings.opera_log10_pat
+            log10_pat=self._raw_data_settings.opera_log10_pat,
+            data_write_path=self._path_settings.file_for_features_source['opera'], 
+            flags_write_path=self._path_settings.opera_AD_file
         )
-        # Drop any chemicals missing all features (e.g., inorganics)
-        X_opera = X_opera.dropna(how='all')
-        AD_flags = AD_flags.loc[X_opera.index]
-
-        features_write_path=self._path_settings.file_for_features_source['opera']
-        utilities.ensure_directory_exists(features_write_path)
-        X_opera.to_parquet(features_write_path, compression='gzip')
-
-        flags_write_path=self._path_settings.opera_AD_file
-        utilities.ensure_directory_exists(flags_write_path)
-        AD_flags.to_parquet(flags_write_path, compression='gzip')
 
         return X_opera, AD_flags
     #endregion
@@ -222,26 +230,21 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed CompTox features.
         '''
-        # TODO: Is there a better way to identify these chemicals?
-        chemicals_to_exclude = opera.chemicals_to_exclude_from_qsar(
-            self._path_settings.chemical_identifiers_file, 
-            self._path_settings.opera_structures_file
-        )
-
         return comptox.opera_test_predictions_from_csv(
             self._path_settings.raw_comptox_features_file, 
             self._index_col, 
-            chemicals_to_exclude=chemicals_to_exclude,
             columns_to_exclude=self._raw_data_settings.comptox_columns_to_exclude,
             log10_pat=self._raw_data_settings.comptox_log10_pat, 
             write_path=self._path_settings.file_for_features_source['comptox']
         )
     #endregion
 
+    # FIXME: Requires processed surrogate PODs prior to usage
+    # Should propagate changes if surrogate PODs change
     #region: _rdkit_features_from_raw
     def _rdkit_features_from_raw(self):
         '''
-        # Extract and process two-dimensional molecular descriptors from the
+        Extract and process two-dimensional molecular descriptors from the
         RDKit library.
 
         The processed data are saved to a parquet file on disk.
@@ -251,11 +254,10 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed RDKit features.
         '''
-        # Get the QSAR-ready SMILES from OPERA
-        smi_file = self._path_settings.opera_structures_file
-        smiless = opera.extract_smiles_from_structures_file(smi_file)
-        dtxsids = opera.extract_dtxsid_from_structures_file(smi_file)
-        smiles_for_chem = dict(zip(dtxsids, smiless))
+        smiles_for_chem = opera.extract_smiles_for_chem(
+            self._path_settings.raw_opera_features_dir,
+            subset_chem_ids=self.load_training_chemicals()
+            )
 
         return rdkit_utilities.get_2d_descriptors(
             smiles_for_chem,
@@ -279,10 +281,15 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed experimental LD50 values.
         '''
+        dtxsid_for_casrn = other_sources.get_casrn_dtxsid_mapping(
+            self._path_settings.raw_surrogate_pods_file, 
+            self._raw_data_settings.surrogate_tox_data_kwargs,
+        )
+
         return other_sources.experimental_ld50s_from_excel(
             self._path_settings.raw_ld50_experimental_file, 
             self._raw_data_settings.ld50_exp_column, 
-            id_for_casrn=self._map_casrn_to_dtxsid(), 
+            id_for_casrn=dtxsid_for_casrn, 
             id_name=self._index_col,
             write_path=self._path_settings.ld50_experimental_file
         )
@@ -302,34 +309,18 @@ class RawDataProcessor:
         pandas.DataFrame
             The processed authoritative Points of Departure values.
         '''
+        dtxsid_for_casrn = other_sources.get_casrn_dtxsid_mapping(
+            self._path_settings.raw_surrogate_pods_file, 
+            self._raw_data_settings.surrogate_tox_data_kwargs,
+        )
+
         return other_sources.authoritative_toxicity_values_from_excel(
             self._path_settings.raw_authoritative_pods_file, 
             self._raw_data_settings.auth_data_kwargs,
             self._raw_data_settings.auth_file_ilocs_for_effect, 
-            id_for_casrn=self._map_casrn_to_dtxsid(), 
+            id_for_casrn=dtxsid_for_casrn,
             id_name=self._index_col, 
             write_path=self._path_settings.authoritative_pods_file
-        )
-    #endregion
-
-    #region: _map_casrn_to_dtxsid
-    def _map_casrn_to_dtxsid(self):
-        '''
-        Map CASRN to DTXSID using the DSSTox dataset.
-
-        Returns
-        -------
-        dict
-            A dictionary mapping CASRN to DTXSID.
-        '''
-        casrn_column = self._raw_data_settings.dsstox_sdf_casrn_column
-        dtxsid_column = self._raw_data_settings.dsstox_sdf_dtxsid_column
-
-        return (
-            pd.read_parquet(self._build_path_dsstox_compiled())
-            .set_index(casrn_column)
-            [dtxsid_column]
-            .to_dict()
         )
     #endregion
 
@@ -365,5 +356,24 @@ class RawDataProcessor:
             self._raw_data_settings.oed_data_kwargs,
             self._index_col,
             write_path=self._path_settings.toxcast_oeds_file
+        )
+    #endregion
+
+    #region: load_training_chemicals
+    def load_training_chemicals(self):
+        '''
+        Return a list of identifiers for all chemicals with surrogate PODs. 
+
+        This is a helper function which can be used to get identifiers for 
+        input to external data APIs to get features. For all other purposes, 
+        training data should be loaded via 
+        `DataManager.load_features_and_target()`.
+        '''        
+        return list(
+            pd.read_csv(
+                self._path_settings.surrogate_pods_file, 
+                index_col=0
+            )
+            .index
         )
     #endregion

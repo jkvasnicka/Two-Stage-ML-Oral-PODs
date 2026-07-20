@@ -85,12 +85,74 @@ def process_all_batches(
     predictions = pd.concat(predictions)
     AD_flags = pd.concat(AD_flags)
 
-    if data_write_path is not None:
-        predictions.to_csv(data_write_path)
-    if flags_write_path is not None:
-        AD_flags.to_csv(flags_write_path)
+    predictions, AD_flags = _perform_final_cleaning(predictions, AD_flags)
+
+    _write_data(predictions, data_write_path)
+    _write_data(AD_flags, flags_write_path)
 
     return predictions, AD_flags
+#endregion
+
+#region: _perform_final_cleaning
+def _perform_final_cleaning(predictions, AD_flags):
+    '''
+    Perform final cleaning on the combined predictions.
+
+    This includes any dropping rows with all missing values and removing any 
+    duplicate index values.
+
+    Parameters
+    ----------
+    predictions : pandas.DataFrame
+        The DataFrame containing the combined predictions.
+    AD_flags : pandas.DataFrame
+        The DataFrame containing the corresponding applicability domain flags.
+
+    Returns
+    -------
+    predictions : pandas.DataFrame
+        The cleaned predictions DataFrame.
+    AD_flags : pandas.DataFrame
+        The updated applicability domain flags DataFrame.
+    '''
+    where_all_missing = predictions.isna().all(axis=1)
+    if any(where_all_missing):
+        # Drop chemicals missing all predictions (e.g., inorganics)
+        predictions = predictions.loc[~where_all_missing]
+        logging.info(f'Dropped {sum(where_all_missing)} rows with all missing predictions')
+
+    where_duplicated_idx = predictions.index.duplicated()
+    if any(where_duplicated_idx):
+        # Drop duplicate chemicals
+        predictions = predictions.loc[~where_duplicated_idx]
+        logging.info(f'Dropped {sum(where_duplicated_idx)} duplicated rows')
+
+    # Update the applicability domain flags
+    AD_flags = AD_flags.loc[predictions.index]
+
+    return predictions, AD_flags
+#endregion
+
+#region: _write_data
+def _write_data(df, write_path):
+    '''
+    Write DataFrame to a Parquet file with gzip compression.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to be written to disk.
+    write_path : str
+        The file path where the DataFrame will be saved. If `write_path` is 
+        None or an empty string, the function does nothing.
+
+    Returns
+    -------
+    None
+    '''
+    if write_path:
+        utilities.ensure_directory_exists(write_path)
+        df.to_parquet(write_path, compression='gzip')
 #endregion
     
 #region: extract_predictions_and_app_domains
@@ -100,9 +162,7 @@ def extract_predictions_and_app_domains(
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
-        log10_pat='Log', 
-        data_write_path=None, 
-        flags_write_path=None
+        log10_pat='Log'
         ):
     '''
     Process a single batch of chemicals/samples.
@@ -118,8 +178,7 @@ def extract_predictions_and_app_domains(
         index_name=index_name,
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix,  
-        log10_pat=log10_pat, 
-        write_path=flags_write_path
+        log10_pat=log10_pat
     )
 
     predictions = extract_predictions_from_csv_files(
@@ -129,9 +188,8 @@ def extract_predictions_and_app_domains(
         discrete_columns=discrete_columns, 
         discrete_suffix=discrete_suffix, 
         log10_pat=log10_pat, 
-        flags=AD_flags,
-        write_path=data_write_path
-        )
+        flags=AD_flags
+    )
     
     if predictions.index.duplicated().any():
         raise ValueError('Duplicate DTXSIDs found in directory. Check input data.')
@@ -147,8 +205,7 @@ def extract_predictions_from_csv_files(
         discrete_columns=None, 
         discrete_suffix=None, 
         log10_pat='Log', 
-        flags=None, 
-        write_path=None
+        flags=None
         ):
     '''
     Load and extract the outputs as separate CSV file from OPERA 2.9.
@@ -172,8 +229,6 @@ def extract_predictions_from_csv_files(
     flags : pandas.DataFrame (optional)
         Maps each feature-chemical combination to a boolean. Values which 
         are 'True' denote unreliable and will be considered as missing (NaN).
-    write_path str (optional)
-        Path to write the return as a CSV file.
     
     Returns
     -------
@@ -214,8 +269,6 @@ def extract_predictions_from_csv_files(
         )
     if flags is not None:
         predictions = set_unreliable_values(predictions, flags)
-    if write_path is not None:
-        predictions.to_csv(write_path)
 
     return predictions
 #endregion
@@ -249,7 +302,11 @@ def _model_data_from_csv(data_dir, file_name):
     The first column (MoleculeID) is used as the index column
     '''
     data_path = os.path.join(data_dir, file_name)
-    return pd.read_csv(data_path, index_col=0)
+    return pd.read_csv(
+        data_path, 
+        index_col=0, 
+        low_memory=False  # silences warnings about mixed dtypes
+        )
 #endregion
 
 #region: set_unreliable_values
@@ -288,8 +345,7 @@ def extract_app_domains_from_csv_files(
         index_name=None, 
         discrete_columns=None, 
         discrete_suffix=None, 
-        log10_pat=None, 
-        write_path=None
+        log10_pat=None
         ):
     '''
     Flag any features outside the respective model applicability domains.
@@ -353,8 +409,6 @@ def extract_app_domains_from_csv_files(
             discrete_suffix,
             validate_columns=False  # not all features have a defined AD
             )
-    if write_path is not None:
-        AD_flags.to_csv(write_path)
 
     return AD_flags
 #endregion
@@ -428,63 +482,110 @@ def split_applicability_domain_columns(global_local_ADs):
     return global_ADs, local_AD_indexes
 #endregion
 
-#region: chemicals_to_exclude_from_qsar
-def chemicals_to_exclude_from_qsar(
-        chemical_id_file, chemical_structures_file):
+#region: extract_smiles_for_chem
+def extract_smiles_for_chem(main_dir, subset_chem_ids=None):
     '''
-    Return a list of chemicals that did not pass the QSAR Standardization 
-    Workflow.
-    '''
-    raw_chemical_ids = set(pd.read_csv(chemical_id_file).squeeze())
-    qsar_ready_ids = set(
-        extract_dtxsid_from_structures_file(chemical_structures_file)
-    )
-
-    return list(raw_chemical_ids.difference(qsar_ready_ids))
-#endregion
-
-#region: extract_dtxsid_from_structures_file
-def extract_dtxsid_from_structures_file(structures_file):
-    '''
-    Extract DTXSID values from a SMI file.
+    Extract chemical IDs and their corresponding SMILES strings from .smi 
+    files in subdirectories.
 
     Parameters
     ----------
-    structures_file : str
+    main_dir : str
+        The main directory containing subdirectories with .smi files.
+    subset_chem_ids : list of str, optional
+        A list of chemical IDs to include in the result. If None, include all.
+
+    Returns
+    -------
+    dict
+        A dictionary with chemical IDs as keys and SMILES strings as values.
+
+    See Also
+    --------
+    raw_processing.rdkit_utilities.get_2d_descriptors()
+        Function that loads RDKit features using smiles_for_chem
+    '''
+    smiles_for_chem = {}  # initialize
+    for entry in os.listdir(main_dir):
+        data_dir = os.path.join(main_dir, entry)
+        if os.path.isdir(data_dir):
+            smi_file = get_smi_file(data_dir)
+            chem_ids = extract_chem_ids_from_smi(smi_file)
+            smiles = extract_smiles_from_smi(smi_file)
+            for chem_id, smiles_str in zip(chem_ids, smiles):
+                if subset_chem_ids is None or chem_id in subset_chem_ids:
+                    smiles_for_chem[chem_id] = smiles_str
+    return smiles_for_chem    
+#endregion
+
+#region: get_smi_file
+def get_smi_file(data_dir):
+    '''
+    Identify the .smi file in the given directory.
+
+    Parameters
+    ----------
+    data_dir : str
+        The directory to search for .smi files.
+
+    Returns
+    -------
+    str
+        The path to the .smi file in the directory.
+    '''
+    smi_files = [
+        file for file in os.listdir(data_dir) if file.endswith('.smi')
+        ]
+    if len(smi_files) == 1:
+        return os.path.join(data_dir, smi_files[0])
+    else:
+        raise ValueError(
+            f'Expected exactly one .smi file in {data_dir}, but found ',
+            f'{len(smi_files)}')
+#endregion
+
+#region: extract_chem_ids_from_smi
+def extract_chem_ids_from_smi(smi_file):
+    '''
+    Extract chemical identifier (DTXSID) values from an SMI file.
+
+    Parameters
+    ----------
+    smi_file : str
         The path to the SMI file.
 
     Returns
     -------
     list
     '''
-    return extract_from_smi_file(structures_file, 1)
+    return extract_from_smi(smi_file, 1)
 #endregion
 
-#region: extract_smiles_from_structures_file
-def extract_smiles_from_structures_file(structures_file):
+#region: extract_smiles_from_smi
+def extract_smiles_from_smi(smi_file):
     '''
-    Extract "QSAR-ready" SMILES strings from a SMI file.
+    Extract "QSAR-ready" SMILES strings from an SMI file.
 
     Parameters
     ----------
-    structures_file : str
+    smi_file : str
         The path to the SMI file.
 
     Returns
     -------
     list
     '''
-    return extract_from_smi_file(structures_file, 0)
+    return extract_from_smi(smi_file, 0)
 #endregion
 
-#region: extract_from_smi_file
-def extract_from_smi_file(structures_file, index):
+#region: extract_from_smi
+def extract_from_smi(smi_file, index):
     '''
     Helper function to extract data from a SMI file based on the given index.
 
     Parameters
     ----------
-    structures_file : str
+    smi_file : str
         The path to the SMI file.
     index : int
         The index of the data to extract from each line (0 for SMILES, 1 for 
@@ -494,7 +595,7 @@ def extract_from_smi_file(structures_file, index):
     -------
     list
     '''
-    with open(structures_file, 'r') as f:
+    with open(smi_file, 'r') as f:
         data = [line.split('\t')[index].strip() for line in f.readlines()]
     return data
 #endregion

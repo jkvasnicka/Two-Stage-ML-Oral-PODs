@@ -19,7 +19,11 @@ import itertools
 from . import utilities
 
 #region: cumulative_pod_distributions
-def cumulative_pod_distributions(results_analyzer, plot_settings):
+def cumulative_pod_distributions(
+        results_analyzer, 
+        plot_settings,
+        output_dir=None
+        ):
     '''
     Generate a subplot with multiple Axes, each representing the cumulative
     distribution functions (CDFs) for different models and samples.
@@ -44,7 +48,10 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
     '''
     colors, linestyles = get_plot_styles()
 
-    grouped_keys = results_analyzer.group_model_keys('target_effect')
+    grouped_keys = results_analyzer.group_model_keys(
+        'target_effect',
+        model_keys=plot_settings.final_model_keys
+        )
 
     for grouping_key, model_keys in grouped_keys:
 
@@ -100,7 +107,8 @@ def cumulative_pod_distributions(results_analyzer, plot_settings):
         utilities.save_figure(
             fig, 
             cumulative_pod_distributions, 
-            grouping_key
+            grouping_key,
+            output_dir=output_dir
         )
 #endregion
 

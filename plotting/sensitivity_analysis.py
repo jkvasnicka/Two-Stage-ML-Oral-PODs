@@ -19,21 +19,19 @@ from . import utilities
 # FIXME: This function only works if 'axs' is a 2D array
 #region: sensitivity_analysis_boxplots
 def sensitivity_analysis_boxplots(
-        results_manager, 
-        data_manager,
+        results_analyzer, 
         plot_settings, 
         xlim=(0., 1.),
-        figsize=(7, 5)
+        figsize=(7, 5),
+        output_dir=None
         ):
     '''
     Generate boxplots for sensitivity analysis from performance data.
 
     Parameters
     ----------
-    results_manager : instance of ResultsManager
-        Object responsible for managing and combining results from models.
-    data_manager : instance of DataManager
-        Data manager object for loading dataset features and targets.
+    results_analyzer : instance of ResultsAnalyzer
+        Object responsible for analyzing model results.
     plot_settings : SimpleNamespace
         Contains settings for plotting, such as model labels, metrics, and effects.
     xlim : tuple, optional
@@ -46,7 +44,7 @@ def sensitivity_analysis_boxplots(
     None
     '''
     ## Get the data
-    performances = results_manager.combine_results('performances')
+    performances = results_analyzer.combine_results('performances')
 
     effects = performances.columns.unique(level='target_effect')
 
@@ -59,13 +57,13 @@ def sensitivity_analysis_boxplots(
         figsize=figsize
     )
 
-    model_key_names = results_manager.read_model_key_names()
+    model_key_names = results_analyzer.read_model_key_names()
     for j, effect in enumerate(effects):
         
         df_wide = prepare_data_for_plotting(
             performances, 
             effect, 
-            data_manager, 
+            results_analyzer, 
             model_key_names, 
             plot_settings
             )
@@ -98,7 +96,8 @@ def sensitivity_analysis_boxplots(
         fig, 
         sensitivity_analysis_boxplots, 
         'performances-without-selection',
-        bbox_inches='tight'
+        bbox_inches='tight',
+        output_dir=output_dir
         )
 #endregion
 
@@ -106,7 +105,7 @@ def sensitivity_analysis_boxplots(
 def prepare_data_for_plotting(
         performances, 
         effect, 
-        data_manager, 
+        results_analyzer, 
         model_key_names, 
         plot_settings
         ):
@@ -121,8 +120,8 @@ def prepare_data_for_plotting(
         DataFrame containing performance metrics.
     effect : str
         The target effect category being analyzed.
-    data_manager : instance of DataManager
-        Data manager object for loading features and targets.
+    results_analyzer : instance of ResultsAnalyzer
+        Object responsible for analyzing model results.
     model_key_names : list of str
         List of model key names.
     plot_settings : SimpleNamespace
@@ -147,7 +146,7 @@ def prepare_data_for_plotting(
         model_key = (effect, *col[:-1])
         if model_key not in n_samples_for:
             # Compute the sample size
-            _, y_true = data_manager.load_features_and_target(
+            _, y_true = results_analyzer.load_features_and_target(
                 **dict(zip(model_key_names, model_key))
                 )
             n_samples_for[model_key] = utilities.comma_separated(len(y_true))

@@ -22,7 +22,8 @@ def proportions_incomplete_subplots(
         targets_file, 
         plot_settings, 
         base_size_per_feature=(0.2, 6),
-        threshold=None
+        threshold=None,
+        output_dir=None
     ):
     '''
     Generate a visualization of the proportions of incomplete samples for each 
@@ -63,7 +64,8 @@ def proportions_incomplete_subplots(
         AD_flags, 
         in_samples_for_effect,
         base_size_per_feature=base_size_per_feature,
-        threshold=threshold
+        threshold=threshold,
+        output_dir=output_dir
     )
 
     ## Plot the data for out-of-sample chemicals
@@ -73,7 +75,8 @@ def proportions_incomplete_subplots(
         AD_flags, 
         {plot_settings.label_for_sample_type['out'] : out_samples},
         base_size_per_feature=base_size_per_feature,
-        threshold=threshold
+        threshold=threshold,
+        output_dir=output_dir
     )
 #endregion
 
@@ -83,7 +86,8 @@ def proportions_incomplete_subplot(
         AD_flags, 
         samples_dict, 
         base_size_per_feature=(0.2, 6),
-        threshold=None
+        threshold=None,
+        output_dir=None
     ):
     '''
     Generate a subplot for each group of samples in the provided dictionary.
@@ -156,7 +160,8 @@ def proportions_incomplete_subplot(
     utilities.save_figure(
         fig, 
         proportions_incomplete_subplot, 
-        list(titles)
+        list(titles),
+        output_dir=output_dir
         )
 #endregion
 

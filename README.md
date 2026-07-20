@@ -1,57 +1,119 @@
-# Two-Stage Machine Learning-Based Approach for Predicting Points of Departure
+# Two-Stage Machine-Learning Models for Points of Departure
 
-This repository contains the source code and results associated with the manuscript titled "Two-Stage Machine Learning-Based Approach to Predict Points of Departure for Human Non-cancer and Developmental/Reproductive Effects," by Kvasnicka et al.
+This repository contains two-stage machine-learning workflows for predicting
+oral and inhalation points of departure (PODs) for general non-cancer and
+reproductive/developmental effects. The oral workflow accompanies Kvasnicka
+et al., *Two-Stage Machine Learning-Based Approach to Predict Points of
+Departure for Human Non-cancer and Developmental/Reproductive Effects*.
 
-## Compatibility
-The procedure has been tested on PC computers running Windows 10 and Windows 11.
+Compatibility with non-Windows operating systems is not guaranteed.
 
-## Getting Started
+## Environment
 
-### Downloading the Repository and Assets
-1. The latest version of the repository can be found under the "Releases" tab. Download the source code and the corresponding assets.
-2. The assets include an `Input` directory and a `Results` directory, both containing large files.
-3. Unzip the source code directory to a preferred location on your computer.
-4. Unzip the asset directories into the source code directory. Your directory now contains all models, results, and figures corresponding to the manuscript.
+Create and activate an environment from an Anaconda or Miniconda prompt:
 
-### Setting Up the Environment
-1. **Anaconda/Miniconda Installation**: If you don't have Anaconda or Miniconda installed, please download and install from [Anaconda](https://www.anaconda.com/products/distribution) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
-2. **Create a New Virtual Environment**: Open an Anaconda terminal and navigate to the source code directory.
-    ```sh
-    cd path/to/source-code-directory
-    ```
-   Then, create a new environment using the `environment.yml` file included in the directory:
-    ```sh
-    conda env create -f environment.yml -n your-environment-name
-    ```
-3. **Activate the Environment**:
-    ```sh
-    conda activate your-environment-name
-    ```
+```powershell
+conda env create -f environment.yml -n pod-models
+conda activate pod-models
+```
 
-### Usage
+`pod-models` is only an example and may be replaced with any environment name.
+Run all commands below from the repository root.
 
-#### Analyzing Modeling Results
-- The `results_analysis` module provides a `ResultsAnalyzer` class, which is central to analyzing modeling results.
-- Use of `ResultsAnalyzer` is demonstrated in the Jupyter notebook `Analysis_for_ES&T_Manuscript`, also available as an HTML file in the `Analyses` directory.
+## Assets and configuration
 
-#### Reproducing Manuscript Results and Figures
-1. **Preprocess Raw Input Files**: Generate the `Processed` sub-directory within `Inputs` containing features and target variables.
-    ```sh
-    python preprocess.py
-    ```
-   This step may take several minutes. "Preprocessing completed" will be displayed in the console when this step is finished.
+Large assets are kept outside Git. Place the supplied assets in the following
+locations before running the workflows:
 
-2. **Execute Modeling Workflows**: This step is computationally intensive and may take around 24 hours on a standard desktop to process all models according to `Input/Configuration/model-configuration.json`.
-    ```sh
-    python workflow_management.py
-    ```
-   This creates a `Results` directory with machine learning estimators, performance scores, and feature importance scores. "Run completed" will be displayed in the console when this step is finished.
+```text
+Input/
+  Raw/
+  Processed/
+Results/
+  Oral/
+  Inhalation/
+```
 
-3. **Plot Results**: Generate figures based on the modeling results.
-    ```sh
-    python plot.py
-    ```
-   This creates a new directory `Figures` with image files corresponding to the results. "Plotting completed" will be displayed in the console when this step is finished.
+`Input/Processed` can be regenerated from the configured raw inputs. `Results`
+contains the persisted estimators and numerical modeling results; it is not
+regenerated unless a modeling workflow is deliberately run.
 
-### Caution
-Executing all modeling workflows is computationally intensive and utilizes parallel processing. Execution time may vary based on computer specifications.
+- `config.json` selects the oral configuration.
+- `config_inhalation.json` selects the inhalation configuration.
+- Endpoint-specific settings are under `Input/Configuration/Oral` and
+  `Input/Configuration/Inhalation`.
+- Shared settings are under `Input/Configuration/Shared`.
+
+The oral and inhalation configurations apply their persisted models to the
+same 803,494-chemical OPERA application universe, sourced from
+`Input/Raw/OPERA/All_Predictions`.
+
+## Preprocessing
+
+Generate the endpoint-specific processed inputs from the configured raw files:
+
+```powershell
+# Oral
+python preprocess.py
+
+# Inhalation
+python preprocess.py -c config_inhalation.json
+```
+
+Preprocessing writes generated files under `Input/Processed`.
+
+## Persisted models and results
+
+Persisted estimators and numerical results are loaded from `Results/Oral` and
+`Results/Inhalation`. Training is not required to load these estimators, apply
+them to compatible feature rows, analyze the existing results, or generate
+figures.
+
+- The persisted oral models and results are the validated artifacts published
+  with release `v1.0.0`. They were trained using the historical oral processed
+  inputs supplied with that release. The current full-table OPERA configuration
+  expands model application.
+- The persisted inhalation models and results were generated by the workflow
+  recorded in commit `f490373`.
+
+`ResultsAnalyzer` loads the fitted estimator and applies
+it to the feature table selected by the endpoint configuration. The analysis
+notebook demonstrates model loading and result analysis.
+
+### Oral historical-input differences
+
+Changes since `v1.0.0` mean that current oral preprocessing and model training
+will not reproduce the 2024-published artifacts exactly. These differences do
+not affect use of the persisted `v1.0.0` models.
+
+## Figure generation
+
+Generate figures from the processed inputs and existing Results:
+
+```powershell
+# Oral
+python plot.py
+
+# Inhalation
+python plot.py -c config_inhalation.json
+```
+
+Figures are written under `Figures/Oral` and `Figures/Inhalation`.
+
+## Optional model training
+
+Model training is not required for ordinary model application or figure
+generation. A complete training run is computationally expensive, uses the
+currently configured processed inputs, and overwrites or creates content under
+`Results`.
+
+Only run training when new model development is intended and the existing
+Results have been backed up:
+
+```powershell
+# Oral
+python workflow_management.py
+
+# Inhalation
+python workflow_management.py -c config_inhalation.json
+```

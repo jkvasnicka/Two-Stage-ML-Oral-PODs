@@ -17,7 +17,8 @@ from . import utilities
 #region: feature_distributions
 def feature_distributions(
         features_file,
-        color='cornflowerblue'
+        color='cornflowerblue',
+        output_dir=None
         ):
     '''
     Visualize the distributions of features as histograms.
@@ -97,5 +98,10 @@ def feature_distributions(
 
     fig.tight_layout()
 
-    utilities.save_figure(fig, feature_distributions, 'feature-distributions')
+    utilities.save_figure(
+        fig, 
+        feature_distributions, 
+        'feature-distributions',
+        output_dir=output_dir
+        )
 #endregion
