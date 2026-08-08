@@ -163,7 +163,8 @@ def prepare_data_for_plotting(
     ordered_columns = []
     for label in plot_settings.model_for_label.keys():
         for col in df_wide_new.columns:
-            if label in col[0]:  # Matching label part of the column
+            model_label = col[0].rsplit(' (', 1)[0]
+            if label == model_label:
                 ordered_columns.append(col)
     df_wide_new = df_wide_new.loc[:, ordered_columns]
 

@@ -706,6 +706,92 @@ class ResultsAnalyzer:
         return performance_summary
     #endregion
 
+    #region: model_performance_table
+    def model_performance_table(
+            self,
+            model_keys=None,
+            quantiles=(0.05, 0.5, 0.95),
+            decimals=2,
+            ):
+        '''Return a formatted manuscript performance table.
+
+        Parameters
+        ----------
+        model_keys : list of tuple, optional
+            Model keys to include.
+        quantiles : sequence of float, optional
+            Lower, median, and upper quantiles to display.
+        decimals : int, optional
+            Number of decimal places to display.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Four-column table with effect section rows and one row per model.
+        '''
+        quantiles = tuple(quantiles)
+        if len(quantiles) != 3:
+            raise ValueError(
+                'quantiles must contain lower, median, and upper values.'
+            )
+
+        lower, median, upper = quantiles
+        summary = self.summarize_model_performances(
+            model_keys=model_keys,
+            quantiles=quantiles,
+        )
+
+        def format_value(value):
+            rounded = round(float(value), decimals)
+            if rounded == 0:
+                rounded = 0
+            return f'{rounded:.{decimals}f}'
+
+        def format_interval(values):
+            return (
+                f'{format_value(values[median])} '
+                f'[{format_value(values[lower])}–'
+                f'{format_value(values[upper])}]'
+            )
+
+        row_order = summary.index.droplevel('metric')
+        row_order = row_order[~row_order.duplicated()]
+        table = (
+            summary.apply(format_interval, axis=1)
+            .unstack('metric')
+            .reindex(row_order)
+        )
+        table = table.reindex(
+            columns=list(self.plot_settings.label_for_metric.values())
+        )
+        table = table.rename(columns={'$R^2$': 'R²'})
+
+        section_label_for_effect = {
+            'General Noncancer': 'General non-cancer effects',
+            'Reproductive/Developmental': (
+                'Reproductive/developmental effects'),
+        }
+        rows = []
+        for effect in table.index.get_level_values('effect').unique():
+            section_label = section_label_for_effect.get(
+                effect, f'{effect}')
+            rows.append([section_label, '', '', ''])
+            for model_name, values in table.loc[effect].iterrows():
+                if ' (final) ' in model_name:
+                    model_name = model_name.replace(
+                        ' (final)', ' with feature selection')
+                elif model_name.startswith('RDKit Features'):
+                    model_name = f'**{model_name}'
+                else:
+                    model_name = f'*{model_name}'
+                rows.append([model_name, *values])
+
+        return pd.DataFrame(
+            rows,
+            columns=['QSAR Model (n)', 'RMSE', 'MedAE', 'R²'],
+        )
+    #endregion
+
     #region: describe
     def describe(self, model_key, result_type, percentiles=None):
         '''
