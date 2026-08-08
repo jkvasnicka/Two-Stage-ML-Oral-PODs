@@ -39,6 +39,8 @@
 
     "results_dir" : "Results/Oral",
 
+    "pod_predictions_file" : "Predictions/Oral/oral_pod_predictions",
+
     "figures_dir" : "Figures/Oral"
     
 }

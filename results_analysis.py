@@ -14,6 +14,40 @@ from feature_selection import FeatureSelector
 # NOTE: For backwards compatibility
 from plotting import sensitivity_analysis  
 
+
+def pod_to_effect_level(pod, factor=3.49):
+    '''
+    Convert POD values to 10%-incidence population effect levels.
+
+    The default factor of 3.49 is the best-estimate (P50) human variability
+    factor used by Aurisano et al. to convert a population-median effect level
+    (50% incidence) to a 10%-incidence human population effect level. Thus,
+    the conversion yields an oral human effect dose (HD_M^10%) or inhalation
+    human effect concentration (HC_M^10%), according to the POD units.
+
+    Sources
+    -------
+    Aurisano et al. (2023), doi:10.1289/EHP11524.
+    Aurisano et al. (2024), doi:10.1021/acs.est.4c00207.
+
+    Parameters
+    ----------
+    pod : scalar or array-like
+        Point-of-departure values. NumPy arrays and pandas objects retain
+        their input shape and labels.
+    factor : float, optional
+        Positive human variability factor. Default is 3.49. Supply another
+        value to override the literature-based default.
+
+    Returns
+    -------
+    scalar or array-like
+        Effect-level values of the same general type as ``pod``.
+    '''
+    if factor <= 0:
+        raise ValueError("'factor' must be greater than zero.")
+    return pod / factor
+
 #region: ResultsAnalyzer.__init__
 class ResultsAnalyzer:
     '''

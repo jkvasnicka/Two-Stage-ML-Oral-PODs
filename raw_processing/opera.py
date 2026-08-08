@@ -128,7 +128,11 @@ def _perform_final_cleaning(predictions, AD_flags):
         logging.info(f'Dropped {sum(where_duplicated_idx)} duplicated rows')
 
     # Update the applicability domain flags
+    AD_flags = AD_flags.loc[
+        ~AD_flags.index.duplicated(keep='first')]
     AD_flags = AD_flags.loc[predictions.index]
+    if not predictions.index.equals(AD_flags.index):
+        raise ValueError('Prediction and AD indices are not aligned.')
 
     return predictions, AD_flags
 #endregion

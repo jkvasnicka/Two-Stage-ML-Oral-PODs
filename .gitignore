@@ -6,5 +6,6 @@ __pycache__/
 
 # Large files
 Results
+Predictions/
 Input/Raw
 Input/Processed

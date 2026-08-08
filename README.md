@@ -80,6 +80,39 @@ figures.
 it to the feature table selected by the endpoint configuration. The analysis
 notebook demonstrates model loading and result analysis.
 
+## Prediction exports
+
+Full-table prediction export requires the processed OPERA features and the
+persisted models and results described above. Generate each route independently
+from the repository root:
+
+```powershell
+# Oral
+python predict.py
+
+# Inhalation
+python predict.py -c config_inhalation.json
+```
+
+The commands write Parquet and zipped CSV representations of the same table:
+
+```text
+Predictions/Oral/oral_pod_predictions.parquet
+Predictions/Oral/oral_pod_predictions.csv.zip
+Predictions/Inhalation/inhalation_pod_predictions.parquet
+Predictions/Inhalation/inhalation_pod_predictions.csv.zip
+```
+
+Each table contains `DTXSID`, `general_pod`, `general_lb`, `general_ub`,
+`repro_dev_pod`, `repro_dev_lb`, and `repro_dev_ub`. The `pod` columns are
+central point-of-departure predictions; `lb` and `ub` are the lower and upper
+bounds of the 90% prediction interval. Oral values are in mg/kg-day, and
+inhalation values are in mg/m3. Rows retain the general-model POD order, with
+reproductive/developmental results aligned by `DTXSID`.
+
+Optional 10%-incidence human population effect levels can be calculated on
+demand using the `pod_to_effect_level` helper in `results_analysis.py`.
+
 ### Oral historical-input differences
 
 Changes since `v1.0.0` mean that current oral preprocessing and model training
