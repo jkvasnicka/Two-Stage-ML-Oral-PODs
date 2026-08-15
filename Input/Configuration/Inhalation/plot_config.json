@@ -8,6 +8,8 @@
         "importances_boxplots",
         "importances_replicates_boxplots",
         "in_and_out_sample_comparisons",
+        "benchmarking_scatterplots",
+        "cumulative_pod_distributions",
         "predictions_by_missing_feature",
         "sensitivity_analysis_boxplots"
       ],
@@ -31,6 +33,8 @@
         "RandomForestRegressor"
       ]
     ],
+
+    "benchmarking_include_toxcast": false,
 
     "label_for_metric": {
       "root_mean_squared_error": "RMSE",
@@ -178,4 +182,3 @@
     }
 
   }
-  
