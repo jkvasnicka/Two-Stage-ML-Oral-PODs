@@ -314,13 +314,33 @@ class RawDataProcessor:
             self._raw_data_settings.surrogate_tox_data_kwargs,
         )
 
-        return other_sources.authoritative_toxicity_values_from_excel(
-            self._path_settings.raw_authoritative_pods_file, 
-            self._raw_data_settings.auth_data_kwargs,
-            self._raw_data_settings.auth_file_ilocs_for_effect, 
-            id_for_casrn=dtxsid_for_casrn,
-            id_name=self._index_col, 
-            write_path=self._path_settings.authoritative_pods_file
+        auth_data_format = self._raw_data_settings.auth_data_format
+
+        if auth_data_format == 'table_s7_long':
+            return other_sources.inhalation_authoritative_pods_from_table_s7(
+                self._path_settings.raw_authoritative_pods_file,
+                self._raw_data_settings.auth_data_kwargs,
+                self._raw_data_settings.auth_effect_column,
+                self._raw_data_settings.auth_effect_mapper,
+                self._raw_data_settings.auth_value_column,
+                aggregation=self._raw_data_settings.auth_aggregation,
+                id_for_casrn=dtxsid_for_casrn,
+                id_name=self._index_col,
+                write_path=self._path_settings.authoritative_pods_file
+            )
+
+        if auth_data_format == 'figure_s5_wide':
+            return other_sources.oral_authoritative_pods_from_figure_s5(
+                self._path_settings.raw_authoritative_pods_file,
+                self._raw_data_settings.auth_data_kwargs,
+                self._raw_data_settings.auth_file_ilocs_for_effect,
+                id_for_casrn=dtxsid_for_casrn,
+                id_name=self._index_col,
+                write_path=self._path_settings.authoritative_pods_file
+            )
+
+        raise ValueError(
+            f'Unsupported authoritative POD format: {auth_data_format}'
         )
     #endregion
 

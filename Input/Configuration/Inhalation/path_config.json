@@ -16,6 +16,10 @@
     
     "surrogate_pods_file" : "Input/Processed/Targets/Aurisano/Inhalation/surrogate_points_of_departure.csv",
 
+    "raw_authoritative_pods_file" : "Input/Raw/Aurisano/Inhalation/es4c00207_si_002.xlsx",
+
+    "authoritative_pods_file" : "Input/Processed/Analysis/Aurisano/Inhalation/authoritative_points_of_departure.csv",
+
     "results_dir" : "Results/Inhalation",
 
     "pod_predictions_file" : "Predictions/Inhalation/inhalation_pod_predictions",

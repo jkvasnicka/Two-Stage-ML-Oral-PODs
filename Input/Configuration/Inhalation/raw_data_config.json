@@ -2,7 +2,8 @@
     "datasets_to_process": [
       "opera_features",
       "rdkit_features",
-      "surrogate_pods"
+      "surrogate_pods",
+      "authoritative_pods"
     ],
   
     "do_log10_target": true,
@@ -39,15 +40,21 @@
     ],
   
     "auth_data_kwargs": {
-      "sheet_name": "Data for Figure S5",
-      "header": [0, 1],
-      "skiprows": [0]
+      "sheet_name": "Table S7"
     },
-  
-    "auth_file_ilocs_for_effect": {
-      "general": [0, 5],
-      "repro_dev": [6, 11]
+
+    "auth_data_format": "table_s7_long",
+
+    "auth_effect_column": "Study duration type",
+
+    "auth_effect_mapper": {
+      "Chronic": "general",
+      "Repro/Developmental": "repro_dev"
     },
+
+    "auth_value_column": "log PODreg,BMDh avg [mg/m3]",
+
+    "auth_aggregation": "mean",
   
     "oed_data_kwargs": {
       "sheet_name": "pod_ratio_master",
@@ -166,4 +173,3 @@
       ]
     }
   }
-  

@@ -18,7 +18,7 @@ def benchmarking_scatterplots(
         results_analyzer,
         function_for_metric,
         plot_settings,
-        figsize=(6, 9),
+        figsize=None,
         output_dir=None
         ):
     '''
@@ -44,30 +44,40 @@ def benchmarking_scatterplots(
         function name.
     '''
     y_auth_df = results_analyzer.load_authoritative_pods()
-    y_toxcast = results_analyzer.load_oral_equivalent_doses()
+    if plot_settings.benchmarking_include_toxcast:
+        y_toxcast = results_analyzer.load_oral_equivalent_doses()
 
     model_key_names = results_analyzer.read_model_key_names()
     grouped_keys = results_analyzer.group_model_keys('target_effect')
 
     for grouping_key, model_keys in grouped_keys:
         num_subplots = len(model_keys)
+        num_rows = 3 if plot_settings.benchmarking_include_toxcast else 2
+        if figsize is None:
+            figure_size = (6, 3 * num_rows)
+        else:
+            figure_size = figsize
 
-        fig, ax_objs = plt.subplots(3, num_subplots, figsize=figsize)
+        fig, ax_objs = plt.subplots(
+            num_rows,
+            num_subplots,
+            figsize=figure_size
+        )
 
         # Initialize the limits.
         xmin, xmax = np.inf, -np.inf
 
         for i, model_key in enumerate(model_keys):
-            
             y_pred, _, y_true = results_analyzer.get_in_sample_prediction(model_key)
 
             key_for = dict(zip(model_key_names, model_key))
             y_comparison = y_auth_df[key_for['target_effect']].dropna()
             y_evaluation_dict = {
-                plot_settings.surrogate_label : y_true, 
-                plot_settings.qsar_label : y_pred,
-                plot_settings.toxcast_label : y_toxcast,
+                plot_settings.surrogate_label : y_true,
+                plot_settings.qsar_label : y_pred
             }
+            if plot_settings.benchmarking_include_toxcast:
+                y_evaluation_dict[plot_settings.toxcast_label] = y_toxcast
 
             for j, (label, y_evaluation) in enumerate(
                     y_evaluation_dict.items()):

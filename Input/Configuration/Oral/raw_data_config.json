@@ -51,6 +51,8 @@
         "skiprows" : [0]
     },
 
+    "auth_data_format" : "figure_s5_wide",
+
     "auth_file_ilocs_for_effect" : {
         "general" : [0, 5],
         "repro_dev" : [6, 11]

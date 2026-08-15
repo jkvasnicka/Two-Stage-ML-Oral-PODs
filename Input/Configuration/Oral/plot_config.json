@@ -17,7 +17,9 @@
     "final_model_keys": [
       ["general", "opera", "predicted", "missing", "true", "RandomForestRegressor"],
       ["repro_dev", "opera", "predicted", "missing", "true", "RandomForestRegressor"]
-  ],  
+  ],
+
+    "benchmarking_include_toxcast" : true,
 
     "label_for_metric": {
       "root_mean_squared_error": "RMSE",
@@ -106,4 +108,3 @@
   }
 
 }
-  

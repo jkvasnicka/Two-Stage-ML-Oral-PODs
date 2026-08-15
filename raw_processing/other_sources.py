@@ -169,8 +169,8 @@ def get_casrn_dtxsid_mapping(tox_data_path, tox_data_kwargs):
     )
 #endregion
 
-#region: authoritative_toxicity_values_from_excel
-def authoritative_toxicity_values_from_excel(
+#region: oral_authoritative_pods_from_figure_s5
+def oral_authoritative_pods_from_figure_s5(
         fig_s5_path, 
         auth_data_kwargs,
         ilocs_for_effect, 
@@ -228,6 +228,92 @@ def authoritative_toxicity_values_from_excel(
         auth_pods.to_csv(write_path)
         
     return auth_pods
+#endregion
+
+#region: inhalation_authoritative_pods_from_table_s7
+def inhalation_authoritative_pods_from_table_s7(
+        regulatory_path,
+        data_kwargs,
+        effect_column,
+        effect_mapper,
+        value_column,
+        aggregation='mean',
+        id_for_casrn=None,
+        id_name='DTXSID',
+        write_path=None
+        ):
+    '''
+    Process record-level regulatory PODs into one value per endpoint.
+
+    CASRN mappings from the surrogate source take precedence over identifiers
+    supplied with regulatory records. This reconciles identifier revisions
+    across source tables while retaining valid regulatory-only identifiers.
+
+    Parameters
+    ----------
+    regulatory_path : str
+        Path to the regulatory POD workbook.
+    data_kwargs : dict
+        Keyword arguments for ``pandas.read_excel``.
+    effect_column : str
+        Column containing the source endpoint categories.
+    effect_mapper : dict
+        Mapping from source categories to model endpoint names.
+    value_column : str
+        Column containing log10 regulatory composite values.
+    aggregation : str, optional
+        Aggregation applied to multiple records for one chemical and endpoint.
+    id_for_casrn : dict, optional
+        Mapping from CASRN to canonical DTXSID.
+    id_name : str, optional
+        Name for the processed chemical identifier.
+    write_path : str, optional
+        Destination CSV path.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Regulatory PODs indexed by chemical identifier, with endpoint columns.
+    '''
+    regulatory_data = pd.read_excel(regulatory_path, **data_kwargs)
+    canonical_ids = regulatory_data['dtxsid'].copy()
+
+    # Prefer Table S6 DTXSIDs to align with the surrogate modeling data;
+    # fall back to the Table S7 DTXSID when its CASRN is absent from Table S6.
+    if id_for_casrn is not None:
+        mapped_ids = regulatory_data['casrn'].map(id_for_casrn)
+        canonical_ids = mapped_ids.fillna(canonical_ids)
+
+    id_pattern = re.compile(pattern.dtxsid(as_group=True))
+    regulatory_data[id_name] = canonical_ids.astype('string').str.extract(
+        id_pattern,
+        expand=False
+    )
+    regulatory_data['effect'] = regulatory_data[effect_column].map(
+        effect_mapper
+    )
+    regulatory_data['value'] = pd.to_numeric(
+        regulatory_data[value_column],
+        errors='coerce'
+    )
+
+    regulatory_pods = (
+        regulatory_data
+        .dropna(subset=[id_name, 'effect', 'value'])
+        .groupby([id_name, 'effect'])['value']
+        .agg(aggregation)
+        .unstack('effect')
+        .reindex(columns=list(effect_mapper.values()))
+    )
+    regulatory_pods.index = regulatory_pods.index.astype(object)
+    regulatory_pods.index.name = id_name
+    regulatory_pods.columns.name = None
+
+    if write_path is not None:
+        utilities.ensure_directory_exists(write_path)
+        regulatory_pods.to_csv(write_path)
+
+    return regulatory_pods
 #endregion
 
 #region: experimental_ld50s_from_excel
