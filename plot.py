@@ -14,7 +14,8 @@ from plotting import (
     model_performance,
     moe,
     pod,
-    sensitivity_analysis
+    sensitivity_analysis,
+    vapor_concentration,
 )
 
 from config_management import config_from_cli_args
@@ -128,7 +129,8 @@ class ResultsPlotter:
             'margins_of_exposure_cumulative' : self._margins_of_exposure_cumulative,
             'cumulative_pod_distributions' : self._cumulative_pod_distributions, 
             'predictions_by_missing_feature' : self._predictions_by_missing_feature,
-            'sensitivity_analysis_boxplots' : self._sensitivity_analysis_boxplots
+            'sensitivity_analysis_boxplots' : self._sensitivity_analysis_boxplots,
+            'vapor_concentration_ceiling' : self._vapor_concentration_ceiling
         }
 
         # Filter out any plotting functions not defined in the config file
@@ -292,6 +294,18 @@ class ResultsPlotter:
             output_dir=self._path_settings.figures_dir
         )
 #endregion:
+
+#region: _vapor_concentration_ceiling
+    def _vapor_concentration_ceiling(self):
+        '''Call the saturated vapor concentration plotting workflow.'''
+        vapor_concentration.vapor_concentration_ceiling(
+            self._path_settings.file_for_features_source['opera'],
+            self._path_settings.pod_predictions_file,
+            self._path_settings.surrogate_pods_file,
+            self._plot_settings,
+            output_dir=self._path_settings.figures_dir,
+        )
+#endregion
 
 if __name__ == '__main__':
     print('Plotting results...')

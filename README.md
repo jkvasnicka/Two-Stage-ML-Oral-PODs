@@ -133,6 +133,10 @@ python plot.py -c config_inhalation.json
 
 Figures are written under `Figures/Oral` and `Figures/Inhalation`.
 
+The inhalation vapor-concentration figure uses the configured inhalation
+prediction export. Run `python predict.py -c config_inhalation.json` before
+generating inhalation figures if that export is not already available.
+
 ## Optional model training
 
 Model training is not required for ordinary model application or figure
