@@ -11,7 +11,8 @@
         "benchmarking_scatterplots",
         "cumulative_pod_distributions",
         "predictions_by_missing_feature",
-        "sensitivity_analysis_boxplots"
+        "sensitivity_analysis_boxplots",
+        "vapor_concentration_ceiling"
       ],
 
     "final_model_keys": [
