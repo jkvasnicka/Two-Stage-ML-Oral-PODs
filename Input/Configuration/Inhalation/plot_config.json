@@ -12,8 +12,14 @@
         "cumulative_pod_distributions",
         "predictions_by_missing_feature",
         "sensitivity_analysis_boxplots",
-        "vapor_concentration_ceiling"
+        "vapor_concentration_ceiling",
+        "cross_route_pod_comparison"
       ],
+
+    "cross_route_config_files": {
+      "oral": "config.json",
+      "inhalation": "config_inhalation.json"
+    },
 
     "final_model_keys": [
       [
