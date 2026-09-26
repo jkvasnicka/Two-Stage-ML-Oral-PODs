@@ -15,6 +15,197 @@ from feature_selection import FeatureSelector
 from plotting import sensitivity_analysis  
 
 
+# Bounds are in log10 MOE; the upper bound belongs to each category.
+MOE_CATEGORIES = {
+    'Low Concern': (2., np.inf),
+    'Moderate Concern': (0., 2.),
+    'High Concern': (-np.inf, 0.),
+}
+
+
+def classify_moe(moes):
+    '''Classify a log10 MOE Series; nonfinite values remain unclassified.'''
+    labels = ['High Concern', 'Moderate Concern', 'Low Concern']
+    bounds = [-np.inf] + [MOE_CATEGORIES[label][1] for label in labels]
+    return pd.cut(moes.where(np.isfinite(moes)), bounds, labels=labels)
+
+
+def pod_moe_results(analyzer, model_keys, exposure, pod_transform=None):
+    '''Calculate endpoint application PODs and MOEs from fitted estimators.
+
+    Parameters
+    ----------
+    analyzer : ResultsAnalyzer
+        Supplies predictions, model-key metadata, and CV RMSE.
+    model_keys : iterable of tuple
+        One model per endpoint. Training chemicals are excluded.
+    exposure : pandas.DataFrame
+        Log10 intake estimates, shared unchanged between compared routes.
+    pod_transform : callable, optional
+        Converts the native log10 POD result frame to exposure-compatible
+        dose units, including bounds, preserving index and CDF columns.
+        Omit when native POD units already match exposure units.
+
+    Returns
+    -------
+    dict
+        Endpoint keys mapped to ``pod`` and ``moe`` result frames. PODs
+        retain all application chemicals; MOEs retain exposure matches.
+    '''
+    effect_index = analyzer.read_model_key_names().index('target_effect')
+    results = {}
+    for key in analyzer.validate_model_keys(model_keys):
+        effect = key[effect_index]
+        if effect in results:
+            raise ValueError('Specify only one model per endpoint.')
+        pods = analyzer.pod_and_prediction_interval(key)
+        if pod_transform is not None:
+            pods = pod_transform(pods)
+        moes = analyzer.moe_from_pods(
+            pods['pod'], exposure, analyzer.get_typical_pod_error(key),
+        )
+        results[effect] = {'pod': pods, 'moe': moes}
+    return results
+
+
+def summarize_moe(results, exposure, label_for_effect):
+    '''Return baseline manuscript counts and typical exposure uncertainty.
+
+    Parameters
+    ----------
+    results : dict
+        Endpoint results from ``pod_moe_results()`` for either route.
+    exposure : pandas.DataFrame
+        The unchanged log10 exposure inputs used to calculate the MOEs.
+    label_for_effect : dict
+        Manuscript endpoint labels.
+
+    Returns
+    -------
+    summary : pandas.DataFrame
+        Application/exposure denominators and cumulative concern counts
+        using the lower hazard bound at upper exposure.
+    exposure_uncertainty : float
+        Median log10 exposure interval width over the union of endpoint
+        application populations. Display precision is left to the caller.
+    '''
+    rows = {}
+    application = pd.Index([])
+    upper = '95th percentile (mg/kg/day)'
+    lower = '5th percentile (mg/kg/day)'
+    for effect, model in results.items():
+        pods, moes = model['pod'], model['moe'][upper]['lb']
+        application = application.union(pods.index)
+        rows[label_for_effect[effect]] = {
+            'Application chemicals': len(pods),
+            'Chemicals with exposure': len(moes),
+            'MOE <= 1': int(moes.le(0).sum()),
+            'MOE <= 100': int(moes.le(2).sum()),
+        }
+    exposure = exposure.loc[exposure.index.intersection(application)]
+    uncertainty = (exposure[upper] - exposure[lower]).median()
+    return pd.DataFrame.from_dict(rows, orient='index'), uncertainty
+
+
+def route_allocation_results(oral_results, inhalation_results):
+    '''Pair application MOEs and classify conservative screening estimates.
+
+    Parameters
+    ----------
+    oral_results, inhalation_results : dict
+        Endpoint results from ``pod_moe_results()``. Both routes must use
+        the same unchanged exposure inputs and compatible dose units.
+        Training exclusions are inherited from each route's predictions.
+
+    Returns
+    -------
+    paired : dict of pandas.DataFrame
+        Eligible DTXSIDs by endpoint, with (route, exposure, statistic)
+        columns. Retains MOE points and bounds at all three exposures and
+        lower-hazard/upper-exposure concern labels. Cumulative counts are omitted
+        because the population changes after pairing.
+    '''
+    if oral_results.keys() != inhalation_results.keys():
+        raise ValueError('Oral and inhalation endpoints must match.')
+    exposures = [f'{p}th percentile (mg/kg/day)' for p in (50, 5, 95)]
+    upper = exposures[-1]
+    paired = {}
+    for effect in oral_results:
+        routes = {}
+        for route, results in (
+                ('oral', oral_results[effect]['moe']),
+                ('inhalation', inhalation_results[effect]['moe'])):
+            frames = {}
+            for exposure in exposures:
+                frame = results[exposure].loc[:, ['moe', 'lb', 'ub']]
+                if not frame.index.is_unique or frame.index.hasnans:
+                    raise ValueError('MOE DTXSIDs must be unique/nonmissing.')
+                frames[exposure] = frame
+            routes[route] = pd.concat(frames, axis=1, join='inner')
+        table = pd.concat(routes, axis=1, join='inner')
+        table = table.loc[np.isfinite(table).all(axis=1)].copy()
+        for route in routes:
+            table[(route, upper, 'concern')] = classify_moe(
+                table[(route, upper, 'lb')]
+            )
+        paired[effect] = table
+    return paired
+
+
+def route_allocation_table(oral_results, inhalation_results, label_for_effect):
+    '''Format endpoint matrices with margins and whole-population percentages.
+
+    Parameters
+    ----------
+    oral_results, inhalation_results : dict
+        Endpoint application results using identical exposure inputs; see
+        ``route_allocation_results()`` for pairing and eligibility.
+    label_for_effect : dict
+        Manuscript labels for endpoint keys.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Counts and percentages to two decimal places; small nonzero values
+        are shown as <0.01%. Empty populations
+        show ``NA`` percentages rather than implying an observed fraction.
+    '''
+    paired = route_allocation_results(oral_results, inhalation_results)
+    panels = {}
+    for effect, frame in paired.items():
+        matrix = _route_concern_counts(frame)
+        n = len(frame)
+        totals = matrix.copy()
+        totals['Total'] = matrix.sum(axis=1)
+        totals.loc['Total'] = totals.sum(axis=0)
+        panels[label_for_effect[effect]] = totals.applymap(
+            lambda count: _format_concern_count(count, n)
+        )
+    return pd.concat(panels).rename_axis(
+        index=['Endpoint', 'Oral concern'],
+        columns='Inhalation concern, n (%)',
+    )
+
+
+def _route_concern_counts(table):
+    '''Count all nine screening-concern combinations, including zero cells.'''
+    upper = '95th percentile (mg/kg/day)'
+    order = ['High Concern', 'Moderate Concern', 'Low Concern']
+    return pd.crosstab(
+        table[('oral', upper, 'concern')],
+        table[('inhalation', upper, 'concern')],
+    ).reindex(index=order, columns=order, fill_value=0).fillna(0).astype(int)
+
+
+def _format_concern_count(count, total):
+    '''Format an exact count without rounding a small nonzero percent to zero.'''
+    if not total:
+        return f'{count:,} (NA)'
+    percent = 100 * count / total
+    label = '<0.01' if 0 < percent < 0.01 else f'{percent:.2f}'
+    return f'{count:,} ({label})'
+
+
 def pod_to_effect_level(pod, factor=3.49):
     '''
     Convert POD values to 10%-incidence population effect levels.
@@ -378,21 +569,47 @@ class ResultsAnalyzer:
         y_pred, *_ = self.predict(model_key, exclude_training=exclude_training)
         
         exposure_df = self.data_manager.load_exposure_data()
-        moes = self.margins_of_exposure(y_pred, exposure_df)
+        rmse = self.get_typical_pod_error(model_key)
+        return self.moe_from_pods(
+            y_pred, exposure_df, rmse, inverse_transform, normalize,
+        )
+    #endregion
 
-        rmse = self.get_typical_pod_error(model_key)  # log10-units
-        
+    @staticmethod
+    def moe_from_pods(
+            predictions, exposure_df, rmse,
+            inverse_transform=False, normalize=False):
+        '''Summarize unit-compatible log10 POD/exposure results.
+
+        Parameters
+        ----------
+        predictions : pandas.Series
+            Log10 PODs in exposure-compatible dose units, indexed by DTXSID.
+        exposure_df : pandas.DataFrame
+            Log10 intake estimates, one column per uncertainty percentile.
+        rmse : float
+            Model-specific median CV RMSE in log10 units.
+        inverse_transform, normalize : bool, optional
+            Return linear values or cumulative proportions, respectively.
+
+        Returns
+        -------
+        dict of pandas.DataFrame
+            Per-exposure MOE points, hazard bounds, and cumulative counts
+            (or proportions), using the original oral calculation.
+        '''
+        moes = ResultsAnalyzer.margins_of_exposure(predictions, exposure_df)
         results_for_percentile = {}  # initialize
-        
+
         for percentile in exposure_df.columns:
-            
-            sorted_moes, cumulative_data = self.generate_cdf_data(
+
+            sorted_moes, cumulative_data = ResultsAnalyzer.generate_cdf_data(
                 moes[percentile],
                 normalize=normalize
                 )
-            
-            lb, ub = self.prediction_interval(sorted_moes, rmse)
-            
+
+            lb, ub = ResultsAnalyzer.prediction_interval(sorted_moes, rmse)
+
             if inverse_transform:
                 sorted_moes, lb, ub = ResultsAnalyzer._inverse_log10(
                     sorted_moes, lb, ub
@@ -404,14 +621,13 @@ class ResultsAnalyzer:
                     'ub': ub
                     }
             ResultsAnalyzer._insert_cumulative_data(
-                moe_data, 
-                cumulative_data, 
+                moe_data,
+                cumulative_data,
                 normalize
                 )
             results_for_percentile[percentile] = pd.DataFrame(moe_data)
-            
+
         return results_for_percentile
-    #endregion
 
     #region: generate_cdf_data
     @staticmethod

@@ -248,6 +248,27 @@ def cross_route_summary_table(summary, label_for_effect):
     return pd.DataFrame(result)
 
 
+def bmch_pod_to_hed(pods):
+    '''Convert native log10 BMCh POD results to log10 POD_inh,HED.
+
+    Parameters
+    ----------
+    pods : pandas.DataFrame
+        Native BMCh results in log10 mg/m3, with pod/lb/ub columns.
+        These must be concentration predictions, not oral dose predictions.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A copy in log10 mg/(kg day); DTXSIDs and CDF columns are unchanged.
+        The constant shift preserves log10 RMSE and interval widths.
+    '''
+    converted = pods.copy()
+    columns = ['pod', 'lb', 'ub']
+    converted[columns] += np.log10(bmch_to_administered_dose(1.0))
+    return converted
+
+
 def bmch_to_administered_dose(
         bmch, ventilation_m3_day=13.0, body_weight_kg=70.0):
     '''Normalize BMCh (mg/m3) to administered dose (mg/(kg day)).'''
