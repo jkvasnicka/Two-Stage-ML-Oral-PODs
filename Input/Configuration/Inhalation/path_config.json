@@ -24,6 +24,8 @@
 
     "pod_predictions_file" : "Predictions/Inhalation/inhalation_pod_predictions",
 
+    "seem3_exposure_file" : "Input/Processed/Analysis/SEEM3/Exposure_download_v1.parquet",
+
     "figures_dir" : "Figures/Inhalation"
     
 }

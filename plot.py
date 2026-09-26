@@ -24,6 +24,7 @@ from data_management import DataManager
 from metrics_management import MetricsManager
 from results_management import ResultsManager
 from results_analysis import ResultsAnalyzer
+from cross_route import bmch_pod_to_hed
 
 #region: plot_main()
 def plot_main():
@@ -55,11 +56,21 @@ def plot_main():
         config.plot
         )
     
+    # Select the MOE unit conversion from the configured native target units.
+    moe_pod_transform = None
+    if 'margins_of_exposure_cumulative' in getattr(
+            config.plot, 'plots_to_include', []):
+        moe_pod_transform = {
+            'POD [mg/kg-d]': None,
+            'POD [mg/m3]': bmch_pod_to_hed,
+        }[config.raw_data.tox_metric]
+
     ## Plot generation
     results_plotter = ResultsPlotter(
         results_analyzer,
         config.plot, 
         config.path,
+        moe_pod_transform=moe_pod_transform,
         function_for_metric=metrics_manager.function_for_metric,
         threshold=config.preprocessor.settings['MissingValuesSelector']['kwargs']['threshold']
     )
@@ -83,7 +94,8 @@ class ResultsPlotter:
             plot_settings, 
             path_settings, 
             function_for_metric=None, 
-            threshold=None
+            threshold=None,
+            moe_pod_transform=None
             ):
         '''
         Initialize the ResultsPlotter with configuration settings.
@@ -99,6 +111,9 @@ class ResultsPlotter:
             Configuration settings for plotting.
         path_settings : SimpleNamespace
             Configuration settings for file path management.
+        moe_pod_transform : callable, optional
+            Native log10 POD-to-dose transformation for the MOE figure only.
+            Default preserves native POD units. Other plots are unaffected.
         ...
             Keyword arguments for individual plotting functions.
         '''
@@ -107,6 +122,7 @@ class ResultsPlotter:
         self._path_settings = path_settings 
         self._function_for_metric = function_for_metric 
         self._threshold = threshold
+        self._moe_pod_transform = moe_pod_transform
         self._initialize_dispatcher()
 #endregion
 
@@ -249,14 +265,13 @@ class ResultsPlotter:
 
 #region: _margins_of_exposure_cumulative
     def _margins_of_exposure_cumulative(self):
-        '''
-        Call moe.margins_of_exposure_cumulative with parameters.
-        '''
+        '''Call the common MOE plot with its explicit POD transformation.'''
         moe.margins_of_exposure_cumulative(
-            self._results_analyzer, 
+            self._results_analyzer,
             self._plot_settings,
-            output_dir=self._path_settings.figures_dir
-            )
+            output_dir=self._path_settings.figures_dir,
+            pod_transform=self._moe_pod_transform,
+        )
 #endregion
 
 #region: _cumulative_pod_distributions

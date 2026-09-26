@@ -9,6 +9,7 @@
         "importances_replicates_boxplots",
         "in_and_out_sample_comparisons",
         "benchmarking_scatterplots",
+        "margins_of_exposure_cumulative",
         "cumulative_pod_distributions",
         "predictions_by_missing_feature",
         "sensitivity_analysis_boxplots",
@@ -85,6 +86,9 @@
     },
 
     "moe_right_truncation": 10.0,
+
+    "moe_bbox_inches": "tight",
+    "moe_pod_xlabel": "$\\log_{10}POD_{inh,HED}$ [mg/(kg·d)]",
     "prediction_label": "$log_{10}POD$",
     "feature_names_label": "Feature Names",
     "label_for_sample_type": {

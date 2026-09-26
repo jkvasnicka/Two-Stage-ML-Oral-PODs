@@ -16,17 +16,11 @@ import seaborn as sns
 import numpy as np
 
 from . import utilities
+from results_analysis import MOE_CATEGORIES, pod_moe_results
 
 POD_XLABEL = '$\log_{10}POD$ [mg∙(kg∙d)$^{-1}$]'
 MOE_XLABEL = '$\log_{10}MOE$'
 
-# Define the limits of the vertical spans in log10 units of MOE.
-# log10(0) is undefined and will be handled dynamically
-MOE_CATEGORIES = {
-    'Low Concern' : (2., np.inf),
-    'Moderate Concern' : (0., 2.),  # 1, 100
-    'High Concern' : (-np.inf, 0.)  # 0, 1
-}
 MOE_CATEGORY_KWARGS = {
     'Low Concern' : {'color' : 'white', 'alpha' : 0.},  # transparent
     'Moderate Concern' : {'color' : '#a6cee3', 'alpha' : 0.2},
@@ -37,7 +31,8 @@ MOE_CATEGORY_KWARGS = {
 def margins_of_exposure_cumulative(
         results_analyzer, 
         plot_settings,
-        output_dir=None):
+        output_dir=None,
+        pod_transform=None):
     '''
     Plot distributions of margin of exposure (MOE), with uncertainty, across
     chemicals.
@@ -55,6 +50,9 @@ def margins_of_exposure_cumulative(
         An instance of ResultsAnalyzer used to retrieve and process MOE data.
     plot_settings : SimpleNamespace
         Configuration settings for plotting.
+    pod_transform : callable, optional
+        Transformation passed to shared POD/MOE preparation when native
+        POD units differ from exposure units. Default leaves PODs unchanged.
 
     Returns
     -------
@@ -64,6 +62,7 @@ def margins_of_exposure_cumulative(
     '''
     # Get x-axis truncation limit if present
     right_truncation = plot_settings.__dict__.get('moe_right_truncation', None)
+    pod_xlabel = getattr(plot_settings, 'moe_pod_xlabel', POD_XLABEL)
 
     model_key_names, grouped_keys = group_model_keys(
         results_analyzer, 
@@ -71,6 +70,11 @@ def margins_of_exposure_cumulative(
         )
 
     for grouping_key, model_keys in grouped_keys:
+        model_results = pod_moe_results(
+            results_analyzer, model_keys,
+            results_analyzer.data_manager.load_exposure_data(),
+            pod_transform=pod_transform,
+        )
 
         nrows = 2  # POD & MOE
         ncols = len(model_keys)  # N effect categories
@@ -84,6 +88,8 @@ def margins_of_exposure_cumulative(
         global_moe_xlim = utilities.initialize_global_limits()
 
         for i, model_key in enumerate(model_keys):
+            effect = model_key[model_key_names.index('target_effect')]
+            results = model_results[effect]
 
             ylabel = 'Cumulative Count of Chemicals' if i == 0 else None 
 
@@ -94,24 +100,22 @@ def margins_of_exposure_cumulative(
                 plot_settings.label_for_effect
             )
 
-            plot_model_pod_data(  # first row, column i
+            _plot_pod_results(  # first row, column i
                 axs[0, i],
-                model_key, 
-                results_analyzer,
+                results['pod'],
                 global_xlim=global_pod_xlim
             )
             format_axes(
                 axs[0, i], 
-                POD_XLABEL,
+                pod_xlabel,
                 title=title,
                 ylabel=ylabel,
                 global_xlim=global_pod_xlim
             )
 
-            plot_model_moe_data(  # second row, column i
-                axs[1, i], 
-                model_key, 
-                results_analyzer, 
+            _plot_moe_results(  # second row, column i
+                axs[1, i],
+                results['moe'],
                 plot_settings,
                 global_xlim=global_moe_xlim
             )
@@ -138,7 +142,8 @@ def margins_of_exposure_cumulative(
             fig,
             margins_of_exposure_cumulative,
             grouping_key,
-            output_dir=output_dir
+            output_dir=output_dir,
+            bbox_inches=getattr(plot_settings, 'moe_bbox_inches', None),
         )
 #endregion
 
@@ -231,17 +236,7 @@ def plot_model_pod_data(
     '''
     results = results_analyzer.pod_and_prediction_interval(model_key)
 
-    plot_with_prediction_interval(
-        ax,
-        results['pod'],
-        results['cum_count'],
-        results['lb'],
-        results['ub'],
-        color='black'
-    )
-
-    if global_xlim:
-        utilities.update_global_limits(global_xlim, ax.get_xlim())
+    _plot_pod_results(ax, results, global_xlim)
 #endregion
 
 #region: plot_model_moe_data
@@ -273,21 +268,7 @@ def plot_model_moe_data(
     None
     '''
     results_for_percentile = results_analyzer.moe_and_prediction_intervals(model_key)
-    percentile_colors = sns.color_palette('Set2', len(results_for_percentile))
-
-    for j, (percentile, results) in enumerate(results_for_percentile.items()):
-        plot_with_prediction_interval(
-            ax,
-            results['moe'],
-            results['cum_count'],
-            results['lb'],
-            results['ub'],
-            color=percentile_colors[j],
-            label=plot_settings.label_for_exposure_column[percentile]
-        )
-
-    if global_xlim:
-        utilities.update_global_limits(global_xlim, ax.get_xlim())
+    _plot_moe_results(ax, results_for_percentile, plot_settings, global_xlim)
 #endregion
 
 #region: plot_with_prediction_interval
@@ -647,3 +628,37 @@ def group_model_keys(results_analyzer, model_keys):
         )
     return model_key_names, grouped_keys
 #endregion
+
+
+def _plot_pod_results(ax, results, global_xlim=None):
+    '''Draw an already calculated POD distribution and its interval.'''
+    plot_with_prediction_interval(
+        ax,
+        results['pod'],
+        results['cum_count'],
+        results['lb'],
+        results['ub'],
+        color='black'
+    )
+
+    if global_xlim:
+        utilities.update_global_limits(global_xlim, ax.get_xlim())
+
+
+def _plot_moe_results(ax, results_for_percentile, plot_settings, global_xlim=None):
+    '''Draw already calculated exposure-specific MOE distributions.'''
+    percentile_colors = sns.color_palette('Set2', len(results_for_percentile))
+
+    for j, (percentile, results) in enumerate(results_for_percentile.items()):
+        plot_with_prediction_interval(
+            ax,
+            results['moe'],
+            results['cum_count'],
+            results['lb'],
+            results['ub'],
+            color=percentile_colors[j],
+            label=plot_settings.label_for_exposure_column[percentile]
+        )
+
+    if global_xlim:
+        utilities.update_global_limits(global_xlim, ax.get_xlim())
