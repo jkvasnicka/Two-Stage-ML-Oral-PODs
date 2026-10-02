@@ -2,8 +2,6 @@
 Plot saturated vapor concentration screening results.
 '''
 
-from pathlib import Path
-
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import numpy as np
@@ -13,7 +11,7 @@ from vapor_concentration import (
     ENDPOINTS,
     POINT_ABOVE,
     POINT_AT_OR_BELOW,
-    build_vapor_concentration_table,
+    prepare_vapor_concentration_table,
     summarize_vapor_concentration,
 )
 
@@ -21,30 +19,13 @@ from . import utilities
 
 
 def vapor_concentration_ceiling(
-        features_file,
-        predictions_file,
-        surrogate_pods_file,
+        results_analyzer,
+        path_settings,
         plot_settings,
         output_dir=None,
         ):
-    '''Generate the manuscript BMCh/SVC figure from persisted inputs.'''
-    features = pd.read_parquet(
-        features_file,
-        columns=['VP_pred', 'MolWeight'],
-    )
-    predictions = pd.read_parquet(
-        Path(predictions_file).with_suffix('.parquet')
-    )
-    surrogate_pods = pd.read_csv(surrogate_pods_file, index_col=0)
-    training_chemicals_for_effect = {
-        effect: surrogate_pods[effect].dropna().index
-        for effect in ENDPOINTS
-    }
-    table = build_vapor_concentration_table(
-        features,
-        predictions,
-        training_chemicals_for_effect=training_chemicals_for_effect,
-    )
+    '''Generate the manuscript BMCh/SVC figure from fitted predictions.'''
+    table = prepare_vapor_concentration_table(results_analyzer, path_settings)
     figure = bmch_svc_by_effect(
         table,
         label_for_effect=plot_settings.label_for_effect,

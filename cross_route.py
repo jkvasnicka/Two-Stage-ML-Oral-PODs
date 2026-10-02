@@ -1,10 +1,13 @@
 '''Compare cross-route QSAR predictions and Aurisano PODs.'''
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
+
+from data_management import DataManager
+from predict import build_prediction_table
+from results_analysis import ResultsAnalyzer
+from results_management import ResultsManager
 
 ENDPOINTS = ('general', 'repro_dev')
 POPULATION_LABELS = {
@@ -13,8 +16,8 @@ POPULATION_LABELS = {
 }
 
 
-def load_cross_route_comparison(oral_config, inhalation_config):
-    '''Load predictions and unfiltered Table S5/S6 Aurisano PODs.
+def prepare_cross_route_comparison(oral_config, inhalation_config):
+    '''Predict with fitted models and read Table S5/S6 Aurisano PODs.
 
     Parameters
     ----------
@@ -38,8 +41,13 @@ def load_cross_route_comparison(oral_config, inhalation_config):
     '''
     inputs = []
     for config in (oral_config, inhalation_config):
-        predictions = pd.read_parquet(
-            Path(config.path.pod_predictions_file).with_suffix('.parquet')
+        analyzer = ResultsAnalyzer(
+            ResultsManager(config.path.results_dir, config.data.file_type),
+            DataManager(config.data, config.path),
+            config.plot,
+        )
+        predictions = build_prediction_table(
+            analyzer, config.plot.final_model_keys,
         )
         source_pods = _read_aurisano_pods(config)
         inputs.append((predictions, source_pods))

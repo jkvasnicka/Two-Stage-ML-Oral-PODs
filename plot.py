@@ -316,9 +316,8 @@ class ResultsPlotter:
     def _vapor_concentration_ceiling(self):
         '''Call the saturated vapor concentration plotting workflow.'''
         vapor_concentration.vapor_concentration_ceiling(
-            self._path_settings.file_for_features_source['opera'],
-            self._path_settings.pod_predictions_file,
-            self._path_settings.surrogate_pods_file,
+            self._results_analyzer,
+            self._path_settings,
             self._plot_settings,
             output_dir=self._path_settings.figures_dir,
         )

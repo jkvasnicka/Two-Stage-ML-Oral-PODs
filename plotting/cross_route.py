@@ -8,7 +8,7 @@ import numpy as np
 from config_management import UnifiedConfiguration
 from cross_route import (
     ENDPOINTS,
-    load_cross_route_comparison,
+    prepare_cross_route_comparison,
     summarize_cross_route,
 )
 from . import utilities
@@ -23,7 +23,7 @@ def cross_route_pod_comparison(
     '''Generate the manuscript cross-route figure from persisted inputs.'''
     oral_config = UnifiedConfiguration(oral_config_file)
     inhalation_config = UnifiedConfiguration(inhalation_config_file)
-    tables, source_tables, _ = load_cross_route_comparison(
+    tables, source_tables, _ = prepare_cross_route_comparison(
         oral_config, inhalation_config,
     )
     summary = summarize_cross_route(tables, source_tables)
