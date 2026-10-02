@@ -2,11 +2,10 @@
 Calculate and summarize saturated vapor concentration screening results.
 '''
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 
+from predict import build_prediction_table
 
 DEFAULT_TEMPERATURE_K = 298.15
 GAS_CONSTANT_PA_M3_MOL_K = 8.314462618
@@ -23,13 +22,13 @@ INTERVAL_ABOVE = 'entire_interval_above_svc'
 
 
 def vapor_concentration_interval_classification_table(
-        data_manager,
+        results_analyzer,
         path_settings,
         label_for_effect,
         ):
     '''Return the manuscript prediction-interval classification table.'''
     summary = vapor_concentration_summary_table(
-        data_manager,
+        results_analyzer,
         path_settings,
         label_for_effect,
     )
@@ -72,8 +71,39 @@ def vapor_concentration_interval_classification_table(
     return pd.DataFrame(table_data)
 
 
+def prepare_vapor_concentration_table(results_analyzer, path_settings):
+    '''Prepare SVC comparisons from physical inputs and fitted predictions.
+
+    Parameters
+    ----------
+    results_analyzer : ResultsAnalyzer
+        Supplies configured final-model predictions and training identifiers.
+    path_settings : SimpleNamespace
+        Configured processed OPERA feature paths.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Chemical-level SVC calculations and endpoint BMCh classifications.
+    '''
+    features = pd.read_parquet(
+        path_settings.file_for_features_source['opera'],
+        columns=['VP_pred', 'MolWeight'],
+    )
+    predictions = build_prediction_table(
+        results_analyzer, results_analyzer.plot_settings.final_model_keys,
+    )
+    training_chemicals_for_effect = {
+        effect: results_analyzer.load_target(target_effect=effect).index
+        for effect in ENDPOINTS
+    }
+    return build_vapor_concentration_table(
+        features, predictions, training_chemicals_for_effect,
+    )
+
+
 def vapor_concentration_summary_table(
-        data_manager,
+        results_analyzer,
         path_settings,
         label_for_effect,
         ):
@@ -81,8 +111,8 @@ def vapor_concentration_summary_table(
 
     Parameters
     ----------
-    data_manager : DataManager
-        Configured manager used to identify endpoint training chemicals.
+    results_analyzer : ResultsAnalyzer
+        Supplies fitted predictions and endpoint training identifiers.
     path_settings : SimpleNamespace
         Configured repository input paths.
     label_for_effect : dict
@@ -93,21 +123,9 @@ def vapor_concentration_summary_table(
     pandas.DataFrame
         Coverage and classification counts, denominators, and percentages.
     '''
-    features = pd.read_parquet(
-        path_settings.file_for_features_source['opera'],
-        columns=['VP_pred', 'MolWeight'],
-    )
-    predictions = pd.read_parquet(
-        Path(path_settings.pod_predictions_file).with_suffix('.parquet')
-    )
-    training_chemicals_for_effect = {
-        effect: data_manager.load_target(target_effect=effect).index
-        for effect in ENDPOINTS
-    }
-    summary = summarize_vapor_concentration_inputs(
-        features,
-        predictions,
-        training_chemicals_for_effect=training_chemicals_for_effect,
+    table = prepare_vapor_concentration_table(results_analyzer, path_settings)
+    summary = summarize_vapor_concentration(
+        table,
         label_for_effect=label_for_effect,
     )
     summary_columns = [
@@ -158,7 +176,7 @@ def build_vapor_concentration_table(
         OPERA features indexed by DTXSID. ``VP_pred`` must be in linear
         mmHg and ``MolWeight`` must be in g/mol.
     predictions : pandas.DataFrame
-        Persisted BMCh predictions with a unique ``DTXSID`` column.
+        Fitted BMCh predictions with a unique ``DTXSID`` column.
     training_chemicals_for_effect : dict, optional
         Endpoint names mapped to training-chemical identifiers.
     temperature_k : float, optional
