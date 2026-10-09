@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+from matplotlib.text import Text
+from matplotlib.transforms import Bbox
 
 from . import utilities
 
@@ -22,7 +24,8 @@ def pairwise_scatters_and_kde_subplots(
         targets_file, 
         plot_settings, 
         figsize=(10, 10),
-        output_dir=None
+        output_dir=None,
+        font_scale=1
         ):
     '''
     Create a grid of scatter and KDE plots for combinations of features.
@@ -35,6 +38,8 @@ def pairwise_scatters_and_kde_subplots(
         Path to the targets file.
     plot_settings : SimpleNamespace
         Configuration settings for plotting.
+    font_scale : float, optional
+        Scale figure text for readability at manuscript placement size.
 
     Returns
     -------
@@ -98,11 +103,32 @@ def pairwise_scatters_and_kde_subplots(
         bbox_to_anchor=(1., 0.)
     )
 
+    bbox_inches = 'tight'
+    if font_scale != 1:
+        for text in fig.findobj(match=Text):
+            text.set_fontsize(text.get_fontsize() * font_scale)
+        for ax in axs.flat:
+            if ax.get_visible():
+                ax.locator_params(axis='both', nbins=2)
+        fig.tight_layout()
+        fig.subplots_adjust(bottom=0.07, top=0.95)
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        # Include long labels that Matplotlib's tight crop can truncate.
+        label_boxes = [
+            label.get_window_extent(renderer).transformed(
+                fig.dpi_scale_trans.inverted())
+            for ax in axs.flat if ax.get_visible()
+            for label in (ax.xaxis.label, ax.yaxis.label)
+        ]
+        bbox_inches = Bbox.union(
+            [fig.get_tightbbox(renderer)] + label_boxes).padded(0.1)
+
     utilities.save_figure(
         fig, 
         pairwise_scatters_and_kde_subplots, 
         'all-opera-features-and-target-union',
-        bbox_inches='tight',
+        bbox_inches=bbox_inches,
         output_dir=output_dir
         )
 #endregion

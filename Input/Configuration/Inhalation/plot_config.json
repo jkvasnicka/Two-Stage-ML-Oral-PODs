@@ -110,13 +110,20 @@
       "CATMoS_LD50_pred",
       "P_pred",
       "TopoPolSurfAir",
-      "MolWeight"
+      "MolWeight",
+      "KOA_pred",
+      "HL_pred"
     ],
 
     "kde_transformation_features": [
       "P_pred",
-      "CATMoS_LD50_pred"
+      "CATMoS_LD50_pred",
+      "KOA_pred",
+      "HL_pred"
     ],
+
+    "kde_figsize": [15, 15],
+    "kde_font_scale": 1.7,
 
     "model_for_label": {
       "RandomForestRegressor (final)": [

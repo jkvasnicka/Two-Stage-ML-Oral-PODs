@@ -180,6 +180,8 @@ class ResultsPlotter:
             self._path_settings.file_for_features_source['opera'], 
             self._path_settings.surrogate_pods_file,
             self._plot_settings,
+            figsize=getattr(self._plot_settings, 'kde_figsize', (10, 10)),
+            font_scale=getattr(self._plot_settings, 'kde_font_scale', 1),
             output_dir=self._path_settings.figures_dir
             )
 #endregion
