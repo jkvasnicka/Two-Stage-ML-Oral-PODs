@@ -53,6 +53,21 @@ def proportions_incomplete_subplots(
     X = pd.read_parquet(features_file)
     AD_flags = pd.read_parquet(AD_file)
     ys = pd.read_csv(targets_file, index_col=0)
+    base_size_per_feature = getattr(
+        plot_settings, 'completeness_base_size_per_feature',
+        base_size_per_feature)
+    lettering = {
+        'label_fontsize': getattr(
+            plot_settings, 'completeness_label_fontsize', 8),
+        'tick_fontsize': getattr(
+            plot_settings, 'completeness_tick_fontsize', None),
+        'axis_fontsize': getattr(
+            plot_settings, 'completeness_axis_fontsize', None),
+        'heading_fontsize': getattr(
+            plot_settings, 'completeness_heading_fontsize', None),
+        'wrap_labels': getattr(
+            plot_settings, 'completeness_wrap_labels', False),
+    }
 
     ## Plot the data for training chemicals
     in_samples_for_effect = {
@@ -65,7 +80,8 @@ def proportions_incomplete_subplots(
         in_samples_for_effect,
         base_size_per_feature=base_size_per_feature,
         threshold=threshold,
-        output_dir=output_dir
+        output_dir=output_dir,
+        **lettering,
     )
 
     ## Plot the data for out-of-sample chemicals
@@ -76,7 +92,8 @@ def proportions_incomplete_subplots(
         {plot_settings.label_for_sample_type['out'] : out_samples},
         base_size_per_feature=base_size_per_feature,
         threshold=threshold,
-        output_dir=output_dir
+        output_dir=output_dir,
+        **lettering,
     )
 #endregion
 
@@ -87,7 +104,12 @@ def proportions_incomplete_subplot(
         samples_dict, 
         base_size_per_feature=(0.2, 6),
         threshold=None,
-        output_dir=None
+        output_dir=None,
+        label_fontsize=8,
+        tick_fontsize=None,
+        axis_fontsize=None,
+        heading_fontsize=None,
+        wrap_labels=False
     ):
     '''
     Generate a subplot for each group of samples in the provided dictionary.
@@ -103,6 +125,14 @@ def proportions_incomplete_subplot(
         value is a list of sample IDs.
     base_size_per_feature : tuple
         The base size of the plot for a single feature.
+    label_fontsize : float, optional
+        Category lettering size. Non-default sizes use multiline headings.
+    tick_fontsize : float, optional
+        X-axis tick lettering size. None preserves the existing default.
+    axis_fontsize, heading_fontsize : float, optional
+        Local axis-label and heading sizes. None preserves defaults.
+    wrap_labels : bool, optional
+        Wrap feature labels wider than 2.4 inches at their final underscore.
 
     Returns
     -------
@@ -148,7 +178,12 @@ def proportions_incomplete_subplot(
             valid_prop, 
             title, 
             n_samples,
-            threshold=threshold
+            threshold=threshold,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            axis_fontsize=axis_fontsize,
+            heading_fontsize=heading_fontsize,
+            wrap_labels=wrap_labels,
             )
 
         # Remove ylabel for all but the first subplot
@@ -174,6 +209,11 @@ def proportions_incomplete_barchart(
         title, 
         n_samples,
         threshold=None,
+        label_fontsize=8,
+        tick_fontsize=None,
+        axis_fontsize=None,
+        heading_fontsize=None,
+        wrap_labels=False,
         ):
     '''
     Plot the proportions of missing values, values outside AD, and valid 
@@ -193,6 +233,14 @@ def proportions_incomplete_barchart(
         Title of the plot.
     n_samples : int
         Total number of samples.
+    label_fontsize : float, optional
+        Category lettering size; default is 8 points.
+    tick_fontsize : float, optional
+        X-axis tick lettering size. None preserves the existing default.
+    axis_fontsize, heading_fontsize : float, optional
+        Local axis-label and heading sizes. None preserves defaults.
+    wrap_labels : bool, optional
+        Wrap feature labels wider than 2.4 inches at their final underscore.
 
     Returns
     -------
@@ -225,14 +273,31 @@ def proportions_incomplete_barchart(
         ax.axvline(threshold, linestyle='-.', zorder=5)
     
     ax.set_yticks(y)
-    ax.set_yticklabels(
-        [f'{index} ({int(value)}%)' 
-         for index, value in valid_prop.items()], 
-         fontsize=8)
-    ax.set_xlabel('% Incomplete', size='medium')
-    ax.set_ylabel('Feature Names (% Complete)', size='medium')
+    if wrap_labels:
+        renderer = ax.figure.canvas.get_renderer()
+        label_font = ax.yaxis.label.get_fontproperties().copy()
+        label_font.set_size(label_fontsize)
+    labels = []
+    for feature, value in valid_prop.items():
+        label = f'{feature} ({int(value)}%)'
+        if wrap_labels and '_' in feature:
+            width = renderer.get_text_width_height_descent(
+                label, label_font, ismath=False)[0] / ax.figure.dpi
+            if width > 2.4:
+                prefix, suffix = feature.rsplit('_', 1)
+                label = f'{prefix}_\n{suffix} ({int(value)}%)'
+        labels.append(label)
+    ax.set_yticklabels(labels, fontsize=label_fontsize)
+    if tick_fontsize is not None:
+        ax.tick_params(axis='x', labelsize=tick_fontsize)
+    ax.set_xlabel('% Incomplete', size=axis_fontsize or 'medium')
+    ax.set_ylabel('Feature Names (% Complete)',
+                  size=axis_fontsize or 'medium')
     n_samples = utilities.comma_separated(n_samples)
-    ax.set_title(f'{title} (n={n_samples})', size='medium', loc='left')
+    display_title = f'{title} (n={n_samples})'
+    if label_fontsize != 8:
+        display_title = title.replace('/', '/\n') + f'\n(n={n_samples})'
+    ax.set_title(display_title, size=heading_fontsize or 'medium', loc='left')
     ax.set_xlim([0, 100])
     ax.grid(True, axis='x', linestyle='--', color='black', alpha=0.6)
 

@@ -18,7 +18,8 @@ from . import utilities
 def feature_distributions(
         features_file,
         color='cornflowerblue',
-        output_dir=None
+        output_dir=None,
+        wrap_titles=False
         ):
     '''
     Visualize the distributions of features as histograms.
@@ -29,6 +30,8 @@ def feature_distributions(
         Path to the features file. 
     color : str, optional
         Color for the histogram bars.
+    wrap_titles : bool, optional
+        Split long titles at their last underscore. Default is False.
 
     Returns
     -------
@@ -95,6 +98,12 @@ def feature_distributions(
     total_features = len(continuous_features) + len(discrete_features)
     for i in range(total_features, nrows * ncols):
         axs.flatten()[i].axis('off')
+
+    if wrap_titles:
+        for ax in axs.flat:
+            title = ax.get_title()
+            if len(title) > 20 and '_' in title:
+                ax.set_title('_\n'.join(title.rsplit('_', 1)))
 
     fig.tight_layout()
 

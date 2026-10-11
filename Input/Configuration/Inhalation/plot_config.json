@@ -17,6 +17,31 @@
         "cross_route_pod_comparison"
       ],
 
+    "export_dpi": {
+      "feature_distributions": 450,
+      "pairwise_scatters_and_kde_subplots": 600,
+      "proportions_incomplete_subplots": 450,
+      "important_feature_counts": 450,
+      "importances_boxplots": 450,
+      "importances_replicates_boxplots": 450,
+      "in_and_out_sample_comparisons": 450,
+      "benchmarking_scatterplots": 450,
+      "margins_of_exposure_cumulative": 450,
+      "cumulative_pod_distributions": 450,
+      "predictions_by_missing_feature": 450
+    },
+
+    "cross_route_legend_fontsize": 11,
+    "cross_route_axis_fontsize": 11,
+    "feature_distribution_wrap_titles": true,
+    "completeness_label_fontsize": 15,
+    "completeness_tick_fontsize": 15,
+    "completeness_axis_fontsize": 15,
+    "completeness_heading_fontsize": 16,
+    "completeness_wrap_labels": true,
+    "completeness_base_size_per_feature": [0.33, 6],
+    "importance_compact_tick_effects": ["repro_dev"],
+
     "cross_route_config_files": {
       "oral": "config.json",
       "inhalation": "config_inhalation.json"
@@ -88,6 +113,7 @@
     "moe_right_truncation": 10.0,
 
     "moe_bbox_inches": "tight",
+    "moe_preserve_bbox": true,
     "moe_pod_xlabel": "$\\log_{10}POD_{inh,HED}$ [mg/(kg·d)]",
     "prediction_label": "$log_{10}POD$",
     "feature_names_label": "Feature Names",

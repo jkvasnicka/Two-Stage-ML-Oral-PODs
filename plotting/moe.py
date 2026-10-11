@@ -144,6 +144,7 @@ def margins_of_exposure_cumulative(
             grouping_key,
             output_dir=output_dir,
             bbox_inches=getattr(plot_settings, 'moe_bbox_inches', None),
+            preserve_bbox=getattr(plot_settings, 'moe_preserve_bbox', False),
         )
 #endregion
 
