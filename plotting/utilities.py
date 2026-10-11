@@ -3,6 +3,7 @@ This module contains various utility functions for general plotting tasks.
 '''
 
 import seaborn as sns
+import matplotlib as mpl
 import os
 from matplotlib.ticker import MaxNLocator
 import pandas as pd
@@ -15,7 +16,8 @@ def save_figure(
         fig_label, 
         extension='.png', 
         bbox_inches=None,
-        output_dir=None
+        output_dir=None,
+        preserve_bbox=False
         ):
     '''
     Save a matplotlib figure to a specified directory with a given label and 
@@ -43,6 +45,9 @@ def save_figure(
         bounding box in inches (default is None).
     output_dir : str, optional
         Name of the main directory to save the figure. Default is 'Figures'.
+    preserve_bbox : bool, optional
+        Measure a tight crop at the figure DPI before export, keeping its
+        physical dimensions stable when exporting at a higher DPI.
         
     Returns
     -------
@@ -58,6 +63,10 @@ def save_figure(
     output_dir = append_function_to_path(output_dir, function)
     fig_path = figure_path(output_dir, fig_label, extension=extension)
     print(f'Saving figure --> "{fig_path}"')
+    if preserve_bbox and bbox_inches == 'tight':
+        fig.canvas.draw()
+        bbox_inches = fig.get_tightbbox(fig.canvas.get_renderer()).padded(
+            mpl.rcParams['savefig.pad_inches'])
     fig.savefig(fig_path, bbox_inches=bbox_inches)
 #endregion
 

@@ -3,6 +3,8 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+from matplotlib.legend_handler import HandlerTuple
 import numpy as np
 
 from config_management import UnifiedConfiguration
@@ -31,6 +33,10 @@ def cross_route_pod_comparison(
         tables, source_tables, summary,
         label_for_effect=plot_settings.label_for_effect,
         color_for_effect=plot_settings.color_for_effect,
+        legend_fontsize=getattr(
+            plot_settings, 'cross_route_legend_fontsize', None),
+        axis_fontsize=getattr(
+            plot_settings, 'cross_route_axis_fontsize', None),
     )
     utilities.save_figure(
         figure,
@@ -44,7 +50,7 @@ def cross_route_pod_comparison(
 
 def cross_route_comparison(
         tables, source_tables, summary, label_for_effect, color_for_effect,
-        bin_width=0.25):
+        bin_width=0.25, legend_fontsize=None, axis_fontsize=None):
     '''Plot density and ratio panels with Spearman annotations.
 
     Parameters
@@ -61,6 +67,11 @@ def cross_route_comparison(
         Existing endpoint labels and colors from the plot configuration.
     bin_width : float, optional
         Shared ratio-histogram bin width in log10 units.
+    legend_fontsize : float, optional
+        Legend lettering size. When set, consolidate all keys below the
+        panels so no legend obscures plotted data.
+    axis_fontsize : float, optional
+        Local axis and colorbar lettering size. None preserves defaults.
 
     Returns
     -------
@@ -155,9 +166,11 @@ def cross_route_comparison(
                 f'Aurisano PODs: n = {len(source):,}'
             ),
         )
-        axis.legend(
-            loc='lower right', fontsize=7, framealpha=0.95, markerscale=2,
-        )
+        if legend_fontsize is None:
+            axis.legend(
+                loc='lower right', fontsize=7,
+                framealpha=0.95, markerscale=2,
+            )
 
         endpoint_summary = summary.loc[
             summary['effect'].eq(effect)
@@ -204,20 +217,23 @@ def cross_route_comparison(
             ylabel='Chemicals within population (%)',
             title=f'({chr(67 + column)}) {label_for_effect[effect]}',
         )
-        population_legend = axis.legend(loc='upper left', fontsize=7)
-        axis.add_artist(population_legend)
-        axis.legend(
-            handles=[
-                Line2D([], [], color='#444444', linewidth=0.8,
-                       linestyle=style, label=label)
-                for style, label in (
-                    ('-', '0: equal PODs'),
-                    ('--', '+/-1: 10-fold difference'),
-                    (':', '+/-2: 100-fold difference'),
-                )
-            ],
-            loc='upper right', fontsize=6.5,
-        )
+        if legend_fontsize is None:
+            population_legend = axis.legend(loc='upper left', fontsize=7)
+            axis.add_artist(population_legend)
+        reference_handles = [
+            Line2D([], [], color='#444444', linewidth=0.8,
+                   linestyle=style, label=label)
+            for style, label in (
+                ('-', '0: equal doses' if legend_fontsize is not None
+                 else '0: equal PODs'),
+                ('--', '+/-1: 10-fold difference'),
+                (':', '+/-2: 100-fold difference'),
+            )
+        ]
+        if legend_fontsize is None:
+            axis.legend(
+                handles=reference_handles, loc='upper right', fontsize=6.5,
+            )
         axis.grid(axis='y', linestyle=':', linewidth=0.5)
 
 
@@ -232,4 +248,44 @@ def cross_route_comparison(
     histogram_max = max(axis.get_ylim()[1] for axis in axes[1, :])
     for axis in axes[1, :]:
         axis.set_ylim(0, histogram_max)
+    if axis_fontsize is not None:
+        for axis in [*axes.flat, colorbar.ax]:
+            axis.xaxis.label.set_fontsize(axis_fontsize)
+            axis.yaxis.label.set_fontsize(axis_fontsize)
+            axis.tick_params(labelsize=axis_fontsize)
+        for axis in axes[0, :]:
+            axis.set_xlabel(
+                r'$\log_{10}$(inhalation administered dose,' + '\n'
+                + r'mg kg$^{-1}$ day$^{-1}$)', fontsize=axis_fontsize,
+            )
+    if legend_fontsize is not None:
+        scatter_handles = [
+            Line2D([], [], linestyle='', marker='o', markersize=4,
+                   markerfacecolor='#D55E00', markeredgecolor='white'),
+            Line2D([], [], color=axes[0, 0].lines[0].get_color(),
+                   linestyle=axes[0, 0].lines[0].get_linestyle(),
+                   linewidth=axes[0, 0].lines[0].get_linewidth()),
+        ]
+        figure.legend(
+            handles=scatter_handles,
+            labels=['Aurisano POD points', '1:1 line'],
+            title='Panels A/B', title_fontsize=legend_fontsize,
+            loc='upper left', bbox_to_anchor=(0.035, -0.02),
+            fontsize=legend_fontsize, frameon=False,
+        )
+        histogram_handles = [
+            tuple(Patch(facecolor=color_for_effect[effect], alpha=0.65)
+                  for effect in ENDPOINTS),
+            Patch(facecolor='none', edgecolor=source_color, linewidth=1.5),
+        ]
+        figure.legend(
+            handles=[*histogram_handles, *reference_handles],
+            labels=['QSAR predictions', 'Aurisano PODs',
+                    *[handle.get_label() for handle in reference_handles]],
+            handler_map={tuple: HandlerTuple(ndivide=None)},
+            loc='upper left', bbox_to_anchor=(0.28, -0.02), ncol=3,
+            title='Panels C/D',
+            title_fontsize=legend_fontsize,
+            fontsize=legend_fontsize, frameon=False,
+        )
     return figure

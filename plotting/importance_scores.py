@@ -9,7 +9,7 @@ plot.py
 '''
 
 import matplotlib.pyplot as plt 
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MaxNLocator, StrMethodFormatter
 
 from . import utilities
 
@@ -98,6 +98,11 @@ def _feature_importances_subplot(
         function name.
     '''
     model_keys = results_analyzer.read_model_keys(exclusion_string='false')
+    compact_tick_effects = getattr(
+        plot_settings, 'importance_compact_tick_effects', [])
+    if compact_tick_effects:
+        effect_index = results_analyzer.read_model_key_names().index(
+            'target_effect')
 
     for model_key in model_keys:
 
@@ -126,6 +131,9 @@ def _feature_importances_subplot(
         # Set tick marks dynamically
         for ax in axs:
             ax.xaxis.set_major_locator(MaxNLocator(5))
+            if (compact_tick_effects
+                    and model_key[effect_index] in compact_tick_effects):
+                ax.xaxis.set_major_formatter(StrMethodFormatter('{x:g}'))
 
         fig.tight_layout()
 
