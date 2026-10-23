@@ -3,14 +3,12 @@ Plot saturated vapor concentration screening results.
 '''
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 import numpy as np
 import pandas as pd
 
 from vapor_concentration import (
     ENDPOINTS,
     POINT_ABOVE,
-    POINT_AT_OR_BELOW,
     prepare_vapor_concentration_table,
     summarize_vapor_concentration,
 )
@@ -35,39 +33,33 @@ def vapor_concentration_ceiling(
         figure,
         vapor_concentration_ceiling,
         'bmch-svc-by-effect',
-        bbox_inches='tight',
         output_dir=output_dir,
     )
     plt.close(figure)
 
 
+@plt.rc_context({'font.family': 'Arial'})
 def bmch_svc_by_effect(
         table,
         label_for_effect,
         color_for_effect,
         bin_width=0.25,
         ):
-    '''Plot endpoint-specific BMCh/SVC densities and ratio distributions.'''
+    '''Plot endpoint-specific BMCh/SVC ratio distributions.'''
     figure, axes = plt.subplots(
+        1,
         2,
-        2,
-        figsize=(10, 9),
-        dpi=300,
+        figsize=(7, 3.2),
+        dpi=600,
+        sharex=True,
+        sharey=True,
         constrained_layout=True,
     )
 
-    log_svc_for_effect = {}
-    log_bmch_for_effect = {}
     ratio_for_effect = {}
     for effect in ENDPOINTS:
         application = table.loc[~table[f'{effect}_training_chemical']]
         valid = application[f'{effect}_log10_bmch_svc_ratio'].notna()
-        log_svc_for_effect[effect] = np.log10(
-            application.loc[valid, 'svc_mg_m3']
-        )
-        log_bmch_for_effect[effect] = np.log10(
-            application.loc[valid, f'{effect}_bmch_mg_m3']
-        )
         ratio_for_effect[effect] = application.loc[
             valid,
             f'{effect}_log10_bmch_svc_ratio',
@@ -88,113 +80,43 @@ def bmch_svc_by_effect(
         for effect in ENDPOINTS
     }
 
-    all_scatter_values = [
-        *log_svc_for_effect.values(),
-        *log_bmch_for_effect.values(),
-    ]
-    scatter_min = np.floor(min(values.min() for values in all_scatter_values))
-    scatter_max = np.ceil(max(values.max() for values in all_scatter_values))
-    scatter_extent = (
-        scatter_min,
-        scatter_max,
-        scatter_min,
-        scatter_max,
-    )
-
-    hexbins = []
-    for column, effect in enumerate(ENDPOINTS):
-        axis = axes[0, column]
-        hexbin = axis.hexbin(
-            log_svc_for_effect[effect],
-            log_bmch_for_effect[effect],
-            gridsize=90,
-            extent=scatter_extent,
-            mincnt=1,
-            cmap='viridis',
-        )
-        hexbins.append(hexbin)
-        utilities.plot_one_one_line(
-            axis,
-            scatter_min,
-            scatter_max,
-            color='#444444',
-        )
-        valid_n = int(
-            point_summary_for_effect[effect]['denominator'].iloc[0]
-        )
-        axis.set(
-            aspect='equal',
-            xlabel=r'$\log_{10}$(SVC, mg m$^{-3}$)',
-            ylabel=r'$\log_{10}$(predicted BMCh, mg m$^{-3}$)',
-            title=(
-                f'({chr(65 + column)}) {label_for_effect[effect]}\n'
-                f'n = {valid_n:,}'
-            ),
-        )
-        axis.text(
-            0.97,
-            0.04,
-            'BMCh at or below SVC',
-            transform=axis.transAxes,
-            ha='right',
-            va='bottom',
-            fontsize=8,
-            color='#333333',
-        )
-        axis.text(
-            0.03,
-            0.96,
-            'BMCh above SVC',
-            transform=axis.transAxes,
-            ha='left',
-            va='top',
-            fontsize=8,
-            color='#333333',
-        )
-
-    maximum_count = max(hexbin.get_array().max() for hexbin in hexbins)
-    shared_norm = LogNorm(vmin=1, vmax=maximum_count)
-    for hexbin in hexbins:
-        hexbin.set_norm(shared_norm)
-    colorbar = figure.colorbar(
-        hexbins[0],
-        ax=axes[0, :],
-        shrink=0.8,
-        pad=0.02,
-    )
-    colorbar.set_label('Chemicals per hexagon')
-
     combined_ratios = pd.concat(ratio_for_effect.values(), ignore_index=True)
     lower = np.floor(combined_ratios.min() / bin_width) * bin_width
     upper = np.ceil(combined_ratios.max() / bin_width) * bin_width
     bin_edges = np.arange(lower, upper + bin_width, bin_width)
 
     for column, effect in enumerate(ENDPOINTS):
-        axis = axes[1, column]
+        axis = axes[column]
         ratios = ratio_for_effect[effect]
         axis.hist(
             ratios,
             bins=bin_edges,
             weights=np.full(len(ratios), 100 / len(ratios)),
             color=color_for_effect[effect],
-            edgecolor='white',
-            linewidth=0.25,
+            edgecolor='none',
         )
         axis.axvline(0, color='#444444', linestyle='--', linewidth=1)
         axis.set(
             xlabel=r'$\log_{10}$(BMCh/SVC)',
             ylabel='Chemicals (%)',
-            title=f'({chr(67 + column)}) {label_for_effect[effect]}',
+            title=label_for_effect[effect],
+        )
+        axis.xaxis.label.set_size(9)
+        axis.yaxis.label.set_size(9)
+        axis.title.set_size(9)
+        axis.tick_params(labelsize=8)
+        axis.text(
+            0, 0.98, 'BMCh = SVC',
+            transform=axis.get_xaxis_transform(),
+            ha='center', va='top', fontsize=8,
+            bbox={'facecolor': 'white', 'edgecolor': 'none', 'pad': 2},
         )
         axis.grid(axis='y', linestyle=':', linewidth=0.5)
         point_summary = point_summary_for_effect[effect]
         valid_n = int(point_summary['denominator'].iloc[0])
-        at_or_below = point_summary.loc[POINT_AT_OR_BELOW, 'percent']
         above = point_summary.loc[POINT_ABOVE, 'percent']
         summary_text = (
             f'n = {valid_n:,}\n'
-            f'Median = {ratios.median():.2f}\n'
-            f'At or below SVC = {at_or_below:.1f}%\n'
             f'Above SVC = {above:.1f}%'
         )
         axis.text(
