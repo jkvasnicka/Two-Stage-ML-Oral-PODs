@@ -152,7 +152,8 @@ class ResultsPlotter:
             'predictions_by_missing_feature' : self._predictions_by_missing_feature,
             'sensitivity_analysis_boxplots' : self._sensitivity_analysis_boxplots,
             'vapor_concentration_ceiling' : self._vapor_concentration_ceiling,
-            'cross_route_pod_comparison' : self._cross_route_pod_comparison
+            'cross_route_pod_comparison' : self._cross_route_pod_comparison,
+            'route_allocation_heatmap': self._route_allocation_heatmap,
         }
 
         # Filter out any plotting functions not defined in the config file
@@ -350,6 +351,13 @@ class ResultsPlotter:
             config_files['oral'],
             config_files['inhalation'],
             self._plot_settings,
+            output_dir=self._path_settings.figures_dir,
+        )
+
+    def _route_allocation_heatmap(self):
+        '''Plot the saved route-allocation screening concern table.'''
+        moe.route_allocation_heatmap(
+            self._plot_settings.route_allocation_table_file,
             output_dir=self._path_settings.figures_dir,
         )
 

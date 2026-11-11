@@ -11,7 +11,11 @@ plot.py
     the main package.
 '''
 
-import matplotlib.pyplot as plt 
+import xml.etree.ElementTree as ET
+
+import matplotlib.pyplot as plt
+from matplotlib.colors import BoundaryNorm, ListedColormap
+from matplotlib.patches import Patch
 import seaborn as sns
 import numpy as np
 
@@ -26,6 +30,72 @@ MOE_CATEGORY_KWARGS = {
     'Moderate Concern' : {'color' : '#a6cee3', 'alpha' : 0.2},
     'High Concern' : {'color' : '#1f78b4', 'alpha' : 0.2},
 }
+
+
+def route_allocation_heatmap(table_file, output_dir=None):
+    '''Plot saved counts and percentages for the two route allocations.
+
+    Parameters
+    ----------
+    table_file : str
+        Saved HTML table; percentages are preserved as displayed there.
+    output_dir : str, optional
+        Production figure root used by ``utilities.save_figure``.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Saved, closed figure, retained for annotation verification.
+    '''
+    panels = _read_route_allocation(table_file)
+    figure, axes = plt.subplots(1, 2, figsize=(7.2, 3.9))
+    figure.subplots_adjust(
+        left=0.12, right=0.98, bottom=0.28, top=0.88, wspace=0.35,
+    )
+    colors = ['#e8eff5', '#bdd0df', '#7d9fb9', '#365e7a']
+    cmap = ListedColormap(colors)
+    norm = BoundaryNorm([0, 0.1, 1, 10, 101], cmap.N, clip=True)
+    categories = ['High', 'Moderate', 'Low']
+    for letter, axis, (endpoint, counts, labels, total) in zip(
+            'AB', axes, panels):
+        percentages = counts / total * 100
+        axis.imshow(percentages, cmap=cmap, norm=norm)
+        axis.set(
+            xticks=range(3), xticklabels=categories,
+            yticks=range(3), yticklabels=categories,
+        )
+        axis.set_title(f'({letter}) {endpoint}', fontsize=9.5, pad=9)
+        axis.set_xticks(np.arange(-0.5, 3, 1), minor=True)
+        axis.set_yticks(np.arange(-0.5, 3, 1), minor=True)
+        axis.grid(which='minor', color='white', linewidth=2)
+        axis.tick_params(which='both', length=0, labelsize=9)
+        for row, column in np.ndindex(3, 3):
+            color = 'white' if percentages[row, column] >= 10 else 'black'
+            axis.text(
+                column, row, labels[row, column],
+                ha='center', va='center', color=color, fontsize=9.5,
+            )
+    figure.supxlabel(
+        'Level of concern (100% inhalation)', y=0.16, fontsize=10,
+    )
+    figure.supylabel('Level of concern (100% oral)', x=0.015, fontsize=10)
+    figure.legend(
+        handles=[
+            Patch(facecolor=color, label=label)
+            for color, label in zip(
+                colors, ['<0.1%', '0.1–<1%', '1–<10%', '≥10%'],
+            )
+        ],
+        loc='lower center', bbox_to_anchor=(0.55, 0.01), ncol=4,
+        frameon=False, fontsize=9, handlelength=1.3, columnspacing=1.5,
+    )
+    utilities.save_figure(
+        figure, route_allocation_heatmap, 'screening-concern',
+        bbox_inches='tight', output_dir=output_dir,
+    )
+    plt.close(figure)
+    return figure
+
 
 #region: margins_of_exposure_cumulative
 def margins_of_exposure_cumulative(
@@ -663,3 +733,44 @@ def _plot_moe_results(ax, results_for_percentile, plot_settings, global_xlim=Non
 
     if global_xlim:
         utilities.update_global_limits(global_xlim, ax.get_xlim())
+
+
+def _read_route_allocation(table_file):
+    '''Read saved endpoint matrices without recomputing classifications.'''
+    table = ET.parse(table_file).getroot()
+    categories = ['High Concern', 'Moderate Concern', 'Low Concern']
+    headers = [cell.text for cell in table.findall('./thead/tr')[0]]
+    if headers[2:] != categories + ['Total']:
+        raise ValueError('Unexpected inhalation concern column order.')
+    rows = table.findall('./tbody/tr')
+    endpoints = ['General Noncancer', 'Reproductive/Developmental']
+    if len(rows) != 8:
+        raise ValueError('Expected four saved rows per endpoint.')
+    panels = []
+    for index, endpoint in enumerate(endpoints):
+        block = rows[index * 4:(index + 1) * 4]
+        if block[0].find('th').text != endpoint:
+            raise ValueError('Unexpected endpoint order in saved table.')
+        counts = np.empty((3, 3), dtype=int)
+        labels = np.empty((3, 3), dtype=object)
+        for row, (record, category) in enumerate(zip(block, categories)):
+            if record.findall('th')[-1].text != category:
+                raise ValueError('Unexpected oral concern row order.')
+            cells = record.findall('td')
+            for column, cell in enumerate(cells[:3]):
+                count, percent = cell.text.rstrip(')').split(' (')
+                counts[row, column] = int(count.replace(',', ''))
+                labels[row, column] = f'{count}\n({percent}%)'
+            row_total = int(cells[3].text.split(' (')[0].replace(',', ''))
+            if counts[row].sum() != row_total:
+                raise ValueError('Saved row counts do not match total.')
+        totals = [
+            int(cell.text.split(' (')[0].replace(',', ''))
+            for cell in block[3].findall('td')
+        ]
+        if (counts.sum(axis=0) != totals[:3]).any():
+            raise ValueError('Saved column counts do not match totals.')
+        if counts.sum() != totals[3]:
+            raise ValueError('Saved counts do not match eligible population.')
+        panels.append((endpoint, counts, labels, totals[3]))
+    return panels
