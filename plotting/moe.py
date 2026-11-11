@@ -56,15 +56,14 @@ def route_allocation_heatmap(table_file, output_dir=None):
     cmap = ListedColormap(colors)
     norm = BoundaryNorm([0, 0.1, 1, 10, 101], cmap.N, clip=True)
     categories = ['High', 'Moderate', 'Low']
-    for letter, axis, (endpoint, counts, labels, total) in zip(
-            'AB', axes, panels):
+    for axis, (endpoint, counts, labels, total) in zip(axes, panels):
         percentages = counts / total * 100
         axis.imshow(percentages, cmap=cmap, norm=norm)
         axis.set(
             xticks=range(3), xticklabels=categories,
             yticks=range(3), yticklabels=categories,
         )
-        axis.set_title(f'({letter}) {endpoint}', fontsize=9.5, pad=9)
+        axis.set_title(endpoint, fontsize=9.5, pad=9)
         axis.set_xticks(np.arange(-0.5, 3, 1), minor=True)
         axis.set_yticks(np.arange(-0.5, 3, 1), minor=True)
         axis.grid(which='minor', color='white', linewidth=2)
