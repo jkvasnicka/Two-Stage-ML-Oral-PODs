@@ -14,10 +14,12 @@
         "predictions_by_missing_feature",
         "sensitivity_analysis_boxplots",
         "vapor_concentration_ceiling",
-        "cross_route_pod_comparison"
+        "cross_route_pod_comparison",
+        "route_allocation_heatmap"
       ],
 
     "export_dpi": {
+      "route_allocation_heatmap": 450,
       "feature_distributions": 450,
       "pairwise_scatters_and_kde_subplots": 600,
       "proportions_incomplete_subplots": 450,
@@ -30,6 +32,8 @@
       "cumulative_pod_distributions": 450,
       "predictions_by_missing_feature": 450
     },
+
+    "route_allocation_table_file": "Analyses/Inhalation/Generated/route_allocation.html",
 
     "cross_route_legend_fontsize": 11,
     "cross_route_axis_fontsize": 11,
