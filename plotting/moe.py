@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm, ListedColormap
-from matplotlib.patches import Patch
+from matplotlib.patches import Patch, Rectangle
 import seaborn as sns
 import numpy as np
 
@@ -48,28 +48,36 @@ def route_allocation_heatmap(table_file, output_dir=None):
         Saved, closed figure, retained for annotation verification.
     '''
     panels = _read_route_allocation(table_file)
-    figure, axes = plt.subplots(1, 2, figsize=(7.2, 3.9))
+    figure, axes = plt.subplots(1, 2, figsize=(9.2, 4.8))
     figure.subplots_adjust(
         left=0.12, right=0.98, bottom=0.28, top=0.88, wspace=0.35,
     )
     colors = ['#e8eff5', '#bdd0df', '#7d9fb9', '#365e7a']
     cmap = ListedColormap(colors)
     norm = BoundaryNorm([0, 0.1, 1, 10, 101], cmap.N, clip=True)
-    categories = ['High', 'Moderate', 'Low']
+    categories = ['High', 'Moderate', 'Low', 'Total']
     for axis, (endpoint, counts, labels, total) in zip(axes, panels):
         percentages = counts / total * 100
         axis.imshow(percentages, cmap=cmap, norm=norm)
         axis.set(
-            xticks=range(3), xticklabels=categories,
-            yticks=range(3), yticklabels=categories,
+            xticks=range(4), xticklabels=categories,
+            yticks=range(4), yticklabels=categories,
+            xlim=(-0.5, 3.6), ylim=(3.6, -0.5),
         )
         axis.set_title(endpoint, fontsize=9.5, pad=9)
-        axis.set_xticks(np.arange(-0.5, 3, 1), minor=True)
-        axis.set_yticks(np.arange(-0.5, 3, 1), minor=True)
-        axis.grid(which='minor', color='white', linewidth=2)
+        axis.vlines([0.5, 1.5], -0.5, 2.5, color='white', linewidth=2)
+        axis.hlines([0.5, 1.5], -0.5, 2.5, color='white', linewidth=2)
+        axis.add_patch(Rectangle(
+            (-0.5, -0.5), 3, 3, fill=False, edgecolor='black',
+            linewidth=1,
+        ))
+        for spine in axis.spines.values():
+            spine.set_visible(False)
         axis.tick_params(which='both', length=0, labelsize=9)
-        for row, column in np.ndindex(3, 3):
-            color = 'white' if percentages[row, column] >= 10 else 'black'
+        for row, column in np.ndindex(4, 4):
+            color = 'white' if (
+                row < 3 and column < 3 and percentages[row, column] >= 10
+            ) else 'black'
             axis.text(
                 column, row, labels[row, column],
                 ha='center', va='center', color=color, fontsize=9.5,
@@ -751,15 +759,18 @@ def _read_route_allocation(table_file):
         if block[0].find('th').text != endpoint:
             raise ValueError('Unexpected endpoint order in saved table.')
         counts = np.empty((3, 3), dtype=int)
-        labels = np.empty((3, 3), dtype=object)
+        labels = np.empty((4, 4), dtype=object)
+        for row, record in enumerate(block):
+            for column, cell in enumerate(record.findall('td')):
+                count, percent = cell.text.rstrip(')').split(' (')
+                labels[row, column] = f'{count}\n({percent}%)'
         for row, (record, category) in enumerate(zip(block, categories)):
             if record.findall('th')[-1].text != category:
                 raise ValueError('Unexpected oral concern row order.')
             cells = record.findall('td')
             for column, cell in enumerate(cells[:3]):
-                count, percent = cell.text.rstrip(')').split(' (')
+                count = cell.text.split(' (')[0]
                 counts[row, column] = int(count.replace(',', ''))
-                labels[row, column] = f'{count}\n({percent}%)'
             row_total = int(cells[3].text.split(' (')[0].replace(',', ''))
             if counts[row].sum() != row_total:
                 raise ValueError('Saved row counts do not match total.')
