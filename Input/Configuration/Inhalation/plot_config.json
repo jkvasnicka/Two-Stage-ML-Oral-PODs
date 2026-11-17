@@ -72,6 +72,8 @@
     ],
 
     "benchmarking_include_toxcast": false,
+    "out_sample_prediction_on_x": true,
+    "out_sample_prediction_label": "$\\log_{10}$(BMCh)",
 
     "label_for_metric": {
       "root_mean_squared_error": "RMSE",

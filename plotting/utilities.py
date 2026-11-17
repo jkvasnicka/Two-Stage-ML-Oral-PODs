@@ -148,7 +148,8 @@ def generate_scatterplot(
         highlight_label='Highlight', 
         title='', 
         xlabel='', 
-        ylabel=''
+        ylabel='',
+        prediction_on_x=False,
     ):
     '''
     Generate a scatterplot comparing two sets of data.
@@ -175,6 +176,8 @@ def generate_scatterplot(
         The label for the x-axis.
     ylabel : str
         The label for the y-axis.
+    prediction_on_x : bool, optional
+        Plot predictions on x while retaining y_true as the metric reference.
     '''
 
     chem_intersection = y_true.index.intersection(y_pred.index)
@@ -189,16 +192,16 @@ def generate_scatterplot(
         y_pred_rest = y_pred.drop(highlight_indices)
         
         ax.scatter(
-            y_true_rest, 
-            y_pred_rest, 
+            y_pred_rest if prediction_on_x else y_true_rest,
+            y_true_rest if prediction_on_x else y_pred_rest,
             alpha=alpha, 
             s=main_size,
             color=color,
             label=main_label
             )
         ax.scatter(
-            y_true_highlight, 
-            y_pred_highlight, 
+            y_pred_highlight if prediction_on_x else y_true_highlight,
+            y_true_highlight if prediction_on_x else y_pred_highlight,
             alpha=alpha, 
             s=highlight_size,
             color=highlight_color,
@@ -214,8 +217,8 @@ def generate_scatterplot(
     else:
 
         ax.scatter(
-            y_true, 
-            y_pred, 
+            y_pred if prediction_on_x else y_true,
+            y_true if prediction_on_x else y_pred,
             alpha=alpha, 
             color=color,
             s=size
