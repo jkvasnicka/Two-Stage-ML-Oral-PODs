@@ -227,10 +227,11 @@ def _performance_scatterplots(
         result_function = 'get_in_sample_prediction'
         result_type = 'Fitted'       
 
-    prediction_on_x = not in_sample and getattr(
-        plot_settings, 'out_sample_prediction_on_x', False)
+    sample_type = 'in_sample' if in_sample else 'out_sample'
+    prediction_on_x = getattr(
+        plot_settings, f'{sample_type}_prediction_on_x', False)
     prediction_label = getattr(
-        plot_settings, 'out_sample_prediction_label',
+        plot_settings, f'{sample_type}_prediction_label',
         plot_settings.prediction_label) if prediction_on_x else (
             plot_settings.prediction_label)
 
