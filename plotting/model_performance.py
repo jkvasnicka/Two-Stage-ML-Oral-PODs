@@ -227,6 +227,13 @@ def _performance_scatterplots(
         result_function = 'get_in_sample_prediction'
         result_type = 'Fitted'       
 
+    prediction_on_x = not in_sample and getattr(
+        plot_settings, 'out_sample_prediction_on_x', False)
+    prediction_label = getattr(
+        plot_settings, 'out_sample_prediction_label',
+        plot_settings.prediction_label) if prediction_on_x else (
+            plot_settings.prediction_label)
+
     all_axs = []
     # Initialize the limits.
     xmin, xmax = np.inf, -np.inf
@@ -249,10 +256,14 @@ def _performance_scatterplots(
             xlabel, ylabel = '', ''
             if i == len(grouped_keys_inner) - 1:
                 select_features = plot_settings.label_for_select_features[key_for['select_features']]
-                xlabel = f'{plot_settings.surrogate_label} {plot_settings.prediction_label}\n{select_features}'
+                x_source = result_type if prediction_on_x else (
+                    plot_settings.surrogate_label)
+                xlabel = f'{x_source} {prediction_label}\n{select_features}'
             if j == 0:
                 effect = plot_settings.label_for_effect[key_for['target_effect']]
-                ylabel = f'{effect}\n{result_type} {plot_settings.prediction_label}'
+                y_source = plot_settings.surrogate_label if (
+                    prediction_on_x) else result_type
+                ylabel = f'{effect}\n{y_source} {prediction_label}'
                 if i == 0:
                     ax.set_title(title, loc='left', size='small', style='italic')
             ax.set_xlabel(xlabel, size='small')
@@ -265,12 +276,16 @@ def _performance_scatterplots(
                 function_for_metric, 
                 plot_settings.label_for_metric,
                 color='black',
-                size=plot_settings.marker_size_for_sample_type['out']
+                size=plot_settings.marker_size_for_sample_type['out'],
+                prediction_on_x=prediction_on_x,
             )
 
             # Update the limits for the one-one line.
-            xmin = min(xmin, *ax.get_xlim())
-            xmax = max(xmax, *ax.get_xlim())
+            limits = ax.get_xlim()
+            if prediction_on_x:
+                limits += ax.get_ylim()
+            xmin = min(xmin, *limits)
+            xmax = max(xmax, *limits)
 
             ax.tick_params(axis='both', labelsize='small')
 
