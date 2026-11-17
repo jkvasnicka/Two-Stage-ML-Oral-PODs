@@ -15,6 +15,16 @@ from feature_selection import FeatureSelector
 from plotting import sensitivity_analysis  
 
 
+# Standard-normal multiplier for a one-sided 95% bound.
+ONE_SIDED_95_Z_SCORE = 1.645
+
+# Unit conversions; EPA chronic exposure averaging uses a 365-day year.
+HOURS_PER_DAY = 24
+DAYS_PER_YEAR = 365
+PPB_PER_PPM = 1000
+GAS_MOLAR_VOLUME_25C_1ATM_L_PER_MOL = 24.45
+
+
 # Bounds are in log10 MOE; the upper bound belongs to each category.
 MOE_CATEGORIES = {
     'Low Concern': (2., np.inf),
@@ -238,6 +248,58 @@ def pod_to_effect_level(pod, factor=3.49):
     if factor <= 0:
         raise ValueError("'factor' must be greater than zero.")
     return pod / factor
+
+
+def pod_to_rfc(
+        pod, qsar_log10_rmse, database_factor, *,
+        surrogate_log10_sd, human_variability_median,
+        human_variability_p95_p50):
+    '''Convert central surrogate inhalation PODs to provisional RfCs.
+
+    Parameters
+    ----------
+    pod : scalar or array-like
+        Central POD in mg/m3, not a lower prediction bound.
+    qsar_log10_rmse : float
+        QSAR log10 prediction error; zero reproduces the source mapping.
+    database_factor : scalar or array-like
+        Additional adjustment for database incompleteness.
+    surrogate_log10_sd : float
+        Log10 spread of surrogate-to-regulatory POD errors.
+    human_variability_median : float
+        Median sensitivity adjustment for 1% population incidence.
+    human_variability_p95_p50 : float
+        P95/P50 uncertainty ratio for the human sensitivity adjustment.
+
+    Returns
+    -------
+    scalar or array-like
+        Provisional continuous-exposure RfC in mg/m3.
+
+    Notes
+    -----
+    Extends Aurisano et al. (2024), doi:10.1021/acs.est.4c00207,
+    Sections 2.7 and 3.3 and Table S6, by adding QSAR error once.
+    Log errors are assumed independent and normal. QSAR RMSE estimates
+    its log-error standard deviation. Method parameters are caller-supplied.
+    '''
+    human_variability_log10_sd = (
+        np.log10(human_variability_p95_p50)
+        / ONE_SIDED_95_Z_SCORE
+    )
+    qsar_log10_variance = qsar_log10_rmse**2
+    surrogate_log10_variance = surrogate_log10_sd**2
+    human_variability_log10_variance = human_variability_log10_sd**2
+    combined_log10_sd = np.sqrt(
+        qsar_log10_variance + surrogate_log10_variance
+        + human_variability_log10_variance
+    )
+    uncertainty_factor = 10**(ONE_SIDED_95_Z_SCORE * combined_log10_sd)
+    return pod / (
+        human_variability_median
+        * database_factor * uncertainty_factor
+    )
+
 
 #region: ResultsAnalyzer.__init__
 class ResultsAnalyzer:
