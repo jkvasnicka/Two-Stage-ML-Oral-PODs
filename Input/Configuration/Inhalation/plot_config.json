@@ -35,6 +35,32 @@
 
     "route_allocation_table_file": "Analyses/Inhalation/Generated/route_allocation.html",
 
+    "diacetyl_case_study": {
+      "pod_to_rfc": {
+        "surrogate_log10_sd": 0.8282,
+        "human_variability_median": 9.7,
+        "human_variability_p95_p50": 4.3
+      },
+      "database_factor": 10,
+      "sensitivity_database_factor": 1,
+      "exposure_hours_per_day": 8,
+      "exposure_days_per_year": 250,
+      "target_hazard_quotient": 1,
+      "chemicals": {
+        "DTXSID6021583": {
+          "name": "Diacetyl",
+          "molecular_weight_g_per_mol": 86.09,
+          "niosh_8h_rel_ppb": 5.0
+        },
+        "DTXSID6051435": {
+          "name": "2,3-Pentanedione",
+          "molecular_weight_g_per_mol": 100.12,
+          "niosh_8h_rel_ppb": 9.3
+        }
+      },
+      "table_file": "Analyses/Inhalation/Generated/diacetyl_case_study.html"
+    },
+
     "cross_route_legend_fontsize": 11,
     "cross_route_axis_fontsize": 11,
     "feature_distribution_wrap_titles": true,
